@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { supabase } from './SupabaseClient';
-import './App.css'; 
+import './App.css';
+import './CaregiverAuth.css';
 
 export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
     const [loginCode, setLoginCode] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleInputChange = (e) => {
+    const handleCodeChange = (e) => {
         // Case-insensitive Normalization: Convert to uppercase, remove spaces/special chars, restrict to 6 chars
         const normalizedCode = e.target.value
             .replace(/[^a-zA-Z0-9]/g, '')
@@ -15,7 +16,7 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
             .slice(0, 6);
         
         setLoginCode(normalizedCode);
-        setErrorMsg(''); // Clear error on typing
+        setErrorMsg(''); 
     };
 
     const handleLogin = async (e) => {
@@ -24,88 +25,118 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
         setErrorMsg('');
 
         if (loginCode.length !== 6) {
-            setErrorMsg("Please enter a complete 6-character code.");
+            setErrorMsg("Please enter your complete 6-character Login Code.");
             setLoading(false);
             return;
         }
 
-        // Validate code in Supabase
-        const { data, error } = await supabase
-            .from('patients')
-            .select('id, patient_id, full_name, caregiver_id')
-            .eq('login_code', loginCode)
-            .eq('is_active', true)
-            .single();
+        // Call the secure RPC to validate, burn the code, and return patient data
+        const { data, error } = await supabase.rpc('redeem_patient_code', {
+            p_code: loginCode
+        });
 
-        if (error || !data) {
-            setErrorMsg("Invalid code. Please check your credentials or ask your caregiver.");
+        // 👇 DIAGNOSTIC LOG ADDED HERE 👇
+        if (error) {
+            console.error("Detailed DB Error:", error);
+        }
+
+        // The RPC returns an array of rows. We expect exactly 1 if successful.
+        if (error || !data || data.length === 0) {
+            setErrorMsg("Login Code is incorrect or expired. Please ask your caregiver for a new code.");
             setLoading(false);
             return;
         }
 
-        // Establish proper Patient Session mechanism. 
-        // Note: For custom 6-digit pin flows, you typically generate a secure JWT via Edge Functions.
-        // For standard React implementation without custom backend routing, you establish local state backed by secure DB queries.
-        
-        // Mock Session Creation (Replace with proper Supabase custom auth token flow in production)
+        const patientData = data[0];
+
+        // Create secure patient session
         const patientSession = {
             role: 'patient',
-            id: data.id,
-            patient_id: data.patient_id,
-            full_name: data.full_name,
-            caregiver_id: data.caregiver_id,
+            id: patientData.id,
+            patient_id: patientData.patient_id,
+            full_name: patientData.full_name,
+            caregiver_id: patientData.caregiver_id,
             timestamp: new Date().getTime()
         };
         
-        // Temporarily stored securely in sessionStorage rather than localStorage to clear on browser close.
         sessionStorage.setItem('neuroplay_patient_session', JSON.stringify(patientSession));
         
         setLoading(false);
-        onLoginSuccess(data); // Route to Patient Home Page
+        onLoginSuccess(patientData); 
     };
 
     return (
         <div className="auth-page-container">
-            <div className="auth-wrapper" style={{ maxWidth: '450px', textAlign: 'center' }}>
-                <button className="auth-link" onClick={onBackToHome} style={{ float: 'left' }}>← Back</button>
-                <div style={{ clear: 'both', marginBottom: '2rem' }}></div>
-                
-                <div className="avatar" style={{ fontSize: '4rem', marginBottom: '1rem' }} role="img" aria-label="patient">👴</div>
-                <h2 style={{ color: '#1a365d', marginBottom: '0.5rem' }}>Patient Login</h2>
-                <p style={{ color: '#64748b', marginBottom: '2rem' }}>Enter Your 6-Character Patient Code</p>
+            <div className="auth-shell">
+                <button className="auth-back-btn" onClick={onBackToHome}>
+                    ← Back to Home
+                </button>
 
-                <form onSubmit={handleLogin}>
-                    <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '16px', border: '2px solid #e2e8f0', marginBottom: '2rem' }}>
-                        <input 
-                            type="text" 
-                            value={loginCode} 
-                            onChange={handleInputChange} 
-                            placeholder="A7K92P"
-                            style={{ 
-                                width: '100%', 
-                                fontSize: '2.5rem', 
-                                textAlign: 'center', 
-                                letterSpacing: '8px', 
-                                border: 'none', 
-                                background: 'transparent',
-                                outline: 'none',
-                                fontWeight: 'bold',
-                                color: '#2F70B5'
-                            }} 
-                        />
+                <div className="auth-card">
+                    {/* Brand / context panel */}
+                    <aside className="auth-brand-panel">
+                        <div className="auth-brand-mark">
+                            <span role="img" aria-label="brain">🧠</span>
+                            <span>NeuroPlay</span>
+                        </div>
+
+                        <h1 className="auth-brand-heading">Hello there 👋</h1>
+                        <p className="auth-brand-copy">
+                            Enter your Login Code to continue to your NeuroPlay activities.
+                        </p>
+
+                        <ul className="auth-brand-list">
+                            <li>Fun, simple cognitive games</li>
+                            <li>Friendly daily reminders</li>
+                            <li>One code — no password to remember</li>
+                        </ul>
+                    </aside>
+
+                    {/* Form panel */}
+                    <div className="auth-form-panel">
+                        {errorMsg && (
+                            <div className="auth-error-banner">
+                                ⚠️ {errorMsg}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleLogin}>
+                            <h2 className="form-title">Patient login</h2>
+                            <p className="form-subtitle">Ask your caregiver for your Login Code if you don't have it handy.</p>
+
+                            <div className="form-group">
+                                <label htmlFor="loginCode">Login Code</label>
+                                <input
+                                    id="loginCode"
+                                    type="text"
+                                    name="loginCode"
+                                    value={loginCode}
+                                    onChange={handleCodeChange}
+                                    placeholder="e.g. A7K92P"
+                                    className="form-input"
+                                    autoComplete="off"
+                                    style={{
+                                        fontSize: '1.6rem',
+                                        textAlign: 'center',
+                                        letterSpacing: '6px',
+                                        fontWeight: 700,
+                                        color: 'var(--primary-blue)',
+                                        padding: '1rem',
+                                    }}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="btn-primary btn-patient"
+                                style={{ marginTop: '0.5rem' }}
+                                disabled={loading}
+                            >
+                                {loading ? 'Logging in…' : 'Log in'}
+                            </button>
+                        </form>
                     </div>
-
-                    {errorMsg && <p style={{ color: '#e53e3e', fontWeight: '600', marginBottom: '1.5rem' }}>{errorMsg}</p>}
-
-                    <button 
-                        type="submit" 
-                        className="btn-primary" 
-                        style={{ background: '#2F70B5' }}
-                        disabled={loginCode.length !== 6 || loading}
-                    >
-                        {loading ? 'AUTHENTICATING...' : '[ LOGIN ]'}
-                    </button>
-                </form>
+                </div>
             </div>
         </div>
     );

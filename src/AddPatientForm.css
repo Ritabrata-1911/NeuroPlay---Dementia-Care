@@ -1,0 +1,88 @@
+/* src/AddPatientForm.css */
+/* Small companion stylesheet — the form itself reuses CaregiverAuth.css classes
+   (auth-shell, auth-card, form-grid, btn-primary, etc). This file only covers
+   the success/credential-reveal screen, which needs a few extra pieces. */
+
+.patient-success-card {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.patient-success-body {
+    padding: 3rem 2.5rem;
+    text-align: center;
+}
+
+.credential-reveal {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0 1.5rem 0;
+    text-align: left;
+}
+
+.credential-reveal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px dashed #cbd5e1;
+}
+
+.credential-reveal-label {
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.credential-reveal-id {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1a365d;
+}
+
+.credential-reveal-code {
+    background: #2F8B61;
+    color: #ffffff;
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: 6px;
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.credential-warning {
+    color: #c53030;
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.patient-success-body .btn-group {
+    justify-content: center;
+}
+
+.patient-success-body .btn-secondary,
+.patient-success-body .btn-primary {
+    width: auto;
+    padding: 0.85rem 1.75rem;
+}
+
+@media (max-width: 480px) {
+    .patient-success-body {
+        padding: 2.25rem 1.5rem;
+    }
+
+    .credential-reveal-code {
+        font-size: 1.6rem;
+        letter-spacing: 4px;
+    }
+}

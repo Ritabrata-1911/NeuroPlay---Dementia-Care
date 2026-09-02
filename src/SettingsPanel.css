@@ -1,0 +1,275 @@
+/* Reuses the CSS variables already defined in CaregiverDashboard.css
+   (--db-primary-blue, --db-caregiver-green, --db-navy-text, etc).
+   Import CaregiverDashboard.css before this file, or these vars
+   will fall back to browser defaults. */
+
+.settings-page {
+    max-width: 760px;
+}
+
+.settings-header {
+    margin-bottom: 2rem;
+}
+
+.settings-back-btn {
+    background: none;
+    border: none;
+    color: var(--db-primary-blue, #2F70B5);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.settings-back-btn:hover {
+    text-decoration: underline;
+}
+
+.settings-header h1 {
+    margin: 0 0 0.35rem 0;
+    font-size: 1.7rem;
+    color: var(--db-navy-text, #1a365d);
+}
+
+.settings-subtitle {
+    color: #64748b;
+    font-size: 0.92rem;
+    margin: 0;
+}
+
+.settings-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eef2f7;
+    margin-bottom: 1.5rem;
+}
+
+.settings-card h2 {
+    margin: 0 0 1.25rem 0;
+    font-size: 1.1rem;
+    color: var(--db-navy-text, #1a365d);
+}
+
+.settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.settings-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.settings-row-column {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.settings-row-label {
+    margin: 0;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--db-navy-text, #1a365d);
+}
+
+.settings-row-hint {
+    margin: 0.2rem 0 0 0;
+    font-size: 0.82rem;
+    color: #94a3b8;
+}
+
+/* Toggle switch */
+
+.settings-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.settings-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.settings-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    border-radius: 24px;
+    transition: background-color 0.2s ease;
+}
+
+.settings-toggle-slider::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.settings-toggle input:checked+.settings-toggle-slider {
+    background-color: var(--db-caregiver-green, #2F8B61);
+}
+
+.settings-toggle input:checked+.settings-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+/* Pill group (notify channel) */
+
+.settings-pill-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.settings-pill {
+    background: #ffffff;
+    border: 1.5px solid var(--db-border-color, #cbd5e1);
+    color: #64748b;
+    padding: 0.45rem 0.9rem;
+    border-radius: 30px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settings-pill:hover {
+    border-color: var(--db-primary-blue, #2F70B5);
+    color: var(--db-primary-blue, #2F70B5);
+}
+
+.settings-pill-active {
+    background-color: var(--db-primary-blue, #2F70B5);
+    border-color: var(--db-primary-blue, #2F70B5);
+    color: #ffffff;
+}
+
+.settings-pill-active:hover {
+    color: #ffffff;
+}
+
+/* Select dropdown */
+
+.settings-select {
+    border: 1.5px solid var(--db-border-color, #cbd5e1);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--db-navy-text, #1a365d);
+    background: #ffffff;
+    cursor: pointer;
+}
+
+/* Buttons */
+
+.settings-btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--db-border-color, #cbd5e1);
+    padding: 0.55rem 1.1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.settings-btn-outline:hover {
+    border-color: var(--db-primary-blue, #2F70B5);
+    color: var(--db-primary-blue, #2F70B5);
+    background: #f0f7ff;
+}
+
+.settings-btn-danger {
+    background: transparent;
+    border: 1.5px solid #fecdd3;
+    padding: 0.55rem 1.1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--db-error-red, #e11d48);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.settings-btn-danger:hover {
+    background: #fff1f2;
+    border-color: #fca5a5;
+}
+
+.settings-version-tag {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+/* Save bar */
+
+.settings-save-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+}
+
+.settings-saved-note {
+    font-size: 0.85rem;
+    color: var(--db-caregiver-green, #2F8B61);
+    font-weight: 600;
+}
+
+.settings-btn-save {
+    background-color: var(--db-caregiver-green, #2F8B61);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.75rem;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.settings-btn-save:hover {
+    background-color: var(--db-caregiver-green-hover, #24704d);
+}
+
+@media (max-width: 640px) {
+    .settings-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+
+    .settings-select,
+    .settings-btn-outline,
+    .settings-btn-danger {
+        width: 100%;
+    }
+}

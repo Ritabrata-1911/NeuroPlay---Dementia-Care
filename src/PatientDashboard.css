@@ -1,0 +1,159 @@
+.patient-dashboard-container {
+    min-height: 100vh;
+    background-color: #f0f4f8;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #1a365d;
+}
+
+.patient-header {
+    background-color: #ffffff;
+    padding: 2rem 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.patient-header-left h1 {
+    font-size: 1.5rem;
+    color: #4a5568;
+    margin: 0 0 1rem 0;
+}
+
+.patient-header-left h2 {
+    font-size: 3rem;
+    color: #1a365d;
+    margin: 0 0 0.5rem 0;
+}
+
+.patient-header-left p {
+    font-size: 1.5rem;
+    color: #2F8B61;
+    margin: 0;
+    font-weight: 500;
+}
+
+.patient-logout-btn {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 2px solid #fecaca;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.patient-logout-btn:hover {
+    background-color: #fee2e2;
+    border-color: #fca5a5;
+}
+
+.patient-main-content {
+    padding: 4rem 5%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.section-heading {
+    font-size: 2rem;
+    color: #1a365d;
+    margin-bottom: 2rem;
+    border-bottom: 3px solid #cbd5e1;
+    padding-bottom: 1rem;
+}
+
+.patient-games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2.5rem;
+}
+
+.patient-game-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    border-top: 8px solid #2F70B5;
+    transition: transform 0.2s;
+}
+
+.patient-game-card:hover {
+    transform: translateY(-5px);
+}
+
+.game-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.patient-game-card h4 {
+    font-size: 1.6rem;
+    margin: 0 0 0.5rem 0;
+    color: #1a365d;
+}
+
+.patient-game-card p {
+    font-size: 1.1rem;
+    color: #64748b;
+    margin: 0 0 2rem 0;
+}
+
+.patient-game-card button {
+    background-color: #2F70B5;
+    color: white;
+    width: 100%;
+    padding: 1.2rem;
+    font-size: 1.4rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.patient-game-card button:hover {
+    background-color: #1e4f85;
+}
+
+/* Placeholders for Future Features */
+.patient-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+.patient-feature-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    border: 2px solid #e2e8f0;
+}
+
+.disabled-card {
+    background: #f8fafc;
+    opacity: 0.8;
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    background: #e2e8f0;
+    padding: 1rem;
+    border-radius: 50%;
+}
+
+.feature-text h4 {
+    font-size: 1.3rem;
+    margin: 0 0 0.25rem 0;
+    color: #4a5568;
+}
+
+.feature-text p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #94a3b8;
+}
