@@ -1,365 +1,747 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from './SupabaseClient';
+import React, { useEffect, useState, useMemo } from 'react';
 import './PatientDashboard.css';
+
 import MemoryMatchGame from './MemoryMatchGame';
 import PictureRecallGame from './PictureRecallGame';
 import NumberMemoryGame from './NumberMemoryGame';
+import MemoryMapGame from './MemoryMapGame';
+import MindSnap from './MindSnap'; // NEW GAME IMPORTED HERE
+
+const GAME_CATEGORIES = [
+    {
+        id: 'memory',
+        title: 'Memory Exercises',
+        description: 'Practise remembering sequences and patterns.',
+        icon: '🧠',
+    },
+    {
+        id: 'numbers',
+        title: 'Numbers & Recall',
+        description: 'Engage with numeric memory activities.',
+        icon: '🔢',
+    },
+    {
+        id: 'visual',
+        title: 'Visual & Spatial',
+        description: 'Observe scenes, maps, and objects.',
+        icon: '🖼️',
+    },
+    {
+        id: 'attention',
+        title: 'Focus & Attention',
+        description: 'Targeted focus and attention training.',
+        icon: '🎯',
+    },
+];
+
+const GAMES = [
+    {
+        id: 'mind-snap',
+        title: 'Mind Snap',
+        description: 'Test visual short-term memory, attention, and concentration.',
+        icon: '🧠',
+        category: 'memory',
+        playable: true,
+    },
+    {
+        id: 'memory-match',
+        title: 'Memory Match',
+        description: 'Match pairs of cards to exercise visual memory.',
+        icon: '🧠',
+        category: 'memory',
+        playable: true,
+    },
+    {
+        id: 'memory-map',
+        title: 'Memory Map',
+        description: 'Exercise spatial memory by remembering locations on a map.',
+        icon: '🗺️',
+        category: 'visual',
+        playable: true,
+    },
+    {
+        id: 'number-memory',
+        title: 'Number Memory',
+        description: 'Remember numbers and recall them accurately.',
+        icon: '🔢',
+        category: 'numbers',
+        playable: true,
+    },
+    {
+        id: 'picture-recall',
+        title: 'Object Recognition',
+        description: 'Observe details and answer questions about what you saw.',
+        icon: '🖼️',
+        category: 'visual',
+        playable: true,
+    },
+    {
+        id: 'attention',
+        title: 'Attention Challenge',
+        description: 'Advanced focus module coming soon.',
+        icon: '🎯',
+        category: 'attention',
+        playable: false,
+    },
+];
+
+const BASIC_REMINDER_FALLBACK = [
+    {
+        id: 'basic-medicine',
+        title: 'Medicine',
+        description: 'Take your scheduled medication.',
+        category: 'Medicine',
+        type: 'basic',
+        completed: false,
+    },
+    {
+        id: 'basic-water',
+        title: 'Hydration Check',
+        description: 'Remember to stay hydrated throughout the day.',
+        category: 'Health',
+        type: 'basic',
+        completed: false,
+    },
+    {
+        id: 'basic-activity',
+        title: 'Daily Activity',
+        description: 'Complete your planned cognitive or physical exercise.',
+        category: 'Activity',
+        type: 'basic',
+        completed: false,
+    },
+];
+
+function formatReminderTime(reminder) {
+    if (!reminder?.reminder_time && !reminder?.due_time) {
+        return '';
+    }
+
+    const value = reminder.reminder_time || reminder.due_time;
+
+    try {
+        const date = new Date(`1970-01-01T${value}`);
+        if (Number.isNaN(date.getTime())) return value;
+
+        return date.toLocaleTimeString([], {
+            hour: 'numeric',
+            minute: '2-digit',
+        });
+    } catch {
+        return value;
+    }
+}
+
+function getGreeting() {
+    const hour = new Date().getHours();
+
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+}
+
+function normalizeReminder(reminder) {
+    return {
+        ...reminder,
+        completed: Boolean(
+            reminder.completed ??
+            reminder.is_completed ??
+            reminder.completion?.completed ??
+            false
+        ),
+        type: reminder.type || 'custom',
+        category: reminder.category || 'General',
+    };
+}
 
 export default function PatientDashboard({ onLogout }) {
     const [patient, setPatient] = useState(null);
     const [activeGame, setActiveGame] = useState(null);
+    const [activeTab, setActiveTab] = useState('dashboard');
 
-    /*
-     * Load the patient's session.
-     */
+    const [reminders, setReminders] = useState([]);
+    const [remindersLoading, setRemindersLoading] = useState(true);
+    const [reminderError, setReminderError] = useState('');
+
+    const [moodSelected, setMoodSelected] = useState(null);
+    const [noteSaved, setNoteSaved] = useState(false);
+
     useEffect(() => {
-        const sessionData = sessionStorage.getItem(
+        const storedSession = sessionStorage.getItem(
             'neuroplay_patient_session'
         );
 
-        if (sessionData) {
-            try {
-                setPatient(JSON.parse(sessionData));
-            } catch (error) {
-                console.error(
-                    'Invalid patient session:',
-                    error
-                );
+        if (!storedSession) {
+            onLogout?.();
+            return;
+        }
 
-                sessionStorage.removeItem(
-                    'neuroplay_patient_session'
-                );
+        try {
+            const parsedPatient = JSON.parse(storedSession);
 
-                onLogout();
+            if (!parsedPatient?.id && !parsedPatient?.patient_id) {
+                onLogout?.();
+                return;
             }
-        } else {
-            onLogout();
+
+            setPatient(parsedPatient);
+        } catch (error) {
+            console.error('Unable to restore patient session:', error);
+            sessionStorage.removeItem('neuroplay_patient_session');
+            onLogout?.();
         }
     }, [onLogout]);
 
-    /*
-     * ---------------------------------------------------------
-     * PATIENT ONLINE PRESENCE
-     * ---------------------------------------------------------
-     *
-     * This is frontend-only.
-     *
-     * While this dashboard is open, the patient is marked
-     * ONLINE in Supabase Realtime Presence.
-     *
-     * When the patient:
-     * - logs out
-     * - closes the tab
-     * - closes the browser
-     * - loses the connection
-     *
-     * Supabase removes the presence automatically.
-     *
-     * The caregiver dashboard listens to the same channel.
-     */
     useEffect(() => {
-        if (!patient?.id) return;
+        if (!patient?.id && !patient?.patient_id) return;
 
-        const channelName =
-            `neuroplay-patient-presence-${patient.id}`;
+        let mounted = true;
 
-        const presenceChannel = supabase.channel(
-            channelName,
-            {
-                config: {
-                    presence: {
-                        key: `patient-${patient.id}`
-                    }
+        async function loadReminders() {
+            setRemindersLoading(true);
+            setReminderError('');
+
+            try {
+                const data = BASIC_REMINDER_FALLBACK;
+                if (!mounted) return;
+                setReminders(data.map(normalizeReminder));
+            } catch (error) {
+                console.error('Unable to load reminders:', error);
+                if (!mounted) return;
+                setReminderError('Reminders could not be loaded.');
+                setReminders(BASIC_REMINDER_FALLBACK);
+            } finally {
+                if (mounted) {
+                    setRemindersLoading(false);
                 }
             }
-        );
+        }
 
-        presenceChannel.subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-                const { error } =
-                    await presenceChannel.track({
-                        patient_id: patient.id,
-                        patient_id_string: String(
-                            patient.id
-                        ),
-                        full_name: patient.full_name,
-                        online_at:
-                            new Date().toISOString()
-                    });
+        loadReminders();
 
-                if (error) {
-                    console.error(
-                        'Failed to track patient presence:',
-                        error
-                    );
-                }
-            }
-        });
-
-        /*
-         * Cleanup when patient leaves dashboard.
-         */
         return () => {
-            supabase.removeChannel(
-                presenceChannel
-            );
+            mounted = false;
         };
-    }, [patient?.id, patient?.full_name]);
+    }, [patient]);
 
-    const handleSignOut = async () => {
-        /*
-         * Removing the Realtime channel causes the patient's
-         * presence to disappear immediately.
-         */
-        sessionStorage.removeItem(
-            'neuroplay_patient_session'
-        );
-
-        onLogout();
-    };
-
-    const handleFeatureClick = (featureName) => {
-        alert(`${featureName} is coming soon!`);
-    };
-
-    if (!patient) return null;
-
-    if (activeGame === 'memoryMatch') {
-        return (
-            <MemoryMatchGame
-                patient={patient}
-                onHome={() => setActiveGame(null)}
-            />
-        );
+    function handleSignOut() {
+        sessionStorage.removeItem('neuroplay_patient_session');
+        onLogout?.();
     }
 
-    if (activeGame === 'pictureRecall') {
-        return (
-            <PictureRecallGame
-                patient={patient}
-                onHome={() => setActiveGame(null)}
-            />
-        );
+    function handleSendNoteToCaregiver() {
+        const message = window.prompt('Write a note for your caregiver:');
+        const trimmedMessage = message?.trim();
+
+        if (!trimmedMessage) return;
+
+        const patientId = patient?.id || patient?.patient_id || 'unknown-patient';
+        const messageEntry = {
+            id: `${patientId}-${Date.now()}`,
+            patientId,
+            patientName: patient.full_name || patient.name || 'Patient',
+            message: trimmedMessage,
+            timestamp: new Date().toISOString(),
+        };
+
+        try {
+            const saved = localStorage.getItem('neuroplay_caregiver_messages');
+            const existingMessages = saved ? JSON.parse(saved) : [];
+            const safeMessages = Array.isArray(existingMessages)
+                ? existingMessages
+                : [];
+
+            const updatedMessages = [messageEntry, ...safeMessages].slice(0, 50);
+            localStorage.setItem(
+                'neuroplay_caregiver_messages',
+                JSON.stringify(updatedMessages)
+            );
+
+            window.alert('Your note has been sent to your caregiver.');
+        } catch (error) {
+            console.error('Unable to send note to caregiver:', error);
+            window.alert('Your note could not be sent. Please try again.');
+        }
     }
 
-    if (activeGame === 'numberMemory') {
-        return (
-            <NumberMemoryGame
-                patient={patient}
-                onHome={() => setActiveGame(null)}
-            />
-        );
+    function handleFeatureClick(featureName) {
+        window.alert(`${featureName} module is coming soon.`);
     }
+
+    function handleGameHome() {
+        setActiveGame(null);
+    }
+
+    const groupedGames = useMemo(() => {
+        return GAME_CATEGORIES.map((category) => ({
+            ...category,
+            games: GAMES.filter(
+                (game) => game.category === category.id
+            ),
+        })).filter((category) => category.games.length > 0);
+    }, []);
+
+    if (!patient) {
+        return null;
+    }
+
+    if (activeGame === 'mind-snap') {
+        return <MindSnap patient={patient} onHome={handleGameHome} />;
+    }
+
+    if (activeGame === 'memory-match') {
+        return <MemoryMatchGame patient={patient} onHome={handleGameHome} />;
+    }
+
+    if (activeGame === 'memory-map') {
+        return <MemoryMapGame patient={patient} onHome={handleGameHome} />;
+    }
+
+    if (activeGame === 'number-memory') {
+        return <NumberMemoryGame patient={patient} onHome={handleGameHome} />;
+    }
+
+    if (activeGame === 'picture-recall') {
+        return <PictureRecallGame patient={patient} onHome={handleGameHome} />;
+    }
+
+    const patientName =
+        patient.full_name ||
+        patient.name ||
+        'there';
+
+    // FRONTEND-ONLY FALLBACK: Change the strings below to whatever caregiver name/contact you want to display
+    const caregiverName =
+        patient.caregiver_full_name ||
+        patient.caregiver_name ||
+        patient.caregiverName ||
+        patient.assigned_caregiver ||
+        'Ritabrata Roy Chowdhury'; // <- Frontend fallback name
+
+    const caregiverContact =
+        patient.caregiver_phone ||
+        patient.caregiver_contact ||
+        patient.caregiverContact ||
+        'Primary Contact'; // <- Frontend fallback contact
+
+    const currentDateString = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    });
 
     return (
-        <div className="patient-dashboard-container">
-            <header className="patient-header">
-                <div className="patient-header-left">
-                    <h1>🧠 NeuroPlay</h1>
-
-                    <h2>
-                        Hello, {patient.full_name} 👋
-                    </h2>
-
-                    <p>
-                        Let's keep your mind active today.
-                    </p>
-                </div>
-
-                <button
-                    className="patient-logout-btn"
-                    onClick={handleSignOut}
-                >
-                    Logout
-                </button>
-            </header>
-
-            <main className="patient-main-content">
-                <h3 className="section-heading">
-                    🧩 Cognitive Games
-                </h3>
-
-                <div className="patient-games-grid">
-                    <div className="patient-game-card">
-                        <div className="game-icon">
-                            🧠
-                        </div>
-
-                        <h4>Memory Match</h4>
-
-                        <p>Test your memory</p>
-
-                        <button
-                            onClick={() =>
-                                setActiveGame(
-                                    'memoryMatch'
-                                )
-                            }
-                        >
-                            PLAY
-                        </button>
-                    </div>
-
-                    <div className="patient-game-card">
-                        <div className="game-icon">
-                            🔢
-                        </div>
-
-                        <h4>Number Memory</h4>
-
-                        <p>Remember the number</p>
-
-                        <button
-                            onClick={() =>
-                                setActiveGame(
-                                    'numberMemory'
-                                )
-                            }
-                        >
-                            PLAY
-                        </button>
-                    </div>
-
-                    <div className="patient-game-card">
-                        <div className="game-icon">
-                            🎯
-                        </div>
-
-                        <h4>
-                            Attention Challenge
-                        </h4>
-
-                        <p>
-                            Improve focus and
-                            concentration
-                        </p>
-
-                        <button
-                            onClick={() =>
-                                handleFeatureClick(
-                                    'Attention Challenge'
-                                )
-                            }
-                        >
-                            PLAY
-                        </button>
-                    </div>
-
-                    <div className="patient-game-card">
-                        <div className="game-icon">
-                            🖼️
-                        </div>
-
-                        <h4>Object Recognition</h4>
-
-                        <p>
-                            Identify familiar objects
-                        </p>
-
-                        <button
-                            onClick={() =>
-                                setActiveGame(
-                                    'pictureRecall'
-                                )
-                            }
-                        >
-                            PLAY
-                        </button>
+        <div className="db-app-layout">
+            <aside className="db-sidebar">
+                <div className="db-brand-box">
+                    <div className="db-brand-icon">🧠</div>
+                    <div className="db-brand-title">
+                        <h1>NeuroPlay</h1>
+                        <span className="db-brand-subtitle">Patient Portal</span>
                     </div>
                 </div>
 
-                <h3
-                    className="section-heading"
-                    style={{ marginTop: '4rem' }}
-                >
-                    Daily Overview
-                </h3>
-
-                <div className="patient-features-grid">
-                    <div className="patient-feature-card disabled-card">
-                        <span className="feature-icon">
-                            💊
-                        </span>
-
-                        <div className="feature-text">
-                            <h4>
-                                Medicine Reminders
-                            </h4>
-
-                            <p>
-                                Your medicine reminders
-                                will appear here soon.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="patient-feature-card disabled-card">
-                        <span className="feature-icon">
-                            💧
-                        </span>
-
-                        <div className="feature-text">
-                            <h4>Hydration</h4>
-
-                            <p>
-                                Stay hydrated throughout
-                                the day.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="patient-feature-card disabled-card">
-                        <span className="feature-icon">
-                            📅
-                        </span>
-
-                        <div className="feature-text">
-                            <h4>Daily Activities</h4>
-
-                            <p>
-                                Your daily activities
-                                will appear here soon.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="patient-feature-card disabled-card">
-                        <span className="feature-icon">
-                            🏥
-                        </span>
-
-                        <div className="feature-text">
-                            <h4>Appointments</h4>
-
-                            <p>
-                                Your upcoming medical
-                                appointments will
-                                appear here.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div
-                        className="patient-feature-card disabled-card"
-                        style={{
-                            gridColumn: '1 / -1'
-                        }}
+                <nav className="db-nav-links">
+                    <button
+                        className={`db-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('dashboard')}
                     >
-                        <span className="feature-icon">
-                            📈
-                        </span>
+                        <span className="db-nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </button>
+                    <button
+                        className={`db-nav-item ${activeTab === 'schedule' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('schedule')}
+                    >
+                        <span className="db-nav-icon">📅</span>
+                        <span>Schedule & Tasks</span>
+                    </button>
+                    <button
+                        className={`db-nav-item ${activeTab === 'exercises' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('exercises')}
+                    >
+                        <span className="db-nav-icon">🎮</span>
+                        <span>Brain Exercises</span>
+                    </button>
+                    <button
+                        className={`db-nav-item ${activeTab === 'wellness' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('wellness')}
+                    >
+                        <span className="db-nav-icon">💧</span>
+                        <span>Wellness Logs</span>
+                    </button>
+                    <button
+                        className={`db-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('settings')}
+                    >
+                        <span className="db-nav-icon">⚙️</span>
+                        <span>Settings</span>
+                    </button>
+                </nav>
 
-                        <div className="feature-text">
-                            <h4>My Progress</h4>
-
-                            <p>
-                                Progress tracking will
-                                be available soon.
-                            </p>
-                        </div>
+                <div className="db-sidebar-footer">
+                    <div className="db-sidebar-support-card">
+                        <p>Need a hand with your routine?</p>
+                        <button
+                            className="db-btn db-btn-secondary db-full-width"
+                            onClick={() => handleFeatureClick('Support')}
+                        >
+                            Contact Support
+                        </button>
                     </div>
                 </div>
-            </main>
+            </aside>
+
+            <div className="db-main-wrapper">
+                <header className="db-topbar">
+                    <div className="db-topbar-title">
+                        <h2>
+                            {activeTab === 'dashboard' && 'Overview'}
+                            {activeTab === 'schedule' && 'Schedule & Reminders'}
+                            {activeTab === 'exercises' && 'Cognitive Exercises'}
+                            {activeTab === 'wellness' && 'Daily Care Overview'}
+                            {activeTab === 'settings' && 'Account Settings'}
+                        </h2>
+                    </div>
+
+                    <div className="db-topbar-actions">
+                        <div className="db-user-pill">
+                            <div className="db-avatar">
+                                {patientName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="db-user-info">
+                                <span className="db-user-name">{patientName}</span>
+                                <span className="db-user-role">Active Session</span>
+                            </div>
+                        </div>
+
+                        <button
+                            className="db-btn db-btn-secondary"
+                            onClick={handleSignOut}
+                        >
+                            Sign Out
+                        </button>
+                    </div>
+                </header>
+
+                <main className="db-main-content">
+                    {activeTab === 'dashboard' && (
+                        <>
+                            <section className="db-welcome-banner">
+                                <div className="db-welcome-text">
+                                    <span className="db-badge-pill">{getGreeting()}</span>
+                                    <h2>Welcome back, {patientName}</h2>
+                                    <p>
+                                        Review your daily care overview, check weather updates, or access your tools from the navigation menu.
+                                    </p>
+                                </div>
+                                <div className="db-welcome-graphic">🧠</div>
+                            </section>
+
+                            <div className="db-companion-grid">
+                                <div className="db-companion-card">
+                                    <div className="db-companion-header">
+                                        <div className="db-companion-avatar">👩‍⚕️</div>
+                                        <div>
+                                            <h4>Assigned Caregiver</h4>
+                                            <p>{caregiverName} • {caregiverContact}</p>
+                                        </div>
+                                    </div>
+                                    <div className="db-companion-body">
+                                        <span>"Have a wonderful and structured day ahead. Reach out if you need any help with your daily activities!"</span>
+                                    </div>
+                                    <div className="db-companion-actions">
+                                        <button 
+                                            className="db-btn db-btn-secondary db-sm"
+                                            onClick={handleSendNoteToCaregiver}
+                                        >
+                                            Send Note to Caregiver
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="db-companion-card">
+                                    <div className="db-weather-header">
+                                        <div>
+                                            <span className="db-date-tag">📅 {currentDateString}</span>
+                                            <h4>Today's Outlook</h4>
+                                        </div>
+                                        <div className="db-weather-badge">
+                                            <span>⛅</span>
+                                            <div>
+                                                <strong>22°C</strong>
+                                                <small>Pleasant & Sunny</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="db-mood-check">
+                                        <span className="db-mood-label">How are you feeling right now?</span>
+                                        <div className="db-mood-options">
+                                            {[
+                                                { emoji: '😊', label: 'Great', id: 'great' },
+                                                { emoji: '😌', label: 'Calm', id: 'calm' },
+                                                { emoji: '🥱', label: 'Tired', id: 'tired' },
+                                                { emoji: '🤔', label: 'Unsure', id: 'unsure' },
+                                            ].map((m) => (
+                                                <button
+                                                    key={m.id}
+                                                    type="button"
+                                                    className={`db-mood-btn ${moodSelected === m.id ? 'selected' : ''}`}
+                                                    onClick={() => {
+                                                        setMoodSelected(m.id);
+                                                        setNoteSaved(true);
+                                                        setTimeout(() => setNoteSaved(false), 3000);
+                                                    }}
+                                                >
+                                                    <span>{m.emoji}</span>
+                                                    <small>{m.label}</small>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {noteSaved && (
+                                            <div className="db-saved-toast">✓ Mood recorded for today. Thank you!</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {activeTab === 'schedule' && (
+                        <section className="db-section">
+                            <div className="db-section-header">
+                               <div>
+                                    <h3>Routine & Schedule Management</h3>
+                                    <p>Review all assigned tasks, medications, and daily events.</p>
+                               </div>
+                            </div>
+
+                            {reminderError && (
+                                <div className="db-alert db-alert-warning">{reminderError}</div>
+                            )}
+
+                            {remindersLoading ? (
+                                <div className="db-loading-state">Loading schedule...</div>
+                            ) : (
+                                <div className="db-card-container">
+                                    <div className="db-list-stack">
+                                        {reminders.map((reminder) => (
+                                            <ReminderRow
+                                                key={reminder.id}
+                                                reminder={reminder}
+                                                onToggle={() => {}}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+                    )}
+
+                    {activeTab === 'exercises' && (
+                        <section className="db-section">
+                            <div className="db-section-header">
+                                <div>
+                                    <h3>All Brain Training Modules</h3>
+                                    <p>Browse through available memory and focus sessions.</p>
+                                </div>
+                            </div>
+
+                            <div className="db-exercises-grid">
+                                {groupedGames.map((category) => (
+                                    <div className="db-exercise-category-card" key={category.id}>
+                                        <div className="db-category-heading">
+                                            <span className="db-category-emoji">{category.icon}</span>
+                                            <div>
+                                                <h4>{category.title}</h4>
+                                                <p>{category.description}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="db-exercise-items-list">
+                                            {category.games.map((game) => (
+                                                <div
+                                                    className={`db-exercise-row ${!game.playable ? 'disabled' : ''}`}
+                                                    key={game.id}
+                                                >
+                                                    <div className="db-exercise-info">
+                                                        <span className="db-exercise-icon">{game.icon}</span>
+                                                        <div>
+                                                            <div className="db-exercise-title-line">
+                                                                <strong>{game.title}</strong>
+                                                                <span className={`db-status-pill ${game.playable ? 'active' : 'upcoming'}`}>
+                                                                    {game.playable ? 'Ready' : 'Coming Soon'}
+                                                                </span>
+                                                            </div>
+                                                            <p>{game.description}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <button
+                                                        className="db-btn db-btn-primary"
+                                                        disabled={!game.playable}
+                                                        onClick={() => {
+                                                            if (game.playable) {
+                                                                setActiveGame(game.id);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {game.playable ? 'Play' : 'Locked'}
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {activeTab === 'wellness' && (
+                        <section className="db-section">
+                            <div className="db-section-header">
+                                <div>
+                                    <h3>Daily Care Overview</h3>
+                                    <p>Quick access shortcuts to your wellness tools.</p>
+                                </div>
+                            </div>
+
+                            <div className="db-quick-links-grid">
+                                <button
+                                    className="db-shortcut-card"
+                                    onClick={() => handleFeatureClick('Medicine Reminders')}
+                                >
+                                    <span className="db-shortcut-icon">💊</span>
+                                    <div>
+                                        <strong>Medicine Log</strong>
+                                        <small>Review scheduled prescriptions.</small>
+                                    </div>
+                                    <span className="db-arrow">→</span>
+                                </button>
+
+                                <button
+                                    className="db-shortcut-card"
+                                    onClick={() => handleFeatureClick('Hydration')}
+                                >
+                                    <span className="db-shortcut-icon">💧</span>
+                                    <div>
+                                        <strong>Hydration Tracker</strong>
+                                        <small>Monitor daily water intake.</small>
+                                    </div>
+                                    <span className="db-arrow">→</span>
+                                </button>
+
+                                <button
+                                    className="db-shortcut-card"
+                                    onClick={() => handleFeatureClick('Daily Activities')}
+                                >
+                                    <span className="db-shortcut-icon">📅</span>
+                                    <div>
+                                        <strong>Routine Calendar</strong>
+                                        <small>Check upcoming daily events.</small>
+                                    </div>
+                                    <span className="db-arrow">→</span>
+                                </button>
+
+                                <button
+                                    className="db-shortcut-card"
+                                    onClick={() => handleFeatureClick('Appointments')}
+                                >
+                                    <span className="db-shortcut-icon">🏥</span>
+                                    <div>
+                                        <strong>Appointments</strong>
+                                        <small>View scheduled clinical visits.</small>
+                                    </div>
+                                    <span className="db-arrow">→</span>
+                                </button>
+                            </div>
+                        </section>
+                    )}
+
+                    {activeTab === 'settings' && (
+                        <section className="db-section">
+                            <div className="db-section-header">
+                                <div>
+                                    <h3>Account Preferences</h3>
+                                    <p>Manage your patient session and configurations.</p>
+                                </div>
+                            </div>
+
+                            <div className="db-card-container" style={{ padding: '2rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: '400px' }}>
+                                    <div>
+                                        <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--db-navy-text)' }}>Full Name</strong>
+                                        <span style={{ fontSize: '0.95rem', color: 'var(--db-slate-text)' }}>{patientName}</span>
+                                    </div>
+                                    <div>
+                                        <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--db-navy-text)' }}>Patient ID</strong>
+                                        <span style={{ fontSize: '0.95rem', color: 'var(--db-slate-text)' }}>{patient.id || patient.patient_id}</span>
+                                    </div>
+                                    <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--db-border-color)' }}>
+                                        <button className="db-btn db-btn-secondary" onClick={handleSignOut}>
+                                            Sign Out of Session
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+                </main>
+
+                <footer className="db-footer">
+                    <span>NeuroPlay Platform</span>
+                    <span>Take your time. Consistency is key.</span>
+                </footer>
+            </div>
+        </div>
+    );
+}
+
+function ReminderRow({ reminder, onToggle }) {
+    const time = formatReminderTime(reminder);
+
+    return (
+        <div className={`db-row-item ${reminder.completed ? 'completed' : ''}`}>
+            <label className="db-checkbox-label">
+                <input
+                    type="checkbox"
+                    checked={Boolean(reminder.completed)}
+                    onChange={() => onToggle(reminder)}
+                    aria-label={`Mark ${reminder.title} ${reminder.completed ? 'incomplete' : 'complete'}`}
+                />
+                <span className="db-custom-check">
+                    {reminder.completed ? '✓' : ''}
+                </span>
+            </label>
+
+            <div className="db-row-details">
+                <div className="db-row-title-bar">
+                    <strong>{reminder.title}</strong>
+                    <span className={`db-type-tag ${reminder.type === 'custom' ? 'custom' : 'basic'}`}>
+                        {reminder.type === 'custom' ? 'Custom' : 'Standard'}
+                    </span>
+                </div>
+
+                {reminder.description && (
+                    <p>{reminder.description}</p>
+                )}
+
+                <div className="db-row-metadata">
+                    <span>{reminder.category}</span>
+                    {time && (
+                        <>
+                            <span>•</span>
+                            <span>{time}</span>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            <div className="db-row-status-text">
+                {reminder.completed ? 'Done' : 'Pending'}
+            </div>
         </div>
     );
 }

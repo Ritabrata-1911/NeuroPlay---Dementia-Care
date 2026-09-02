@@ -1,159 +1,1504 @@
-.patient-dashboard-container {
-    min-height: 100vh;
-    background-color: #f0f4f8;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #1a365d;
+/* ==========================================
+   PatientDashboard.css - Matching Caregiver Theme
+   ========================================== */
+
+:root {
+    --db-sidebar-bg: #162032;
+    /* Matches Caregiver Sidebar exact dark tone */
+    --db-sidebar-hover: #1f2d42;
+    --db-active-green: #0f9d58;
+    /* Caregiver green */
+    --db-bg-main: #f8fafc;
+    --db-card-bg: #ffffff;
+    --db-navy-text: #1e293b;
+    --db-slate-text: #64748b;
+    --db-border-color: #e2e8f0;
+    --db-font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.patient-header {
-    background-color: #ffffff;
-    padding: 2rem 5%;
+body {
+    font-family: var(--db-font-family);
+    background-color: var(--db-bg-main);
+    color: var(--db-navy-text);
+    margin: 0;
+    padding: 0;
+}
+
+.db-app-layout {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--db-bg-main);
+}
+
+/* Sidebar styling matching caregiver view */
+.db-sidebar {
+    width: 260px;
+    background-color: var(--db-sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.db-brand-box {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.db-brand-icon {
+    font-size: 1.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.4rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.db-brand-title h1 {
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.db-brand-subtitle {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.db-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0 1rem;
+}
+
+.db-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.db-nav-item:hover {
+    background-color: var(--db-sidebar-hover);
+    color: #ffffff;
+}
+
+.db-nav-item.active {
+    background-color: var(--db-active-green);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(15, 157, 88, 0.25);
+}
+
+.db-nav-icon {
+    font-size: 1.1rem;
+}
+
+/* Sidebar support module */
+.db-sidebar-footer {
+    padding: 1rem;
+}
+
+.db-sidebar-support-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1rem;
+    border-radius: 12px;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+}
+
+.db-sidebar-support-card p {
+    margin: 0 0 0.75rem 0;
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+/* Main Layout Wrapper */
+.db-main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background-color: var(--db-bg-main);
+}
+
+.db-topbar {
+    background: var(--db-card-bg);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--db-border-color);
+}
+
+.db-topbar-title h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--db-navy-text);
+    margin: 0;
+}
+
+.db-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Profile / User Pill Matching Top Bar Style */
+.db-user-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--db-bg-main);
+    border: 1px solid var(--db-border-color);
+    padding: 0.35rem 0.85rem 0.35rem 0.35rem;
+    border-radius: 50px;
+}
+
+.db-avatar {
+    width: 32px;
+    height: 32px;
+    background-color: #2563eb;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.db-user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.db-user-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--db-navy-text);
+    line-height: 1.2;
+}
+
+.db-user-role {
+    font-size: 0.7rem;
+    color: var(--db-slate-text);
+}
+
+/* Common Buttons */
+.db-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.db-btn-secondary {
+    background-color: var(--db-card-bg);
+    color: var(--db-navy-text);
+    border: 1px solid var(--db-border-color);
+}
+
+.db-btn-secondary:hover {
+    background-color: #f1f5f9;
+}
+
+.db-btn-primary {
+    background-color: var(--db-active-green);
+    color: #ffffff;
+}
+
+.db-btn-primary:hover {
+    opacity: 0.9;
+}
+
+/* Main Content Area */
+.db-main-content {
+    padding: 2rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Welcome Banner Container */
+.db-welcome-banner {
+    background: linear-gradient(135deg, #162032 0%, #1e293b 100%);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    color: #ffffff;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-.patient-header-left h1 {
-    font-size: 1.5rem;
-    color: #4a5568;
-    margin: 0 0 1rem 0;
+.db-welcome-text h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+    color: #ffffff;
 }
 
-.patient-header-left h2 {
-    font-size: 3rem;
-    color: #1a365d;
-    margin: 0 0 0.5rem 0;
-}
-
-.patient-header-left p {
-    font-size: 1.5rem;
-    color: #2F8B61;
+.db-welcome-text p {
+    color: #94a3b8;
     margin: 0;
-    font-weight: 500;
+    font-size: 0.95rem;
+    max-width: 500px;
 }
 
-.patient-logout-btn {
-    background-color: #fef2f2;
-    color: #dc2626;
-    border: 2px solid #fecaca;
-    padding: 1rem 2rem;
-    font-size: 1.2rem;
-    font-weight: bold;
+.db-badge-pill {
+    background: rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.db-welcome-graphic {
+    font-size: 4rem;
+    opacity: 0.9;
+}
+
+/* Cards & Companions Grid */
+.db-companion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.db-companion-card {
+    background: var(--db-card-bg);
+    border: 1px solid var(--db-border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.db-companion-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.db-companion-avatar {
+    font-size: 2.25rem;
+    background: #f1f5f9;
+    padding: 0.5rem;
     border-radius: 12px;
+}
+
+.db-companion-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--db-navy-text);
+}
+
+.db-companion-header p {
+    margin: 0.2rem 0 0 0;
+    font-size: 0.825rem;
+    color: var(--db-slate-text);
+}
+
+.db-companion-body {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: var(--db-navy-text);
+    font-style: italic;
+    border: 1px solid var(--db-border-color);
+    margin-bottom: 1rem;
+}
+
+.db-weather-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+}
+
+.db-date-tag {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--db-slate-text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.db-weather-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f8fafc;
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--db-border-color);
+}
+
+.db-weather-badge strong {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--db-navy-text);
+}
+
+.db-weather-badge small {
+    font-size: 0.7rem;
+    color: var(--db-slate-text);
+}
+
+/* Mood Selection Elements */
+.db-mood-check {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.db-mood-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--db-navy-text);
+}
+
+.db-mood-options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+}
+
+.db-mood-btn {
+    background: #f8fafc;
+    border: 1px solid var(--db-border-color);
+    border-radius: 10px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
     cursor: pointer;
     transition: all 0.2s;
 }
 
-.patient-logout-btn:hover {
-    background-color: #fee2e2;
-    border-color: #fca5a5;
+.db-mood-btn span {
+    font-size: 1.25rem;
 }
 
-.patient-main-content {
-    padding: 4rem 5%;
-    max-width: 1400px;
-    margin: 0 auto;
+.db-mood-btn small {
+    font-size: 0.75rem;
+    color: var(--db-slate-text);
+    font-weight: 500;
 }
 
-.section-heading {
-    font-size: 2rem;
-    color: #1a365d;
-    margin-bottom: 2rem;
-    border-bottom: 3px solid #cbd5e1;
-    padding-bottom: 1rem;
+.db-mood-btn:hover,
+.db-mood-btn.selected {
+    background: rgba(15, 157, 88, 0.08);
+    border-color: var(--db-active-green);
 }
 
-.patient-games-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2.5rem;
+.db-saved-toast {
+    font-size: 0.75rem;
+    color: var(--db-active-green);
+    font-weight: 600;
+    margin-top: 0.25rem;
 }
 
-.patient-game-card {
-    background: #ffffff;
-    border-radius: 20px;
-    padding: 2.5rem 1.5rem;
-    text-align: center;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    border-top: 8px solid #2F70B5;
-    transition: transform 0.2s;
-}
-
-.patient-game-card:hover {
-    transform: translateY(-5px);
-}
-
-.game-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.patient-game-card h4 {
-    font-size: 1.6rem;
-    margin: 0 0 0.5rem 0;
-    color: #1a365d;
-}
-
-.patient-game-card p {
-    font-size: 1.1rem;
-    color: #64748b;
-    margin: 0 0 2rem 0;
-}
-
-.patient-game-card button {
-    background-color: #2F70B5;
-    color: white;
-    width: 100%;
-    padding: 1.2rem;
-    font-size: 1.4rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-}
-
-.patient-game-card button:hover {
-    background-color: #1e4f85;
-}
-
-/* Placeholders for Future Features */
-.patient-features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+/* General Sections and Cards */
+.db-section {
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
 }
 
-.patient-feature-card {
-    background: #ffffff;
+.db-section-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--db-navy-text);
+    margin: 0;
+}
+
+.db-section-header p {
+    color: var(--db-slate-text);
+    font-size: 0.875rem;
+    margin: 0.25rem 0 0 0;
+}
+
+.db-card-container {
+    background: var(--db-card-bg);
+    border: 1px solid var(--db-border-color);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+/* Reminder list styling */
+.db-row-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--db-border-color);
+    gap: 1rem;
+}
+
+.db-row-item:last-child {
+    border-bottom: none;
+}
+
+.db-row-item.completed {
+    opacity: 0.6;
+    background-color: #fafbfc;
+}
+
+.db-row-details {
+    flex: 1;
+}
+
+.db-row-title-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.2rem;
+}
+
+.db-row-title-bar strong {
+    font-size: 0.95rem;
+    color: var(--db-navy-text);
+}
+
+.db-type-tag {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: var(--db-slate-text);
+}
+
+.db-type-tag.custom {
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+}
+
+.db-row-details p {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.85rem;
+    color: var(--db-slate-text);
+}
+
+.db-row-metadata {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--db-slate-text);
+}
+
+.db-row-status-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--db-slate-text);
+}
+
+/* Exercise Cards Grid */
+.db-exercises-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.db-exercise-category-card {
+    background: var(--db-card-bg);
+    border: 1px solid var(--db-border-color);
     border-radius: 16px;
     padding: 1.5rem;
     display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    border: 2px solid #e2e8f0;
+    flex-direction: column;
+    gap: 1.25rem;
 }
 
-.disabled-card {
+.db-category-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+}
+
+.db-category-emoji {
+    font-size: 1.75rem;
     background: #f8fafc;
-    opacity: 0.8;
+    padding: 0.4rem;
+    border-radius: 10px;
+    border: 1px solid var(--db-border-color);
 }
 
-.feature-icon {
-    font-size: 2.5rem;
-    background: #e2e8f0;
-    padding: 1rem;
-    border-radius: 50%;
-}
-
-.feature-text h4 {
-    font-size: 1.3rem;
-    margin: 0 0 0.25rem 0;
-    color: #4a5568;
-}
-
-.feature-text p {
+.db-category-heading h4 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--db-navy-text);
+}
+
+.db-category-heading p {
+    margin: 0.2rem 0 0 0;
+    font-size: 0.8rem;
+    color: var(--db-slate-text);
+}
+
+.db-exercise-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.db-exercise-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 1px solid var(--db-border-color);
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    gap: 1rem;
+}
+
+.db-exercise-row.disabled {
+    opacity: 0.65;
+}
+
+.db-exercise-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.db-exercise-icon {
+    font-size: 1.25rem;
+}
+
+.db-exercise-title-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.15rem;
+}
+
+.db-exercise-title-line strong {
+    font-size: 0.875rem;
+    color: var(--db-navy-text);
+}
+
+.db-status-pill {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+}
+
+.db-status-pill.active {
+    background: rgba(15, 157, 88, 0.1);
+    color: var(--db-active-green);
+}
+
+.db-status-pill.upcoming {
+    background: #e2e8f0;
+    color: var(--db-slate-text);
+}
+
+.db-exercise-info p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--db-slate-text);
+}
+
+/* Wellness Shortcuts Grid */
+.db-quick-links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.db-shortcut-card {
+    background: var(--db-card-bg);
+    border: 1px solid var(--db-border-color);
+    border-radius: 14px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.db-shortcut-card:hover {
+    border-color: var(--db-active-green);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.db-shortcut-icon {
+    font-size: 1.5rem;
+    background: #f8fafc;
+    padding: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--db-border-color);
+}
+
+.db-shortcut-card div {
+    flex: 1;
+}
+
+.db-shortcut-card strong {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--db-navy-text);
+    margin-bottom: 0.1rem;
+}
+
+.db-shortcut-card small {
+    font-size: 0.75rem;
+    color: var(--db-slate-text);
+}
+
+.db-arrow {
+    color: var(--db-slate-text);
+    font-weight: bold;
+}
+
+/* Footer Section */
+.db-footer {
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--db-border-color);
+    font-size: 0.75rem;
+    color: var(--db-slate-text);
+    background: var(--db-card-bg);
+}
+
+/* Checkbox customization */
+.db-checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.db-checkbox-label input {
+    display: none;
+}
+
+.db-custom-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--db-border-color);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    transition: all 0.2s;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.db-checkbox-label input:checked+.db-custom-check {
+    background: var(--db-active-green);
+    border-color: var(--db-active-green);
+}
+
+/* =========================================================
+   CAREGIVER DASHBOARD VISUAL OVERRIDE
+   Patient JSX remains completely unchanged.
+   ========================================================= */
+
+:root {
+    --db-primary-blue: #2F70B5;
+    --db-caregiver-green: #2F8B61;
+    --db-caregiver-green-hover: #24704d;
+    --db-navy-text: #1a365d;
+    --db-light-bg: #f8fafc;
+    --db-border-color: #cbd5e1;
+    --db-error-red: #e11d48;
+    --db-amber: #d97706;
+
+    --db-sidebar-bg: #1a365d;
+    --db-sidebar-hover: rgba(255,255,255,.08);
+    --db-active-green: #2F8B61;
+    --db-bg-main: #f4f7fb;
+    --db-card-bg: #ffffff;
+    --db-slate-text: #64748b;
+    --db-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html, body {
+    min-height: 100%;
+    background: #f4f7fb;
+    color: var(--db-navy-text);
+}
+
+.db-app-layout {
+    min-height: 100vh;
+    background: #f4f7fb;
+    font-family: var(--db-font-family);
+    color: var(--db-navy-text);
+}
+
+.db-sidebar {
+    width: 240px;
+    min-height: 100vh;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    justify-content: flex-start;
+    padding: 1.75rem 1.25rem;
+    background: linear-gradient(180deg, #1a365d 0%, #22406b 100%);
+    border-right: none;
+}
+
+.db-brand-box {
+    padding: 0 .25rem;
+    gap: .6rem;
+    margin-bottom: 2.5rem;
+}
+
+.db-brand-icon {
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    font-size: 1.4rem;
+}
+
+.db-brand-title h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.db-brand-subtitle {
+    display: none;
+}
+
+.db-nav-links {
+    padding: 0;
+    gap: .35rem;
+}
+
+.db-nav-item {
+    gap: .75rem;
+    color: #cbd5e0;
+    padding: .7rem .85rem;
+    border-radius: 10px;
+    font-size: .92rem;
+    font-weight: 600;
+}
+
+.db-nav-item:hover {
+    background: rgba(255,255,255,.08);
+    color: #fff;
+}
+
+.db-nav-item.active {
+    background: #2F8B61;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+.db-nav-icon {
+    font-size: 1.05rem;
+}
+
+.db-sidebar-footer {
+    margin-top: auto;
+    padding: 0;
+}
+
+.db-sidebar-support-card {
+    background: rgba(255,255,255,.08);
+    border: none;
+    border-radius: 14px;
+    padding: 1.25rem 1rem;
+    text-align: center;
+    color: #cbd5e0;
+}
+
+.db-sidebar-support-card p {
+    margin: 0 0 .85rem;
+    color: #cbd5e0;
+    font-size: .82rem;
+    line-height: 1.4;
+}
+
+.db-sidebar-support-card .db-btn-secondary {
+    width: 100%;
+    background: #fff;
+    color: #1a365d;
+    border: none;
+    padding: .55rem;
+    border-radius: 8px;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.db-main-wrapper {
+    background: #f4f7fb;
+}
+
+.db-topbar {
+    background: transparent;
+    border-bottom: none;
+    padding: 2.25rem 2.5rem 0;
+    align-items: flex-start;
+}
+
+.db-topbar-title h2 {
+    color: #1a365d;
+    font-size: 1.7rem;
+    font-weight: 700;
+}
+
+.db-topbar-actions {
+    gap: .75rem;
+    align-items: center;
+}
+
+.db-user-pill {
+    background: #fff;
+    border: 1.5px solid #cbd5e1;
+    padding: .45rem 1rem .45rem .45rem;
+    border-radius: 30px;
+    gap: .6rem;
+}
+
+.db-avatar {
+    width: 30px;
+    height: 30px;
+    background: #2F70B5;
+    font-size: .85rem;
+    font-weight: 700;
+}
+
+.db-user-name {
+    font-size: .9rem;
+    color: #1a365d;
+    font-weight: 600;
+}
+
+.db-user-role {
+    font-size: .7rem;
+    color: #64748b;
+}
+
+.db-btn {
+    border-radius: 30px;
+    padding: .5rem 1rem;
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.db-btn-secondary {
+    background: #fff;
+    color: #64748b;
+    border: 1.5px solid #cbd5e1;
+}
+
+.db-btn-secondary:hover {
+    color: #1a365d;
+    border-color: #2F70B5;
+    background: #f0f7ff;
+}
+
+.db-btn-primary {
+    background: #2F8B61;
+    color: #fff;
+}
+
+.db-btn-primary:hover {
+    background: #24704d;
+    opacity: 1;
+}
+
+.db-main-content {
+    max-width: 1200px;
+    padding: 1.25rem 2.5rem 3rem;
+    width: 100%;
+}
+
+.db-welcome-banner {
+    background: #fff;
+    color: #1a365d;
+    border: 1px solid #eef2f7;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,.05);
+}
+
+.db-welcome-text h2 {
+    color: #1a365d;
+    font-size: 1.5rem;
+    margin: .35rem 0;
+}
+
+.db-welcome-text p {
+    color: #64748b;
+}
+
+.db-badge-pill {
+    background: #ecfdf5;
+    color: #2F8B61;
+    border: 1px solid #c6f6d5;
+    padding: .4rem .9rem;
+    font-size: .75rem;
+}
+
+.db-welcome-graphic {
+    font-size: 3rem;
+}
+
+.db-companion-grid,
+.db-exercises-grid,
+.db-quick-links-grid {
+    gap: 1.5rem;
+}
+
+.db-companion-card,
+.db-exercise-category-card,
+.db-shortcut-card,
+.db-card-container {
+    background: #fff;
+    border: 1px solid #eef2f7;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,.05);
+}
+
+.db-companion-card {
+    padding: 1.5rem;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.db-companion-card:hover,
+.db-exercise-category-card:hover,
+.db-shortcut-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,.08);
+}
+
+.db-companion-avatar,
+.db-shortcut-icon,
+.db-exercise-icon {
+    background: #f1f5f9;
+}
+
+.db-companion-header h4,
+.db-weather-header h4,
+.db-section-header h3,
+.db-category-heading,
+.db-exercise-title-line,
+.db-row-title-bar {
+    color: #1a365d;
+}
+
+.db-companion-header p,
+.db-section-header p,
+.db-date-tag,
+.db-row-metadata {
     color: #94a3b8;
+}
+
+.db-companion-body {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #1a365d;
+    font-style: italic;
+}
+
+.db-weather-badge {
+    background: #fff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 20px;
+}
+
+.db-weather-badge strong {
+    color: #1a365d;
+}
+
+.db-weather-badge small {
+    color: #64748b;
+}
+
+.db-mood-label {
+    color: #1a365d;
+}
+
+.db-mood-btn {
+    background: #fff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+}
+
+.db-mood-btn small {
+    color: #64748b;
+}
+
+.db-mood-btn:hover,
+.db-mood-btn.selected {
+    background: #ecfdf5;
+    border-color: #2F8B61;
+}
+
+.db-saved-toast {
+    color: #2F8B61;
+}
+
+.db-section {
+    gap: 1.5rem;
+}
+
+.db-section-header {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.db-section-header h3 {
+    font-size: 1.35rem;
+}
+
+.db-row-item {
+    padding: 1rem 1.5rem;
+    border-bottom-color: #e2e8f0;
+}
+
+.db-row-item.completed {
+    background: #fafbfc;
+}
+
+.db-status-pill {
+    background: #ecfdf5;
+    color: #2F8B61;
+    border-color: #c6f6d5;
+}
+
+.db-type-tag {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.db-alert {
+    border-radius: 12px;
+}
+
+.db-alert-warning {
+    background: #fef3e2;
+    border-color: #fed7aa;
+    color: #9a5a08;
+}
+
+.db-custom-check:checked,
+.db-checkbox-label input:checked {
+    accent-color: #2F8B61;
+}
+
+.db-exercise-category-card {
+    padding: 1.5rem;
+}
+
+.db-exercise-row {
+    border-color: #e2e8f0;
+}
+
+.db-exercise-row:hover {
+    background: #f8fafc;
+}
+
+.db-exercise-items-list {
+    border-color: #e2e8f0;
+}
+
+.db-shortcut-card {
+    padding: 1.25rem;
+}
+
+.db-shortcut-card:hover {
+    border-color: #2F70B5;
+}
+
+.db-arrow {
+    color: #2F70B5;
+}
+
+.db-loading-state {
+    min-height: 100vh;
+    background: #f4f7fb;
+    color: #64748b;
+}
+
+.db-footer {
+    color: #94a3b8;
+}
+
+.db-full-width {
+    width: 100%;
+}
+
+.db-sm {
+    padding: .45rem .8rem;
+    font-size: .8rem;
+}
+
+@media (max-width: 1024px) {
+    .db-sidebar {
+        width: 210px;
+        padding: 1.5rem 1rem;
+    }
+
+    .db-topbar {
+        padding: 1.75rem 1.5rem 0;
+    }
+
+    .db-main-content {
+        padding: 1.25rem 1.5rem 2rem;
+    }
+}
+
+@media (max-width: 760px) {
+    .db-app-layout {
+        display: block;
+    }
+
+    .db-sidebar {
+        width: 100%;
+        height: auto;
+        min-height: auto;
+        position: static;
+        padding: 1rem;
+    }
+
+    .db-brand-box {
+        margin-bottom: 1rem;
+    }
+
+    .db-nav-links {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: .25rem;
+    }
+
+    .db-nav-item {
+        width: auto;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .db-sidebar-footer {
+        display: none;
+    }
+
+    .db-topbar {
+        padding: 1.25rem 1rem 0;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .db-topbar-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .db-main-content {
+        padding: 1rem 1rem 2rem;
+    }
+
+    .db-welcome-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .db-welcome-graphic {
+        align-self: flex-end;
+    }
+
+    .db-mood-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .db-topbar-title h2 {
+        font-size: 1.4rem;
+    }
+
+    .db-user-pill {
+        max-width: 58%;
+    }
+
+    .db-user-info {
+        min-width: 0;
+    }
+
+    .db-user-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .db-btn {
+        padding: .45rem .75rem;
+    }
+}
+
+/* =========================================================
+   FINAL PIXEL-TUNING PASS — CAREGIVER DESIGN LANGUAGE
+   Added after a selector-by-selector comparison with the
+   caregiver stylesheet. PatientDashboard.jsx is untouched.
+   ========================================================= */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+button, input, textarea, select { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+
+.db-main-wrapper { min-height: 100vh; }
+.db-main-content { box-sizing: border-box; }
+
+/* Caregiver-style typography rhythm */
+.db-topbar-title h2,
+.db-section-header h3,
+.db-welcome-text h2,
+.db-companion-header h4,
+.db-category-heading h4,
+.db-row-title-bar strong,
+.db-exercise-title-line strong,
+.db-shortcut-card strong {
+    letter-spacing: -0.01em;
+}
+
+/* Sidebar alignment and interaction fidelity */
+.db-sidebar { overflow-y: auto; }
+.db-nav-item { min-height: 44px; }
+.db-nav-item:focus-visible,
+.db-btn:focus-visible,
+.db-mood-btn:focus-visible,
+.db-shortcut-card:focus-visible {
+    outline: 3px solid rgba(47, 112, 181, .28);
+    outline-offset: 2px;
+}
+
+/* Header sizing mirrors the caregiver content canvas */
+.db-topbar,
+.db-main-content { width: 100%; }
+.db-topbar-actions > * { flex-shrink: 0; }
+
+/* Remove inherited dark-banner appearance completely */
+.db-welcome-banner {
+    min-height: 126px;
+    position: relative;
+    overflow: hidden;
+}
+.db-welcome-text { position: relative; z-index: 1; }
+.db-welcome-graphic { color: #2F8B61; opacity: .9; }
+
+/* Shared caregiver card behavior */
+.db-card-container,
+.db-companion-card,
+.db-exercise-category-card,
+.db-shortcut-card {
+    overflow: hidden;
+}
+
+.db-card-container { box-shadow: 0 4px 15px rgba(15, 23, 42, .045); }
+.db-exercise-category-card,
+.db-shortcut-card { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+
+/* Companion details */
+.db-companion-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .65rem;
+    margin-top: auto;
+}
+.db-companion-actions .db-btn { min-height: 38px; }
+
+/* Weather and small information blocks */
+.db-weather-header h4 {
+    margin: 0;
+    color: #1a365d;
+    font-size: 1rem;
+    font-weight: 700;
+}
+.db-weather-header p { margin: .2rem 0 0; color: #64748b; }
+
+/* Lists inherit the clean caregiver vertical rhythm */
+.db-list-stack {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+.db-row-item {
+    transition: background .2s ease;
+}
+.db-row-item:hover { background: #f8fafc; }
+.db-row-item.completed:hover { background: #fafbfc; }
+.db-row-title-bar { flex-wrap: wrap; }
+.db-row-status-text { white-space: nowrap; }
+
+/* Status and tags */
+.db-status-pill {
+    border: 1px solid transparent;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+.db-status-pill.active {
+    background: #ecfdf5;
+    color: #2F8B61;
+    border-color: #c6f6d5;
+}
+.db-status-pill.upcoming {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+.db-type-tag {
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+/* Exercise section consistency */
+.db-category-heading { align-items: center; }
+.db-category-heading > div { min-width: 0; }
+.db-category-emoji {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+.db-exercise-row {
+    transition: background .2s ease, border-color .2s ease;
+}
+.db-exercise-row:hover {
+    border-color: #cbd5e1;
+}
+.db-exercise-info { min-width: 0; }
+.db-exercise-info > div { min-width: 0; }
+.db-exercise-title-line { flex-wrap: wrap; }
+.db-exercise-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Shortcut cards */
+.db-shortcut-card {
+    min-height: 92px;
+    border-color: #eef2f7;
+}
+.db-shortcut-card:hover {
+    background: #fff;
+}
+.db-shortcut-icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.db-arrow { font-size: 1.1rem; transition: transform .2s ease; }
+.db-shortcut-card:hover .db-arrow { transform: translateX(3px); }
+
+/* Alerts */
+.db-alert {
+    padding: 1rem 1.25rem;
+    border: 1px solid transparent;
+    font-size: .875rem;
+    line-height: 1.5;
+}
+.db-alert-warning {
+    box-shadow: none;
+}
+
+/* Checkbox visual correction */
+.db-checkbox-label { flex-shrink: 0; }
+.db-custom-check { flex-shrink: 0; }
+.db-checkbox-label input:checked + .db-custom-check {
+    background: #2F8B61;
+    border-color: #2F8B61;
+    box-shadow: 0 2px 5px rgba(47, 139, 97, .18);
+}
+
+/* Footer */
+.db-footer {
+    margin-top: auto;
+    background: transparent;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Scrollbar refinement */
+.db-main-content::-webkit-scrollbar,
+.db-sidebar::-webkit-scrollbar { width: 7px; }
+.db-main-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 20px;
+}
+.db-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.18);
+    border-radius: 20px;
+}
+
+/* Responsive corrections matching caregiver proportions */
+@media (max-width: 1024px) {
+    .db-main-content { max-width: none; }
+    .db-companion-grid,
+    .db-exercises-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+}
+
+@media (max-width: 760px) {
+    .db-welcome-banner { min-height: auto; }
+    .db-companion-actions { justify-content: stretch; }
+    .db-companion-actions .db-btn { flex: 1; }
+    .db-row-item { align-items: flex-start; }
+    .db-row-status-text { padding-top: .15rem; }
+    .db-footer { flex-direction: column; gap: .5rem; padding: 1.25rem 1rem; }
+}
+
+@media (max-width: 480px) {
+    .db-companion-grid,
+    .db-exercises-grid,
+    .db-quick-links-grid { grid-template-columns: 1fr; }
+    .db-exercise-row { padding: .8rem; }
+    .db-welcome-text h2 { font-size: 1.3rem; }
+    .db-section-header h3 { font-size: 1.2rem; }
 }

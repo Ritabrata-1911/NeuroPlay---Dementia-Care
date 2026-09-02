@@ -4,6 +4,14 @@ import AddPatientForm from './AddPatientForm';
 import CodeCountdown from './CodeCountdown';
 import SettingsPanel from './SettingsPanel';
 import './CaregiverDashboard.css';
+import {
+    BASIC_REMINDERS,
+    fetchRemindersForPatient,
+    saveReminder,
+    toggleReminderCompletion,
+    deleteReminder,
+    subscribeToReminderChanges,
+} from './ReminderService';
 
 // Picks a gender-appropriate avatar for a patient card.
 const getPatientAvatar = (patient) => {
@@ -159,6 +167,19 @@ export default function CaregiverDashboard() {
     const [activeResourceModal, setActiveResourceModal] = useState(null);
     const [emergencyCardPatientId, setEmergencyCardPatientId] = useState(null);
 
+    // --- Shared patient reminders (Supabase-ready, local fallback until the table exists) ---
+    const [reminders, setReminders] = useState([]);
+    const [reminderPatientId, setReminderPatientId] = useState(null);
+    const [reminderLoading, setReminderLoading] = useState(false);
+    const [showReminderForm, setShowReminderForm] = useState(false);
+    const [editingReminder, setEditingReminder] = useState(null);
+    const [reminderForm, setReminderForm] = useState({
+        title: '',
+        description: '',
+        time: '',
+        category: 'custom',
+    });
+
     // --- Quick Calm breathing tool state (lives here so it stops cleanly on modal close) ---
     const BREATHING_PHASES = ['inhale', 'hold1', 'exhale', 'hold2'];
     const BREATHING_LABELS = { inhale: 'Inhale', hold1: 'Hold', exhale: 'Exhale', hold2: 'Hold' };
@@ -219,6 +240,34 @@ export default function CaregiverDashboard() {
      * false = patient dashboard is not connected
      */
     const [patientOnlineStatus, setPatientOnlineStatus] = useState({});
+
+    // --- Patient notes sent from the Patient Dashboard ---
+    // Frontend-only shared inbox. Notes are stored in localStorage so the
+    // caregiver dashboard can display them without changing the existing backend.
+    const [patientMessages, setPatientMessages] = useState([]);
+
+    useEffect(() => {
+        const loadPatientMessages = () => {
+            try {
+                const saved = localStorage.getItem('neuroplay_caregiver_messages');
+                const parsed = saved ? JSON.parse(saved) : [];
+                setPatientMessages(Array.isArray(parsed) ? parsed : []);
+            } catch {
+                setPatientMessages([]);
+            }
+        };
+
+        loadPatientMessages();
+
+        const handleStorage = (event) => {
+            if (event.key === 'neuroplay_caregiver_messages') {
+                loadPatientMessages();
+            }
+        };
+
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, []);
 
     useEffect(() => {
         fetchUserAndPatients();
@@ -323,6 +372,240 @@ export default function CaregiverDashboard() {
             });
         };
     }, [patients, user?.id]);
+
+    useEffect(() => {
+        if (patients.length > 0 && !reminderPatientId) {
+            setReminderPatientId(patients[0].id);
+        }
+    }, [patients, reminderPatientId]);
+
+    useEffect(() => {
+        let unsubscribe = null;
+        if (!reminderPatientId) {
+            setReminders([]);
+            return undefined;
+        }
+
+        let active = true;
+        setReminderLoading(true);
+        fetchRemindersForPatient(reminderPatientId).then((data) => {
+            if (active) {
+                setReminders(data);
+                setReminderLoading(false);
+            }
+        });
+
+        unsubscribe = subscribeToReminderChanges(reminderPatientId, (next) => {
+            if (active) setReminders(next);
+        });
+
+        return () => {
+            active = false;
+            if (typeof unsubscribe === 'function') unsubscribe();
+        };
+    }, [reminderPatientId]);
+
+    const resetReminderForm = () => {
+        setReminderForm({ title: '', description: '', time: '', category: 'custom' });
+        setEditingReminder(null);
+        setShowReminderForm(false);
+    };
+
+    const handleReminderSubmit = async (event) => {
+        event.preventDefault();
+        if (!reminderPatientId || !reminderForm.title.trim()) return;
+
+        setReminderLoading(true);
+        const saved = await saveReminder({
+            ...reminderForm,
+            title: reminderForm.title.trim(),
+            description: reminderForm.description.trim(),
+            patient_id: reminderPatientId,
+            caregiver_id: user?.id || null,
+            id: editingReminder?.id || undefined,
+            is_basic: false,
+        });
+
+        if (saved) {
+            setReminders((prev) => {
+                const exists = prev.some((item) => item.id === saved.id);
+                return exists ? prev.map((item) => item.id === saved.id ? saved : item) : [saved, ...prev];
+            });
+        }
+        setReminderLoading(false);
+        resetReminderForm();
+    };
+
+    const handleReminderToggle = async (reminder) => {
+        const updated = await toggleReminderCompletion(reminder);
+        if (updated) {
+            setReminders((prev) => prev.map((item) => item.id === updated.id ? updated : item));
+        }
+    };
+
+    const handleReminderDelete = async (reminder) => {
+        if (!window.confirm(`Delete the reminder "${reminder.title}"?`)) return;
+        const removed = await deleteReminder(reminder);
+        if (removed) setReminders((prev) => prev.filter((item) => item.id !== reminder.id));
+    };
+
+    const openReminderEditor = (reminder) => {
+        setEditingReminder(reminder);
+        setReminderForm({
+            title: reminder.title || '',
+            description: reminder.description || '',
+            time: reminder.time || '',
+            category: reminder.category || 'custom',
+        });
+        setShowReminderForm(true);
+    };
+
+    const handleBasicReminderToggle = async (basicReminder) => {
+        if (!reminderPatientId) return;
+        const existing = reminders.find((item) => item.id === `basic-${basicReminder.id}-${reminderPatientId}`);
+        const saved = await saveReminder({
+            id: existing?.id,
+            patient_id: reminderPatientId,
+            caregiver_id: user?.id || null,
+            title: basicReminder.title,
+            description: basicReminder.description,
+            time: basicReminder.time,
+            category: basicReminder.category,
+            is_basic: true,
+            enabled: existing ? !existing.enabled : true,
+            completion_date: existing?.completion_date || null,
+            completed: existing?.completed || false,
+        });
+        if (saved) {
+            setReminders((prev) => {
+                const exists = prev.some((item) => item.id === saved.id);
+                return exists ? prev.map((item) => item.id === saved.id ? saved : item) : [saved, ...prev];
+            });
+        }
+    };
+
+    const renderRemindersPanel = () => {
+        const selectedReminderPatient = patients.find((p) => p.id === reminderPatientId) || patients[0] || null;
+        const activeBasicIds = new Set(reminders.filter((r) => r.is_basic && r.enabled !== false).map((r) => r.title));
+        const visibleReminders = reminders.filter((r) => r.enabled !== false);
+        const completedCount = visibleReminders.filter((r) => r.completed).length;
+
+        return (
+            <section className="reminders-panel" id="reminders-section">
+                <div className="reminders-panel-header">
+                    <div>
+                        <p className="reminders-eyebrow">Shared care plan</p>
+                        <h2 className="section-title">Today&apos;s Reminders</h2>
+                        <p className="section-subtitle">The same reminders and completion status appear on the patient dashboard.</p>
+                    </div>
+                    <button className="reminder-add-btn" type="button" onClick={() => { setEditingReminder(null); setReminderForm({ title: '', description: '', time: '', category: 'custom' }); setShowReminderForm(true); }} disabled={!selectedReminderPatient}>
+                        + Add reminder
+                    </button>
+                </div>
+
+                {patients.length > 1 && (
+                    <div className="reminder-patient-picker">
+                        <span>Patient:</span>
+                        {patients.map((patient) => (
+                            <button
+                                type="button"
+                                key={patient.id}
+                                className={`filter-pill ${patient.id === selectedReminderPatient?.id ? 'filter-pill-active' : ''}`}
+                                onClick={() => setReminderPatientId(patient.id)}
+                            >
+                                {patient.full_name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {selectedReminderPatient && (
+                    <div className="reminder-summary-row">
+                        <span>{completedCount} of {visibleReminders.length} completed</span>
+                        <span>{selectedReminderPatient.full_name}</span>
+                    </div>
+                )}
+
+                <div className="reminder-basic-grid">
+                    {BASIC_REMINDERS.map((basic) => (
+                        <div
+                            key={basic.id}
+                            className={`basic-reminder-chip basic-reminder-chip-static ${activeBasicIds.has(basic.title) ? 'basic-reminder-chip-active' : ''}`}
+                        >
+                            <span>{basic.icon}</span>
+                            <span>{basic.title}</span>
+                            <small>Included</small>
+                        </div>
+                    ))}
+                </div>
+
+                {showReminderForm && (
+                    <form className="reminder-form-card" onSubmit={handleReminderSubmit}>
+                        <div className="reminder-form-heading">
+                            <div>
+                                <h3>{editingReminder ? 'Edit reminder' : 'Create custom reminder'}</h3>
+                                <p>Add a reminder that will be visible to the selected patient.</p>
+                            </div>
+                            <button type="button" className="reminder-close-btn" onClick={resetReminderForm}>✕</button>
+                        </div>
+                        <div className="reminder-form-grid">
+                            <label>
+                                Title
+                                <input value={reminderForm.title} onChange={(e) => setReminderForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="e.g. Morning walk" maxLength={80} required />
+                            </label>
+                            <label>
+                                Time
+                                <input type="time" value={reminderForm.time} onChange={(e) => setReminderForm((prev) => ({ ...prev, time: e.target.value }))} />
+                            </label>
+                            <label className="reminder-form-wide">
+                                Note
+                                <textarea value={reminderForm.description} onChange={(e) => setReminderForm((prev) => ({ ...prev, description: e.target.value }))} placeholder="Optional note" maxLength={180} rows={3} />
+                            </label>
+                        </div>
+                        <div className="reminder-form-actions">
+                            <button type="button" className="btn-outline" onClick={resetReminderForm}>Cancel</button>
+                            <button type="submit" className="reminder-save-btn" disabled={reminderLoading}>{editingReminder ? 'Save changes' : 'Create reminder'}</button>
+                        </div>
+                    </form>
+                )}
+
+                {!selectedReminderPatient ? (
+                    <div className="reminder-empty-state">Add a patient before creating reminders.</div>
+                ) : reminderLoading ? (
+                    <div className="reminder-empty-state">Loading reminders…</div>
+                ) : visibleReminders.length === 0 ? (
+                    <div className="reminder-empty-state">No reminders yet. Add a basic or custom reminder above.</div>
+                ) : (
+                    <div className="reminder-list">
+                        {visibleReminders.map((reminder) => (
+                            <div key={reminder.id} className={`reminder-row-card ${reminder.completed ? 'reminder-row-completed' : ''}`}>
+                                <button type="button" className={`reminder-check ${reminder.completed ? 'checked' : ''}`} onClick={() => handleReminderToggle(reminder)} aria-label={reminder.completed ? `Mark ${reminder.title} incomplete` : `Mark ${reminder.title} complete`}>
+                                    {reminder.completed ? '✓' : ''}
+                                </button>
+                                <div className="reminder-row-main">
+                                    <div className="reminder-row-title-line">
+                                        <strong>{reminder.title}</strong>
+                                        <span className={`reminder-type-badge ${reminder.is_basic ? 'basic' : 'custom'}`}>{reminder.is_basic ? 'Basic' : 'Custom'}</span>
+                                    </div>
+                                    {reminder.description && <p>{reminder.description}</p>}
+                                    <div className="reminder-row-meta">
+                                        {reminder.time && <span>🕐 {reminder.time}</span>}
+                                        {reminder.completed ? <span>Completed today</span> : <span>Not completed</span>}
+                                    </div>
+                                </div>
+                                {!reminder.is_basic && (
+                                    <div className="reminder-row-actions">
+                                        <button type="button" onClick={() => openReminderEditor(reminder)} aria-label={`Edit ${reminder.title}`}>Edit</button>
+                                        <button type="button" onClick={() => handleReminderDelete(reminder)} aria-label={`Delete ${reminder.title}`}>Delete</button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
+        );
+    };
 
     const fetchUserAndPatients = async () => {
         setLoading(true);
@@ -1709,22 +1992,51 @@ export default function CaregiverDashboard() {
                         </p>
                     </div>
 
-                    <div className="stat-card">
-                        <span className="badge-beta">
-                            Coming soon
+                    <div className="stat-card alerts-message-card">
+                        <span className="alerts-count-badge">
+                            {patientMessages.length}
                         </span>
 
                         <span className="stat-card-icon stat-icon-amber">
                             🔔
                         </span>
 
-                        <h3>Alerts</h3>
+                        <h3>Alerts & Messages</h3>
 
-                        <p className="stat-placeholder">
-                            Medicine & activity reminders
-                        </p>
+                        {patientMessages.length === 0 ? (
+                            <p className="stat-placeholder">
+                                No new messages from patients
+                            </p>
+                        ) : (
+                            <div className="alerts-message-list">
+                                {patientMessages.slice(0, 3).map((message) => (
+                                    <div
+                                        className="alerts-message-item"
+                                        key={message.id || `${message.timestamp}-${message.patientId}`}
+                                    >
+                                        <strong>
+                                            {message.patientName || 'Patient'}
+                                        </strong>
+                                        <span>{message.message}</span>
+                                        <small>
+                                            {message.timestamp
+                                                ? new Date(message.timestamp).toLocaleString()
+                                                : 'Just now'}
+                                        </small>
+                                    </div>
+                                ))}
+
+                                {patientMessages.length > 3 && (
+                                    <p className="alerts-more-message">
+                                        +{patientMessages.length - 3} more message{patientMessages.length - 3 === 1 ? '' : 's'}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                {renderRemindersPanel()}
 
                 <footer className="dashboard-footer">
                     NeuroPlay · Built for families across the

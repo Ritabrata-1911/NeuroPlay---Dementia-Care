@@ -1,0 +1,257 @@
+.memory-map-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #1a365d;
+  text-align: center;
+}
+
+.mm-header {
+  margin-bottom: 2rem;
+}
+
+.mm-header h1 {
+  font-size: 2.5rem;
+  color: #1a365d;
+  margin: 0 0 0.5rem 0;
+}
+
+.mm-header h2 {
+  font-size: 1.8rem;
+  color: #2F70B5;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.mm-card {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  max-width: 800px;
+  width: 100%;
+}
+
+.mm-instruction {
+  font-size: 1.4rem;
+  color: #4a5568;
+  margin-bottom: 2rem;
+}
+
+/* Difficulty Buttons */
+.mm-difficulty-grid {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.mm-diff-btn {
+  background: white;
+  border: 3px solid #cbd5e1;
+  padding: 1rem 2rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+  border-radius: 12px;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mm-diff-btn:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.mm-diff-btn.selected {
+  border-color: #2F70B5;
+  background: #ebf8ff;
+  color: #2F70B5;
+}
+
+.mm-primary-btn {
+  background: #2F8B61;
+  color: white;
+  border: none;
+  padding: 1.2rem 3rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(47, 139, 97, 0.3);
+  transition: transform 0.2s;
+}
+
+.mm-primary-btn:hover {
+  background: #246c4b;
+  transform: translateY(-2px);
+}
+
+.mm-primary-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Map Grid Styling */
+.mm-map-wrapper {
+  background: #f1f5f9;
+  border: 4px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem auto;
+  display: inline-block;
+}
+
+.mm-map-grid {
+  display: grid;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.mm-cell {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.mm-cell.loc {
+  background: white;
+  border: 3px solid #2F70B5;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.mm-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+}
+
+.mm-label {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #1a365d;
+}
+
+.mm-cell.path {
+  font-size: 2.5rem;
+}
+
+.mm-timer {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #e53e3e;
+  margin-top: 1rem;
+}
+
+/* Question Screen */
+.mm-question {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #1a365d;
+  margin-bottom: 2rem;
+}
+
+.mm-options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+.mm-option-btn {
+  background: white;
+  border: 3px solid #cbd5e1;
+  padding: 1.5rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  border-radius: 16px;
+  color: #1a365d;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.mm-option-btn:hover {
+  border-color: #2F70B5;
+  background: #f8fafc;
+}
+
+.mm-hint-box {
+  margin-top: 1.5rem;
+}
+
+.mm-hint-btn {
+  background: #fffbeb;
+  border: 2px solid #fcd34d;
+  color: #b45309;
+  padding: 0.8rem 1.5rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.mm-hint-text {
+  font-size: 1.3rem;
+  color: #b45309;
+  background: #fffbeb;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-top: 1rem;
+  border: 2px dashed #fcd34d;
+}
+
+/* Feedback & Results */
+.mm-feedback-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+}
+
+.mm-feedback-msg {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1a365d;
+  margin-bottom: 2rem;
+}
+
+.mm-stats {
+  font-size: 1.4rem;
+  line-height: 2;
+  color: #4a5568;
+  background: #f8fafc;
+  padding: 2rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  text-align: left;
+  display: inline-block;
+}
+
+.mm-stats strong {
+  color: #1a365d;
+}
+
+.mm-back-btn {
+  background: transparent;
+  border: none;
+  color: #4a5568;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 2rem;
+  text-decoration: underline;
+}

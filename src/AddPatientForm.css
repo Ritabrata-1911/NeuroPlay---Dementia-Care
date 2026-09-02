@@ -1,6 +1,6 @@
 /* src/AddPatientForm.css */
 /* Small companion stylesheet — the form itself reuses CaregiverAuth.css classes
-   (auth-shell, auth-card, form-grid, btn-primary, etc). This file only covers
+(auth-shell, auth-card, form-grid, btn-primary, etc). This file only covers
    the success/credential-reveal screen, which needs a few extra pieces. */
 
 .patient-success-card {

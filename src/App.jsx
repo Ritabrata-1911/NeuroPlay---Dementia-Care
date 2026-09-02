@@ -1381,6 +1381,7 @@ function App() {
 
                         {/* ====================================================
                             DIRECTORY MODAL
+                            RESTORED FROM FIRST VERSION
                         ==================================================== */}
 
                         {activeModal ===
@@ -1412,6 +1413,7 @@ function App() {
                                         </h3>
 
                                         <ul>
+
                                             <li>
                                                 <strong>
                                                     Gauhati Medical
@@ -1424,8 +1426,223 @@ function App() {
                                                 Neurology &
                                                 Memory Clinic |
                                                 Ph:
-                                                0361-3582043
+                                                0361-3582043 /
+                                                0361-2452244
                                             </li>
+
+                                            <li>
+                                                <strong>
+                                                    Assam Medical
+                                                    College (AMC),
+                                                    Dibrugarh:
+                                                </strong>{' '}
+                                                Department of
+                                                Neurology &
+                                                Geriatric Care
+                                            </li>
+
+                                            <li>
+                                                <strong>
+                                                    Silchar Medical
+                                                    College &
+                                                    Hospital (SMCH),
+                                                    Silchar:
+                                                </strong>{' '}
+                                                General Medicine
+                                                & Neurology OPD
+                                            </li>
+
+                                        </ul>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            🟢 Meghalaya
+                                        </h3>
+
+                                        <ul>
+
+                                            <li>
+                                                <strong>
+                                                    NEIGRIHMS,
+                                                    Shillong:
+                                                </strong>{' '}
+                                                Advanced
+                                                Tertiary Care
+                                                Hospital &
+                                                Neurology Dept |
+                                                Emergency: +91
+                                                364 2530000,
+                                                Enquiry: +91
+                                                364 2530002
+                                            </li>
+
+                                            <li>
+                                                <strong>
+                                                    Civil Hospital
+                                                    Shillong:
+                                                </strong>{' '}
+                                                General Neurology
+                                                & Senior Citizen
+                                                Health Support
+                                            </li>
+
+                                        </ul>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            🟢 Manipur
+                                        </h3>
+
+                                        <ul>
+
+                                            <li>
+                                                <strong>
+                                                    Regional
+                                                    Institute of
+                                                    Medical
+                                                    Sciences (RIMS),
+                                                    Imphal:
+                                                </strong>{' '}
+                                                Centre of
+                                                Excellence /
+                                                Dept of Neurology
+                                                | Ph:
+                                                0385-2414539 /
+                                                Telemedicine Hub
+                                            </li>
+
+                                            <li>
+                                                <strong>
+                                                    Jawaharlal Nehru
+                                                    Institute of
+                                                    Medical Sciences
+                                                    (JNIMS), Imphal:
+                                                </strong>{' '}
+                                                Neurology &
+                                                Psychiatry
+                                                Outpatient Care
+                                            </li>
+
+                                        </ul>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            🟢 Tripura
+                                        </h3>
+
+                                        <ul>
+
+                                            <li>
+                                                <strong>
+                                                    Agartala
+                                                    Government
+                                                    Medical College
+                                                    (AGMC) & GBP
+                                                    Hospital,
+                                                    Agartala:
+                                                </strong>{' '}
+                                                Dedicated
+                                                Neurological
+                                                Clinic &
+                                                Emergency Care
+                                            </li>
+
+                                        </ul>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            🟢 Mizoram
+                                        </h3>
+
+                                        <ul>
+
+                                            <li>
+                                                <strong>
+                                                    Zoram Medical
+                                                    College (ZMC),
+                                                    Falkawn, Aizawl:
+                                                </strong>{' '}
+                                                State Referral
+                                                Hospital & Dept
+                                                of Medicine
+                                            </li>
+
+                                        </ul>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            🟢 Nagaland
+                                        </h3>
+
+                                        <ul>
+
+                                            <li>
+                                                <strong>
+                                                    Kohima Naga
+                                                    Hospital
+                                                    Authority,
+                                                    Kohima:
+                                                </strong>{' '}
+                                                Regional Health
+                                                Center & Emergency
+                                                Support
+                                            </li>
+
+                                        </ul>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            🟢 Arunachal Pradesh
+                                            & Sikkim
+                                        </h3>
+
+                                        <ul>
+
+                                            <li>
+                                                <strong>
+                                                    Tomo Riba
+                                                    Institute of
+                                                    Health and
+                                                    Medical
+                                                    Sciences
+                                                    (TRIHMS),
+                                                    Naharlagun (AP):
+                                                </strong>{' '}
+                                                Specialized
+                                                Consultation
+                                            </li>
+
+                                            <li>
+                                                <strong>
+                                                    Sir Thutob
+                                                    Namgyal
+                                                    Memorial (STNM)
+                                                    Hospital,
+                                                    Gangtok (Sikkim):
+                                                </strong>{' '}
+                                                Neurology &
+                                                Geriatric Care
+                                                Unit
+                                            </li>
+
                                         </ul>
 
                                     </div>
@@ -1476,6 +1693,7 @@ function App() {
 
                         {/* ====================================================
                             MANUAL MODAL
+                            ONLY ADDED THE ABOUT DEMENTIA TAB FROM FIRST VERSION
                         ==================================================== */}
 
                         {activeModal ===
@@ -1548,9 +1766,29 @@ function App() {
                                         Breathing Tool
                                     </button>
 
+                                    {/* ADDED FROM FIRST VERSION */}
+
+                                    <button
+                                        className={`tab-btn ${
+                                            activeManualTab ===
+                                            'dementia'
+                                                ? 'active-tab'
+                                                : ''
+                                        }`}
+                                        onClick={() =>
+                                            setActiveManualTab(
+                                                'dementia'
+                                            )
+                                        }
+                                    >
+                                        🧠 About Dementia
+                                    </button>
+
                                 </div>
 
                                 <div className="guide-scroll-container">
+
+                                    {/* EXISTING LATEST VERSION - GUIDE */}
 
                                     {activeManualTab ===
                                         'guide' && (
@@ -1572,6 +1810,8 @@ function App() {
 
                                         </div>
                                     )}
+
+                                    {/* EXISTING LATEST VERSION - DEESCALATION */}
 
                                     {activeManualTab ===
                                         'deescalation' && (
@@ -1596,9 +1836,148 @@ function App() {
                                         </div>
                                     )}
 
+                                    {/* EXISTING LATEST VERSION - BREATHING */}
+
                                     {activeManualTab ===
                                         'breathing' &&
                                         renderBreathingExercise()}
+
+                                    {/* ADDED FROM FIRST VERSION - ABOUT DEMENTIA */}
+
+                                    {activeManualTab ===
+                                        'dementia' && (
+                                        <div className="tab-content">
+
+                                            <h3>
+                                                What Is Dementia?
+                                            </h3>
+
+                                            <p>
+                                                Dementia is an
+                                                umbrella term for
+                                                a decline in
+                                                memory, thinking,
+                                                and reasoning
+                                                skills severe
+                                                enough to
+                                                interfere with
+                                                daily life. It is
+                                                caused by damage
+                                                to brain cells and
+                                                is progressive,
+                                                meaning symptoms
+                                                generally worsen
+                                                over time.
+                                                Alzheimer's
+                                                disease is the
+                                                most common form,
+                                                accounting for a
+                                                majority of cases.
+                                            </p>
+
+                                            <h3>
+                                                Common Early Signs
+                                            </h3>
+
+                                            <p>
+                                                Frequent memory
+                                                lapses, difficulty
+                                                finding words,
+                                                confusion about
+                                                time or place,
+                                                trouble planning
+                                                familiar tasks,
+                                                and noticeable
+                                                changes in mood or
+                                                personality are
+                                                often among the
+                                                first signs
+                                                families notice.
+                                            </p>
+
+                                            <h3>
+                                                The Three Broad
+                                                Stages
+                                            </h3>
+
+                                            <p>
+                                                <strong>
+                                                    Early stage:
+                                                </strong>{' '}
+                                                Mild forgetfulness
+                                                and occasional
+                                                confusion; the
+                                                person is usually
+                                                still independent.
+                                                <strong>
+                                                    {' '}
+                                                    Middle stage:
+                                                </strong>{' '}
+                                                Memory gaps grow,
+                                                help is needed with
+                                                daily tasks, and
+                                                wandering or
+                                                repeating
+                                                questions is
+                                                common.
+                                                <strong>
+                                                    {' '}
+                                                    Late stage:
+                                                </strong>{' '}
+                                                Significant loss
+                                                of ability to
+                                                communicate and
+                                                carry out basic
+                                                activities;
+                                                full-time care is
+                                                typically required.
+                                            </p>
+
+                                            <h3>
+                                                Why Early Detection
+                                                Matters
+                                            </h3>
+
+                                            <p>
+                                                There is currently
+                                                no cure, but early
+                                                diagnosis allows
+                                                families to plan
+                                                care, start
+                                                supportive
+                                                therapies, adjust
+                                                routines, and
+                                                access medications
+                                                that can slow
+                                                symptom progression
+                                                in some cases.
+                                            </p>
+
+                                            <h3>
+                                                Supporting a Person
+                                                with Dementia
+                                            </h3>
+
+                                            <p>
+                                                Consistent
+                                                routines, a calm
+                                                and well-lit
+                                                environment,
+                                                patience during
+                                                communication, and
+                                                regular cognitive
+                                                engagement (such as
+                                                memory games and
+                                                social interaction)
+                                                can meaningfully
+                                                improve quality of
+                                                life for both
+                                                patients and
+                                                caregivers.
+                                            </p>
+
+                                        </div>
+                                    )}
 
                                 </div>
 
@@ -1607,6 +1986,7 @@ function App() {
 
                         {/* ====================================================
                             TIPS MODAL
+                            RESTORED FROM FIRST VERSION
                         ==================================================== */}
 
                         {activeModal ===
@@ -1618,13 +1998,18 @@ function App() {
                                     & Articles
                                 </h2>
 
+                                <p className="directory-subtext">
+                                    Practical guidance families
+                                    and caregivers can apply at
+                                    home:
+                                </p>
+
                                 <div className="directory-scroll-box">
 
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            🥗 Nutrition &
-                                            Diet
+                                            🥗 Nutrition & Diet
                                         </h3>
 
                                         <p>
@@ -1632,6 +2017,105 @@ function App() {
                                             frequent meals
                                             with familiar
                                             regional foods.
+                                            Keep water visible
+                                            and accessible
+                                            throughout the day,
+                                            as thirst cues are
+                                            often forgotten.
+                                            Limit sugary and
+                                            heavily processed
+                                            snacks, and favor
+                                            finger foods if
+                                            using utensils
+                                            becomes difficult.
+                                        </p>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            🚶 Physical Activity
+                                        </h3>
+
+                                        <p>
+                                            Short daily walks,
+                                            light stretching, or
+                                            simple household
+                                            chores help maintain
+                                            mobility and improve
+                                            mood. Aim for gentle,
+                                            consistent movement
+                                            rather than intense
+                                            exercise, and always
+                                            supervise outdoor
+                                            activity.
+                                        </p>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            😴 Sleep & Sundowning
+                                        </h3>
+
+                                        <p>
+                                            Keep a consistent
+                                            bedtime routine,
+                                            limit caffeine after
+                                            noon, and use dim,
+                                            warm lighting in the
+                                            evening. If confusion
+                                            or agitation
+                                            increases at dusk,
+                                            calm music and a
+                                            familiar face nearby
+                                            can help ease the
+                                            transition.
+                                        </p>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            🏠 Home Safety
+                                        </h3>
+
+                                        <p>
+                                            Remove loose rugs and
+                                            clutter, install grab
+                                            bars near the
+                                            bathroom, label rooms
+                                            clearly, and keep
+                                            sharp objects,
+                                            medicines, and
+                                            cleaning supplies
+                                            locked away or out of
+                                            reach.
+                                        </p>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            💬 Communication
+                                        </h3>
+
+                                        <p>
+                                            Use short, simple
+                                            sentences and
+                                            maintain eye contact.
+                                            Give the person time
+                                            to respond, avoid
+                                            quizzing their memory,
+                                            and focus on the
+                                            feeling behind their
+                                            words rather than
+                                            correcting every
+                                            detail.
                                         </p>
 
                                     </div>
@@ -1643,6 +2127,7 @@ function App() {
 
                         {/* ====================================================
                             SUPPORT MODAL
+                            RESTORED FROM FIRST VERSION
                         ==================================================== */}
 
                         {activeModal ===
@@ -1654,23 +2139,106 @@ function App() {
                                     Community
                                 </h2>
 
+                                <p className="directory-subtext">
+                                    Caregivers don't have to
+                                    manage alone — these are
+                                    the kinds of support worth
+                                    seeking out in the NER:
+                                </p>
+
                                 <div className="directory-scroll-box">
 
                                     <div className="state-dir-block">
 
                                         <h3>
                                             🧑‍🤝‍🧑 Local
-                                            Caregiver
-                                            Support Groups
+                                            Caregiver Support
+                                            Groups
                                         </h3>
 
                                         <p>
                                             Many district
-                                            hospitals and
-                                            NGOs run
-                                            periodic
-                                            caregiver
-                                            meet-ups.
+                                            hospitals and NGOs
+                                            run periodic
+                                            caregiver meet-ups
+                                            where families
+                                            share coping
+                                            strategies and
+                                            practical advice.
+                                            Ask your nearest
+                                            medical center (see
+                                            the Care Directory)
+                                            whether one
+                                            operates in your
+                                            area.
+                                        </p>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            🏢 National &
+                                            Regional Dementia
+                                            Organizations
+                                        </h3>
+
+                                        <p>
+                                            Bodies such as the
+                                            Alzheimer's and
+                                            Related Disorders
+                                            Society of India
+                                            (ARDSI) run chapters
+                                            and helplines across
+                                            India, offering
+                                            counseling, day-care
+                                            referrals, and
+                                            caregiver training
+                                            resources.
+                                        </p>
+
+                                    </div>
+
+                                    <div className="state-dir-block">
+
+                                        <h3>
+                                            💻 Online Communities
+                                        </h3>
+
+                                        <p>
+                                            Moderated online
+                                            forums and social
+                                            media groups for
+                                            dementia caregivers
+                                            can offer round-the-
+                                            clock peer support,
+                                            especially useful
+                                            for families in
+                                            remote areas with
+                                            limited access to
+                                            in-person groups.
+                                        </p>
+
+                                    </div>
+
+                                    <div className="state-dir-block emergency-highlight-block">
+
+                                        <h3>
+                                            🕊️ Mental Health
+                                            Support for
+                                            Caregivers
+                                        </h3>
+
+                                        <p>
+                                            Caregiver burnout is
+                                            common and real. The
+                                            Tele-MANAS helpline
+                                            (14416) offers free,
+                                            confidential
+                                            psychological
+                                            support for
+                                            caregivers as well
+                                            as patients, 24/7.
                                         </p>
 
                                     </div>
