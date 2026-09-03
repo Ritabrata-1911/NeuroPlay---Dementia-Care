@@ -192,25 +192,6 @@
   gap: 0.75rem;
 }
 
-.header-icon-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #ffffff;
-  border: 1.5px solid var(--db-border-color);
-  font-size: 1.05rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
-}
-
-.header-icon-btn:hover {
-  border-color: var(--db-primary-blue);
-  background-color: #f0f7ff;
-}
-
 .header-avatar-btn {
   display: flex;
   align-items: center;
@@ -916,6 +897,93 @@
   margin-bottom: 2rem;
 }
 
+.stats-grid-top {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 1100px) {
+  .stats-grid-top {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid-top {
+    grid-template-columns: 1fr;
+  }
+}
+
+.alerts-panel-standalone {
+  min-width: 0;
+  margin-bottom: 3rem;
+  padding: 1.75rem 1.85rem;
+  border-top: 3px solid var(--db-amber);
+  border-radius: 12px;
+}
+
+.alerts-panel-standalone-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.35rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.alerts-panel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.alerts-panel-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  background: linear-gradient(155deg, #fef3e2 0%, #fde3c0 100%);
+  border: 1px solid #fbd9a5;
+}
+
+.alerts-panel-standalone-head h3 {
+  margin: 0 0 0.15rem;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--db-navy-text);
+  letter-spacing: -0.01em;
+}
+
+.alerts-panel-subtitle {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #8a94a6;
+  font-weight: 500;
+}
+
+.alerts-mark-all-btn {
+  flex-shrink: 0;
+  border: 1px solid var(--db-border-color);
+  background: transparent;
+  color: var(--db-navy-text);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 7px;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.alerts-mark-all-btn:hover {
+  border-color: var(--db-caregiver-green);
+  color: var(--db-caregiver-green);
+  background: rgba(47, 139, 97, 0.06);
+}
+
 .stat-value-text {
   font-size: 1.35rem;
 }
@@ -1439,74 +1507,199 @@
 
 
 /* --- PATIENT MESSAGES INSIDE CAREGIVER ALERTS CARD --- */
-.alerts-message-card {
-  min-width: 0;
-}
-
-.alerts-count-badge {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  min-width: 1.65rem;
-  height: 1.65rem;
-  padding: 0 0.45rem;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #fef3e2;
-  color: #b45309;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border: 1px solid #fed7aa;
-}
-
 .alerts-message-list {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  margin-top: 0.1rem;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 0.35rem;
 }
 
-.alerts-message-item {
+/* "message" row — editorial list style: hairline dividers between
+   rows, a colored accent bar on unread items, and the note itself
+   set as an indented quoted line rather than a chat-bubble box. */
+.msg-item {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.65rem 0.7rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1rem 0.4rem 1rem 0.9rem;
+  border-bottom: 1px solid #eef1f6;
+  border-left: 3px solid transparent;
+  min-width: 0;
+  transition: background-color 0.15s ease, border-left-color 0.15s ease;
+}
+
+.alerts-message-list .msg-item:last-child {
+  border-bottom: none;
+}
+
+.msg-item:hover {
+  background: #fafbfd;
+}
+
+.msg-item.unread {
+  border-left-color: var(--db-caregiver-green);
+  background: #fbfdfc;
+}
+
+.msg-item.is-read {
+  border-left-color: transparent;
+}
+
+.msg-item.is-read .msg-name-inline,
+.msg-item.is-read .msg-text-line {
+  color: #94a1b2;
+}
+
+.msg-avatar {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: linear-gradient(155deg, var(--db-navy-text) 0%, var(--db-caregiver-green) 130%);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+}
+
+.msg-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.msg-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.msg-content {
+  flex: 1;
   min-width: 0;
 }
 
-.alerts-message-item strong {
+/* Header line: sender name + "sent a note" + unread tag */
+.msg-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.76rem;
+  line-height: 1.3;
+  margin: 0 0 0.4rem;
+}
+
+.msg-name-inline {
   color: var(--db-navy-text);
-  font-size: 0.82rem;
+  font-weight: 700;
+  font-size: 0.86rem;
 }
 
-.alerts-message-item span {
-  color: #64748b;
-  font-size: 0.8rem;
-  line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.msg-meta-sub {
+  color: #9aa5b6;
+  font-weight: 500;
 }
 
-.alerts-message-item small {
-  color: #94a3b8;
-  font-size: 0.68rem;
-}
-
-.alerts-more-message {
-  margin: 0.1rem 0 0;
+.msg-unread-tag {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--db-caregiver-green);
-  font-size: 0.78rem;
-  font-weight: 600;
+  background: rgba(47, 139, 97, 0.1);
+  border-radius: 4px;
+  padding: 0.14rem 0.4rem;
+  margin-left: 0.1rem;
+}
+
+/* The note itself — a quoted line rather than a chat bubble, so
+   it reads as content in a professional record, not a messenger. */
+.msg-text-line {
+  font-size: 0.94rem;
+  line-height: 1.55;
+  font-weight: 500;
+  color: #263547;
+  word-break: break-word;
+  border-left: 2px solid #dde3ec;
+  padding-left: 0.65rem;
+  margin: 0 0 0.55rem;
+}
+
+.msg-item.unread .msg-text-line {
+  border-left-color: rgba(47, 139, 97, 0.45);
+}
+
+.msg-time {
+  flex-shrink: 0;
+  font-size: 0.66rem;
+  color: #a7b0bf;
+  white-space: nowrap;
+  padding-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.msg-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0;
+}
+
+.msg-action-btn {
+  border: none;
+  background: transparent;
+  color: #6b7688;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.msg-action-btn:hover {
+  color: var(--db-navy-text);
+  border-bottom-color: #cbd5e1;
+}
+
+.msg-action-btn.primary {
+  color: var(--db-caregiver-green);
+}
+
+.msg-action-btn.primary:hover {
+  border-bottom-color: var(--db-caregiver-green);
+}
+
+.msg-action-btn.danger {
+  color: #b91c1c;
+}
+
+.msg-action-btn.danger:hover {
+  border-bottom-color: #b91c1c;
 }
 
 @media (max-width: 1100px) {
-  .alerts-message-item span {
+  .msg-text-line {
     white-space: normal;
+  }
+}
+
+@media (max-width: 600px) {
+  .msg-text-line {
+    font-size: 0.9rem;
+  }
+
+  .msg-body {
+    flex-direction: column;
+    gap: 0.3rem;
   }
 }

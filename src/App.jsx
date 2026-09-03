@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 import CaregiverAuth from './CaregiverAuth';
 import CaregiverDashboard from './CaregiverDashboard';
@@ -25,7 +26,34 @@ const breathingPhaseLabels = {
 };
 
 function App() {
-    const [currentScreen, setCurrentScreen] = useState('home');
+    // ============================================================
+    // ROUTING
+    //
+    // currentScreen is now derived from the actual browser URL
+    // (via react-router-dom) instead of being held in local state.
+    // This means:
+    //   - the URL bar always reflects the visible screen
+    //   - refreshing the page reloads the SAME screen
+    //   - the browser back/forward buttons move through YOUR
+    //     app's history instead of skipping straight past it
+    //
+    // setCurrentScreen(screen) is kept as a wrapper around
+    // navigate() so every existing call site below (there are
+    // many) keeps working unchanged.
+    // ============================================================
+
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const currentScreen =
+        location.pathname === '/'
+            ? 'home'
+            : location.pathname.slice(1);
+
+    const setCurrentScreen = (screen) => {
+        navigate(screen === 'home' ? '/' : `/${screen}`);
+    };
+
     const [activeModal, setActiveModal] = useState(null);
 
     // ============================================================
@@ -167,6 +195,65 @@ function App() {
             subscription.unsubscribe();
         };
     }, []);
+
+    // ============================================================
+    // AUTH SCREEN GUARD
+    //
+    // Problem this solves:
+    // Logging in navigates from /caregiverAuth -> /caregiverDashboard,
+    // which adds BOTH pages to browser history. If the user then
+    // presses Back, the URL goes to /caregiverAuth again — but the
+    // Supabase session is still valid (logging in doesn't get undone
+    // by pressing Back). CaregiverAuth/PatientLogin don't check for
+    // an existing session, so they'd just show the login form again,
+    // even though the user is still actually logged in.
+    //
+    // Fix: whenever the URL lands on an auth screen, check if a
+    // session already exists. If it does (and we're not in the
+    // middle of a password-reset flow), skip straight past the login
+    // form back to the dashboard. We use `replace` so this doesn't
+    // add yet another history entry — it overwrites the auth-screen
+    // entry, so Back won't get stuck flip-flopping between the two.
+    // ============================================================
+
+    useEffect(() => {
+        let mounted = true;
+
+        const guardAuthScreens = async () => {
+            if (
+                currentScreen === 'caregiverAuth' &&
+                !isPasswordRecovery
+            ) {
+                const {
+                    data: { session }
+                } = await supabase.auth.getSession();
+
+                if (mounted && session) {
+                    navigate('/caregiverDashboard', {
+                        replace: true
+                    });
+                }
+            }
+
+            if (currentScreen === 'patientAuth') {
+                const storedSession = sessionStorage.getItem(
+                    'neuroplay_patient_session'
+                );
+
+                if (mounted && storedSession) {
+                    navigate('/patientDashboard', {
+                        replace: true
+                    });
+                }
+            }
+        };
+
+        guardAuthScreens();
+
+        return () => {
+            mounted = false;
+        };
+    }, [currentScreen, isPasswordRecovery]);
 
     // ============================================================
     // BREATHING TIMER
@@ -2312,5 +2399,4 @@ function App() {
         </div>
     );
 }
-
 export default App;

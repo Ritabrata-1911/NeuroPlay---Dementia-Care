@@ -1,12 +1,42 @@
 import { supabase } from './SupabaseClient';
 
+/*
+ * Shared reminder service — used by BOTH CaregiverDashboard and
+ * PatientDashboard so the two surfaces stay in sync automatically.
+ * Talks to Supabase only — no local/offline fallback, so once the
+ * `reminders` table + policies are in place (see backend-instructions.md)
+ * this is the single source of truth for both dashboards.
+ *
+ * Table: public.reminders
+ *   id              uuid primary key default gen_random_uuid()
+ *   patient_id      uuid not null references patients(id)
+ *   caregiver_id    uuid references auth.users(id)
+ *   created_by      text  -- 'caregiver' | 'patient'
+ *   title           text not null
+ *   description     text
+ *   time            text  -- 'HH:MM', optional
+ *   category        text default 'custom'
+ *   is_basic        boolean default false
+ *   enabled         boolean default true
+ *   completed       boolean default false
+ *   completion_date date  -- date it was last marked complete
+ *   created_at      timestamptz default now()
+ *   updated_at      timestamptz default now()
+ *
+ * Realtime must be enabled on this table (see backend-instructions.md).
+ */
+
+// The four starter reminders every patient gets by default. The
+// caregiver dashboard renders these as toggle chips; when toggled
+// on, a real row is created in the `reminders` table (is_basic:
+// true) so it can be checked off and synced like any other reminder.
 export const BASIC_REMINDERS = [
     {
         id: 'medication',
         title: 'Medicine reminder',
         description: 'Remember your scheduled medicine.',
         time: '',
-        category: 'medicine',
+        category: 'basic',
         icon: '💊',
     },
     {
@@ -14,693 +44,192 @@ export const BASIC_REMINDERS = [
         title: 'Drink some water',
         description: 'Take a moment for a glass of water.',
         time: '',
-        category: 'hydration',
+        category: 'basic',
         icon: '💧',
     },
     {
         id: 'activity',
         title: 'Daily activity',
-        description:
-            'Spend a little time on an everyday activity.',
+        description: 'Spend a little time on an everyday activity.',
         time: '',
-        category: 'activity',
+        category: 'basic',
         icon: '📅',
     },
     {
-        id: 'appointment',
-        title: 'Check today’s appointments',
-        description:
-            'Review any appointments planned for today.',
+        id: 'appointments',
+        title: "Check today's appointments",
+        description: 'Review any appointments planned for today.',
         time: '',
-        category: 'appointment',
-        icon: '🏥',
+        category: 'basic',
+        icon: '🪪',
     },
 ];
 
-const LOCAL_STORAGE_PREFIX = 'neuroplay_reminders_';
+const todayStr = () => new Date().toISOString().slice(0, 10);
 
-const getStorageKey = (patientId) =>
-    `${LOCAL_STORAGE_PREFIX}${patientId}`;
+// A reminder only counts as "completed" for today — this way a
+// checked-off reminder automatically resets at midnight without
+// needing a cron job anywhere.
+function normalize(row) {
+    if (!row) return row;
+    const completedToday = Boolean(row.completed) && row.completion_date === todayStr();
+    return { ...row, completed: completedToday };
+}
 
-const getToday = () =>
-    new Date().toISOString().slice(0, 10);
-
-const safeReadLocalReminders = (patientId) => {
-    try {
-        const raw = localStorage.getItem(
-            getStorageKey(patientId)
-        );
-
-        if (!raw) return [];
-
-        const parsed = JSON.parse(raw);
-
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
-};
-
-const safeWriteLocalReminders = (
-    patientId,
-    reminders
-) => {
-    try {
-        localStorage.setItem(
-            getStorageKey(patientId),
-            JSON.stringify(reminders)
-        );
-    } catch {
-        // localStorage may be unavailable.
-    }
-};
-
-const normalizeReminder = (reminder) => {
-    const today = getToday();
-
-    const completedToday =
-        reminder.completion_date === today
-            ? Boolean(reminder.completed)
-            : false;
-
-    return {
-        ...reminder,
-        completed: completedToday,
-        enabled:
-            reminder.enabled !== false,
-    };
-};
-
-const sortReminders = (reminders) => {
-    return [...reminders].sort((a, b) => {
-        if (a.completed !== b.completed) {
-            return a.completed ? 1 : -1;
-        }
-
-        if (a.time && b.time) {
-            return a.time.localeCompare(b.time);
-        }
-
-        if (a.time && !b.time) return -1;
-        if (!a.time && b.time) return 1;
-
-        return String(a.title || '').localeCompare(
-            String(b.title || '')
-        );
-    });
-};
-
-const mergeBasicReminders = (
-    reminders,
-    patientId
-) => {
-    const existingTitles = new Set(
-        reminders.map((item) => item.title)
-    );
-
-    const basic = BASIC_REMINDERS.map((item) => ({
-        id: `basic-${item.id}-${patientId}`,
-        patient_id: patientId,
-        title: item.title,
-        description: item.description,
-        time: item.time,
-        category: item.category,
-        icon: item.icon,
-        is_basic: true,
-        enabled: true,
-        completed: false,
-        completion_date: null,
-    }));
-
-    return [
-        ...basic.filter(
-            (item) => !existingTitles.has(item.title)
-        ),
-        ...reminders,
-    ];
-};
-
-export async function fetchRemindersForPatient(
-    patientId
-) {
+export async function fetchRemindersForPatient(patientId) {
     if (!patientId) return [];
 
-    const {
-        data,
-        error,
-    } = await supabase
+    const { data, error } = await supabase
         .from('reminders')
         .select('*')
         .eq('patient_id', patientId)
-        .eq('enabled', true)
-        .order('time', {
-            ascending: true,
-            nullsFirst: false,
-        })
-        .order('created_at', {
-            ascending: true,
-        });
+        .order('created_at', { ascending: true });
 
-    if (!error && Array.isArray(data)) {
-        const normalized = data.map(normalizeReminder);
-
-        const merged = mergeBasicReminders(
-            normalized,
-            patientId
-        );
-
-        return sortReminders(merged);
-    }
-
-    /*
-     * The reminders table may not exist yet.
-     * Fall back to browser storage so the UI can still
-     * be developed before the backend is added.
-     */
     if (error) {
-        console.warn(
-            'Supabase reminders table unavailable. Using local reminder storage.',
-            error.message
-        );
+        console.error('Unable to fetch reminders:', error.message);
+        return [];
     }
 
-    const localReminders =
-        safeReadLocalReminders(patientId).map(
-            normalizeReminder
-        );
-
-    return sortReminders(
-        mergeBasicReminders(
-            localReminders,
-            patientId
-        )
-    );
+    return (data || []).map(normalize);
 }
 
-export async function saveReminder(
-    reminder
-) {
-    if (!reminder?.patient_id) {
-        return null;
+// Alias in case other code in the project calls it by this name.
+export const getReminders = fetchRemindersForPatient;
+
+// Creates a reminder when `reminder.id` is missing (or is a local
+// "basic-..." placeholder id), otherwise updates the existing row.
+// For basic reminders without an id yet, looks up any existing row
+// for that patient + title first so re-enabling a basic reminder
+// updates it instead of creating a duplicate.
+export async function saveReminder(reminder) {
+    if (!reminder?.patient_id || !reminder?.title) return null;
+
+    let existingId = reminder.id && !String(reminder.id).startsWith('basic-')
+        ? reminder.id
+        : null;
+
+    if (!existingId && reminder.is_basic) {
+        const { data: existing } = await supabase
+            .from('reminders')
+            .select('id')
+            .eq('patient_id', reminder.patient_id)
+            .eq('is_basic', true)
+            .eq('title', reminder.title)
+            .maybeSingle();
+
+        if (existing?.id) existingId = existing.id;
     }
 
     const payload = {
+        ...(existingId ? { id: existingId } : {}),
         patient_id: reminder.patient_id,
-        caregiver_id:
-            reminder.caregiver_id || null,
+        caregiver_id: reminder.caregiver_id ?? null,
+        created_by: reminder.created_by || (reminder.caregiver_id ? 'caregiver' : 'patient'),
         title: reminder.title,
-        description:
-            reminder.description || '',
+        description: reminder.description || '',
         time: reminder.time || null,
-        category:
-            reminder.category || 'custom',
-        is_basic:
-            Boolean(reminder.is_basic),
-        enabled:
-            reminder.enabled !== false,
-        completed:
-            Boolean(reminder.completed),
-        completed_at:
-            reminder.completed_at || null,
-        completion_date:
-            reminder.completion_date || null,
+        category: reminder.category || 'custom',
+        is_basic: Boolean(reminder.is_basic),
+        enabled: reminder.enabled ?? true,
+        completed: Boolean(reminder.completed),
+        completion_date: reminder.completed ? (reminder.completion_date || todayStr()) : null,
+        updated_at: new Date().toISOString(),
     };
 
-    /*
-     * Existing custom reminder:
-     * update the existing database row.
-     */
-    if (reminder.id && !String(reminder.id).startsWith('basic-')) {
-        const {
-            data,
-            error,
-        } = await supabase
-            .from('reminders')
-            .update(payload)
-            .eq('id', reminder.id)
-            .select()
-            .single();
+    const { data, error } = await supabase
+        .from('reminders')
+        .upsert(payload)
+        .select()
+        .single();
 
-        if (!error && data) {
-            return normalizeReminder(data);
-        }
-
-        if (error) {
-            console.warn(
-                'Unable to update reminder in Supabase. Using local storage.',
-                error.message
-            );
-        }
-    }
-
-    /*
-     * Basic reminders use a stable title/patient lookup.
-     * This allows the same basic reminder to be shared
-     * across caregiver and patient dashboards.
-     */
-    if (reminder.is_basic) {
-        const {
-            data: existing,
-            error: findError,
-        } = await supabase
-            .from('reminders')
-            .select('*')
-            .eq('patient_id', reminder.patient_id)
-            .eq('is_basic', true)
-            .eq('title', reminder.title)
-            .maybeSingle();
-
-        if (!findError && existing) {
-            const {
-                data,
-                error,
-            } = await supabase
-                .from('reminders')
-                .update(payload)
-                .eq('id', existing.id)
-                .select()
-                .single();
-
-            if (!error && data) {
-                return normalizeReminder(data);
-            }
-        }
-
-        const {
-            data,
-            error,
-        } = await supabase
-            .from('reminders')
-            .insert(payload)
-            .select()
-            .single();
-
-        if (!error && data) {
-            return normalizeReminder(data);
-        }
-    } else {
-        /*
-         * New custom reminder.
-         */
-        const {
-            data,
-            error,
-        } = await supabase
-            .from('reminders')
-            .insert(payload)
-            .select()
-            .single();
-
-        if (!error && data) {
-            return normalizeReminder(data);
-        }
-
-        if (error) {
-            console.warn(
-                'Unable to insert reminder in Supabase. Using local storage.',
-                error.message
-            );
-        }
-    }
-
-    /*
-     * Browser fallback.
-     */
-    const local = safeReadLocalReminders(
-        reminder.patient_id
-    );
-
-    const localId =
-        reminder.id ||
-        `local-${Date.now()}-${Math.random()
-            .toString(36)
-            .slice(2, 8)}`;
-
-    const localReminder = normalizeReminder({
-        ...payload,
-        ...reminder,
-        id: localId,
-        patient_id: reminder.patient_id,
-        created_at:
-            reminder.created_at ||
-            new Date().toISOString(),
-        updated_at:
-            new Date().toISOString(),
-    });
-
-    const index = local.findIndex(
-        (item) => item.id === localId
-    );
-
-    if (index >= 0) {
-        local[index] = localReminder;
-    } else {
-        local.unshift(localReminder);
-    }
-
-    safeWriteLocalReminders(
-        reminder.patient_id,
-        local
-    );
-
-    return localReminder;
-}
-
-export async function toggleReminderCompletion(
-    reminder
-) {
-    if (!reminder?.patient_id) {
+    if (error) {
+        console.error('Unable to save reminder:', error.message);
         return null;
     }
 
-    const completed = !Boolean(
-        reminder.completed
-    );
-
-    const today = getToday();
-
-    const payload = {
-        completed,
-        completed_at: completed
-            ? new Date().toISOString()
-            : null,
-        completion_date: completed
-            ? today
-            : null,
-        updated_at:
-            new Date().toISOString(),
-    };
-
-    /*
-     * Database-backed custom reminder.
-     */
-    if (
-        reminder.id &&
-        !String(reminder.id).startsWith('basic-') &&
-        !String(reminder.id).startsWith('local-')
-    ) {
-        const {
-            data,
-            error,
-        } = await supabase
-            .from('reminders')
-            .update(payload)
-            .eq('id', reminder.id)
-            .select()
-            .single();
-
-        if (!error && data) {
-            return normalizeReminder(data);
-        }
-
-        if (error) {
-            console.warn(
-                'Unable to update reminder completion in Supabase.',
-                error.message
-            );
-        }
-    }
-
-    /*
-     * Basic reminder:
-     * locate its database row using patient + title.
-     */
-    if (reminder.is_basic) {
-        const {
-            data: existing,
-            error: findError,
-        } = await supabase
-            .from('reminders')
-            .select('*')
-            .eq('patient_id', reminder.patient_id)
-            .eq('is_basic', true)
-            .eq('title', reminder.title)
-            .maybeSingle();
-
-        if (!findError && existing) {
-            const {
-                data,
-                error,
-            } = await supabase
-                .from('reminders')
-                .update(payload)
-                .eq('id', existing.id)
-                .select()
-                .single();
-
-            if (!error && data) {
-                return normalizeReminder(data);
-            }
-        }
-    }
-
-    /*
-     * Local fallback.
-     */
-    const local = safeReadLocalReminders(
-        reminder.patient_id
-    );
-
-    const updated = {
-        ...reminder,
-        ...payload,
-        completed,
-    };
-
-    const index = local.findIndex(
-        (item) =>
-            item.id === reminder.id ||
-            (
-                item.title === reminder.title &&
-                item.patient_id ===
-                    reminder.patient_id
-            )
-    );
-
-    if (index >= 0) {
-        local[index] = updated;
-    } else {
-        local.push(updated);
-    }
-
-    safeWriteLocalReminders(
-        reminder.patient_id,
-        local
-    );
-
-    window.dispatchEvent(
-        new CustomEvent(
-            'neuroplay-reminder-change',
-            {
-                detail: {
-                    patientId:
-                        reminder.patient_id,
-                },
-            }
-        )
-    );
-
-    return normalizeReminder(updated);
+    return normalize(data);
 }
 
-export async function deleteReminder(
-    reminder
-) {
-    if (!reminder?.patient_id) {
-        return false;
+export async function toggleReminderCompletion(reminder) {
+    if (!reminder?.id) return null;
+
+    const willComplete = !reminder.completed;
+
+    const { data, error } = await supabase
+        .from('reminders')
+        .update({
+            completed: willComplete,
+            completion_date: willComplete ? todayStr() : null,
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', reminder.id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Unable to update reminder:', error.message);
+        return null;
     }
 
-    /*
-     * Basic reminders are not permanently deleted.
-     * They can simply be disabled.
-     */
+    return normalize(data);
+}
+
+// Basic reminders are never hard-deleted (the caregiver toggles them
+// off instead, via saveReminder with enabled: false). Custom reminders
+// are removed outright.
+export async function deleteReminder(reminder) {
+    if (!reminder?.id) return false;
+
     if (reminder.is_basic) {
-        if (
-            reminder.id &&
-            !String(reminder.id).startsWith(
-                'basic-'
-            )
-        ) {
-            const { error } =
-                await supabase
-                    .from('reminders')
-                    .update({
-                        enabled: false,
-                        updated_at:
-                            new Date().toISOString(),
-                    })
-                    .eq(
-                        'id',
-                        reminder.id
-                    );
+        const { error } = await supabase
+            .from('reminders')
+            .update({ enabled: false, updated_at: new Date().toISOString() })
+            .eq('id', reminder.id);
 
-            if (!error) return true;
+        if (error) {
+            console.error('Unable to disable basic reminder:', error.message);
+            return false;
         }
-
         return true;
     }
 
-    if (
-        reminder.id &&
-        !String(reminder.id).startsWith('local-')
-    ) {
-        const { error } =
-            await supabase
-                .from('reminders')
-                .delete()
-                .eq('id', reminder.id);
+    const { error } = await supabase
+        .from('reminders')
+        .delete()
+        .eq('id', reminder.id);
 
-        if (!error) {
-            return true;
-        }
-
-        console.warn(
-            'Unable to delete reminder from Supabase. Removing local copy instead.',
-            error.message
-        );
+    if (error) {
+        console.error('Unable to delete reminder:', error.message);
+        return false;
     }
-
-    const local = safeReadLocalReminders(
-        reminder.patient_id
-    );
-
-    const filtered = local.filter(
-        (item) => item.id !== reminder.id
-    );
-
-    safeWriteLocalReminders(
-        reminder.patient_id,
-        filtered
-    );
-
-    window.dispatchEvent(
-        new CustomEvent(
-            'neuroplay-reminder-change',
-            {
-                detail: {
-                    patientId:
-                        reminder.patient_id,
-                },
-            }
-        )
-    );
 
     return true;
 }
 
-export function subscribeToReminderChanges(
-    patientId,
-    onChange
-) {
-    if (!patientId) {
-        return () => {};
-    }
+// Subscribes to every insert/update/delete for one patient's
+// reminders and re-fetches the full list on change, so both the
+// caregiver and patient dashboards refresh in real time no matter
+// who made the edit. Returns an unsubscribe function.
+export function subscribeToReminderChanges(patientId, onChange) {
+    if (!patientId) return () => {};
 
-    let channel;
-
-    try {
-        channel = supabase
-            .channel(
-                `neuroplay-reminders-${patientId}`
-            )
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'reminders',
-                    filter: `patient_id=eq.${patientId}`,
-                },
-                async () => {
-                    try {
-                        const reminders =
-                            await fetchRemindersForPatient(
-                                patientId
-                            );
-
-                        onChange?.(reminders);
-                    } catch (error) {
-                        console.error(
-                            'Unable to refresh reminders:',
-                            error
-                        );
-                    }
-                }
-            )
-            .subscribe();
-    } catch (error) {
-        console.error(
-            'Unable to subscribe to reminder changes:',
-            error
-        );
-    }
-
-    const handleLocalChange = async (
-        event
-    ) => {
-        if (
-            event?.detail?.patientId !==
-            patientId
-        ) {
-            return;
-        }
-
-        const reminders =
-            await fetchRemindersForPatient(
-                patientId
-            );
-
-        onChange?.(reminders);
-    };
-
-    window.addEventListener(
-        'neuroplay-reminder-change',
-        handleLocalChange
-    );
-
-    const handleStorageChange = async (
-        event
-    ) => {
-        if (
-            event.key !==
-            getStorageKey(patientId)
-        ) {
-            return;
-        }
-
-        const reminders =
-            await fetchRemindersForPatient(
-                patientId
-            );
-
-        onChange?.(reminders);
-    };
-
-    window.addEventListener(
-        'storage',
-        handleStorageChange
-    );
+    const channel = supabase
+        .channel(`reminders-${patientId}`)
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'reminders',
+                filter: `patient_id=eq.${patientId}`,
+            },
+            () => {
+                fetchRemindersForPatient(patientId).then(onChange);
+            }
+        )
+        .subscribe();
 
     return () => {
-        window.removeEventListener(
-            'neuroplay-reminder-change',
-            handleLocalChange
-        );
-
-        window.removeEventListener(
-            'storage',
-            handleStorageChange
-        );
-
-        if (channel) {
-            supabase.removeChannel(channel);
-        }
+        supabase.removeChannel(channel);
     };
 }
-
-/*
- * Alias used by dashboards that prefer the shorter
- * getReminders() name.
- */
-export const getReminders =
-    fetchRemindersForPatient;

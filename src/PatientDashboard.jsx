@@ -1,5 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { supabase } from './SupabaseClient';
 import './PatientDashboard.css';
+import {
+    fetchRemindersForPatient,
+    saveReminder,
+    toggleReminderCompletion,
+    deleteReminder,
+    subscribeToReminderChanges,
+} from './ReminderService';
 
 import MemoryMatchGame from './MemoryMatchGame';
 import PictureRecallGame from './PictureRecallGame';
@@ -85,33 +93,6 @@ const GAMES = [
     },
 ];
 
-const BASIC_REMINDER_FALLBACK = [
-    {
-        id: 'basic-medicine',
-        title: 'Medicine',
-        description: 'Take your scheduled medication.',
-        category: 'Medicine',
-        type: 'basic',
-        completed: false,
-    },
-    {
-        id: 'basic-water',
-        title: 'Hydration Check',
-        description: 'Remember to stay hydrated throughout the day.',
-        category: 'Health',
-        type: 'basic',
-        completed: false,
-    },
-    {
-        id: 'basic-activity',
-        title: 'Daily Activity',
-        description: 'Complete your planned cognitive or physical exercise.',
-        category: 'Activity',
-        type: 'basic',
-        completed: false,
-    },
-];
-
 function formatReminderTime(reminder) {
     if (!reminder?.reminder_time && !reminder?.due_time) {
         return '';
@@ -143,13 +124,8 @@ function getGreeting() {
 function normalizeReminder(reminder) {
     return {
         ...reminder,
-        completed: Boolean(
-            reminder.completed ??
-            reminder.is_completed ??
-            reminder.completion?.completed ??
-            false
-        ),
-        type: reminder.type || 'custom',
+        completed: Boolean(reminder.completed),
+        type: reminder.is_basic ? 'basic' : 'custom',
         category: reminder.category || 'General',
     };
 }
@@ -162,9 +138,17 @@ export default function PatientDashboard({ onLogout }) {
     const [reminders, setReminders] = useState([]);
     const [remindersLoading, setRemindersLoading] = useState(true);
     const [reminderError, setReminderError] = useState('');
+    const [showReminderForm, setShowReminderForm] = useState(false);
+    const [reminderSaving, setReminderSaving] = useState(false);
+    const [reminderForm, setReminderForm] = useState({
+        title: '',
+        description: '',
+        time: '',
+    });
 
     const [moodSelected, setMoodSelected] = useState(null);
     const [noteSaved, setNoteSaved] = useState(false);
+    const [sendingNote, setSendingNote] = useState(false);
 
     useEffect(() => {
         const storedSession = sessionStorage.getItem(
@@ -193,75 +177,108 @@ export default function PatientDashboard({ onLogout }) {
     }, [onLogout]);
 
     useEffect(() => {
-        if (!patient?.id && !patient?.patient_id) return;
+        const patientId = patient?.id || patient?.patient_id;
+        if (!patientId) return undefined;
 
-        let mounted = true;
+        let active = true;
+        setRemindersLoading(true);
+        setReminderError('');
 
-        async function loadReminders() {
-            setRemindersLoading(true);
-            setReminderError('');
+        fetchRemindersForPatient(patientId).then((data) => {
+            if (!active) return;
+            setReminders(data.map(normalizeReminder));
+            setRemindersLoading(false);
+        }).catch((error) => {
+            console.error('Unable to load reminders:', error);
+            if (!active) return;
+            setReminderError('Reminders could not be loaded.');
+            setRemindersLoading(false);
+        });
 
-            try {
-                const data = BASIC_REMINDER_FALLBACK;
-                if (!mounted) return;
-                setReminders(data.map(normalizeReminder));
-            } catch (error) {
-                console.error('Unable to load reminders:', error);
-                if (!mounted) return;
-                setReminderError('Reminders could not be loaded.');
-                setReminders(BASIC_REMINDER_FALLBACK);
-            } finally {
-                if (mounted) {
-                    setRemindersLoading(false);
-                }
-            }
-        }
-
-        loadReminders();
+        const unsubscribe = subscribeToReminderChanges(patientId, (next) => {
+            if (active) setReminders(next.map(normalizeReminder));
+        });
 
         return () => {
-            mounted = false;
+            active = false;
+            unsubscribe();
         };
     }, [patient]);
+
+    const handleReminderToggle = async (reminder) => {
+        const updated = await toggleReminderCompletion(reminder);
+        if (updated) {
+            setReminders((prev) => prev.map((item) => item.id === updated.id ? normalizeReminder(updated) : item));
+        }
+    };
+
+    const handleReminderSubmit = async (event) => {
+        event.preventDefault();
+        const patientId = patient?.id || patient?.patient_id;
+        if (!patientId || !reminderForm.title.trim()) return;
+
+        setReminderSaving(true);
+        const saved = await saveReminder({
+            title: reminderForm.title.trim(),
+            description: reminderForm.description.trim(),
+            time: reminderForm.time,
+            category: 'custom',
+            patient_id: patientId,
+            created_by: 'patient',
+            is_basic: false,
+        });
+
+        if (saved) {
+            setReminders((prev) => [...prev, normalizeReminder(saved)]);
+        }
+
+        setReminderSaving(false);
+        setReminderForm({ title: '', description: '', time: '' });
+        setShowReminderForm(false);
+    };
+
+    const handleReminderDelete = async (reminder) => {
+        if (!window.confirm(`Delete the reminder "${reminder.title}"?`)) return;
+        const removed = await deleteReminder(reminder);
+        if (removed) setReminders((prev) => prev.filter((item) => item.id !== reminder.id));
+    };
 
     function handleSignOut() {
         sessionStorage.removeItem('neuroplay_patient_session');
         onLogout?.();
     }
 
-    function handleSendNoteToCaregiver() {
+    async function handleSendNoteToCaregiver() {
         const message = window.prompt('Write a note for your caregiver:');
         const trimmedMessage = message?.trim();
 
         if (!trimmedMessage) return;
 
-        const patientId = patient?.id || patient?.patient_id || 'unknown-patient';
-        const messageEntry = {
-            id: `${patientId}-${Date.now()}`,
-            patientId,
-            patientName: patient.full_name || patient.name || 'Patient',
-            message: trimmedMessage,
-            timestamp: new Date().toISOString(),
-        };
+        const patientId = patient?.id || patient?.patient_id;
 
-        try {
-            const saved = localStorage.getItem('neuroplay_caregiver_messages');
-            const existingMessages = saved ? JSON.parse(saved) : [];
-            const safeMessages = Array.isArray(existingMessages)
-                ? existingMessages
-                : [];
-
-            const updatedMessages = [messageEntry, ...safeMessages].slice(0, 50);
-            localStorage.setItem(
-                'neuroplay_caregiver_messages',
-                JSON.stringify(updatedMessages)
+        if (!patientId) {
+            window.alert(
+                'Your note could not be sent — your session looks invalid. Please log in again.'
             );
+            return;
+        }
 
-            window.alert('Your note has been sent to your caregiver.');
-        } catch (error) {
+        setSendingNote(true);
+
+        const { error } = await supabase.rpc('send_patient_note', {
+            p_patient_id: patientId,
+            p_message: trimmedMessage,
+        });
+
+        setSendingNote(false);
+
+        if (error) {
             console.error('Unable to send note to caregiver:', error);
             window.alert('Your note could not be sent. Please try again.');
+            return;
         }
+
+        window.alert('Your note has been sent to your caregiver.');
     }
 
     function handleFeatureClick(featureName) {
@@ -455,8 +472,9 @@ export default function PatientDashboard({ onLogout }) {
                                         <button 
                                             className="db-btn db-btn-secondary db-sm"
                                             onClick={handleSendNoteToCaregiver}
+                                            disabled={sendingNote}
                                         >
-                                            Send Note to Caregiver
+                                            {sendingNote ? 'Sending…' : 'Send Note to Caregiver'}
                                         </button>
                                     </div>
                                 </div>
@@ -511,15 +529,67 @@ export default function PatientDashboard({ onLogout }) {
 
                     {activeTab === 'schedule' && (
                         <section className="db-section">
-                            <div className="db-section-header">
+                            <div className="db-section-header pt-schedule-header">
                                <div>
                                     <h3>Routine & Schedule Management</h3>
                                     <p>Review all assigned tasks, medications, and daily events.</p>
                                </div>
+
+                               <button
+                                    type="button"
+                                    className="pt-reminder-add-btn"
+                                    onClick={() => setShowReminderForm((prev) => !prev)}
+                               >
+                                    + Add reminder
+                               </button>
                             </div>
 
                             {reminderError && (
                                 <div className="db-alert db-alert-warning">{reminderError}</div>
+                            )}
+
+                            {showReminderForm && (
+                                <form className="pt-reminder-form" onSubmit={handleReminderSubmit}>
+                                    <div className="pt-reminder-form-grid">
+                                        <label>
+                                            Title
+                                            <input
+                                                value={reminderForm.title}
+                                                onChange={(e) => setReminderForm((prev) => ({ ...prev, title: e.target.value }))}
+                                                placeholder="e.g. Call my sister"
+                                                maxLength={80}
+                                                required
+                                            />
+                                        </label>
+
+                                        <label>
+                                            Time (optional)
+                                            <input
+                                                type="time"
+                                                value={reminderForm.time}
+                                                onChange={(e) => setReminderForm((prev) => ({ ...prev, time: e.target.value }))}
+                                            />
+                                        </label>
+
+                                        <label className="pt-reminder-form-wide">
+                                            Note (optional)
+                                            <textarea
+                                                value={reminderForm.description}
+                                                onChange={(e) => setReminderForm((prev) => ({ ...prev, description: e.target.value }))}
+                                                placeholder="Any extra detail"
+                                                maxLength={180}
+                                                rows={2}
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className="pt-reminder-form-actions">
+                                        <button type="button" className="pt-reminder-cancel-btn" onClick={() => setShowReminderForm(false)}>Cancel</button>
+                                        <button type="submit" className="pt-reminder-save-btn" disabled={reminderSaving}>
+                                            {reminderSaving ? 'Saving…' : 'Create reminder'}
+                                        </button>
+                                    </div>
+                                </form>
                             )}
 
                             {remindersLoading ? (
@@ -527,11 +597,12 @@ export default function PatientDashboard({ onLogout }) {
                             ) : (
                                 <div className="db-card-container">
                                     <div className="db-list-stack">
-                                        {reminders.map((reminder) => (
+                                        {reminders.filter((r) => r.enabled !== false).map((reminder) => (
                                             <ReminderRow
                                                 key={reminder.id}
                                                 reminder={reminder}
-                                                onToggle={() => {}}
+                                                onToggle={handleReminderToggle}
+                                                onDelete={handleReminderDelete}
                                             />
                                         ))}
                                     </div>
@@ -699,7 +770,7 @@ export default function PatientDashboard({ onLogout }) {
     );
 }
 
-function ReminderRow({ reminder, onToggle }) {
+function ReminderRow({ reminder, onToggle, onDelete }) {
     const time = formatReminderTime(reminder);
 
     return (
@@ -739,8 +810,21 @@ function ReminderRow({ reminder, onToggle }) {
                 </div>
             </div>
 
-            <div className="db-row-status-text">
-                {reminder.completed ? 'Done' : 'Pending'}
+            <div className="pt-reminder-row-end">
+                <div className="db-row-status-text">
+                    {reminder.completed ? 'Done' : 'Pending'}
+                </div>
+
+                {reminder.type === 'custom' && onDelete && (
+                    <button
+                        type="button"
+                        className="pt-reminder-delete-btn"
+                        onClick={() => onDelete(reminder)}
+                        aria-label={`Delete ${reminder.title}`}
+                    >
+                        Delete
+                    </button>
+                )}
             </div>
         </div>
     );

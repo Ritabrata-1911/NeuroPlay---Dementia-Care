@@ -1502,3 +1502,148 @@ button { -webkit-tap-highlight-color: transparent; }
     .db-welcome-text h2 { font-size: 1.3rem; }
     .db-section-header h3 { font-size: 1.2rem; }
 }
+
+/* --- PATIENT-ADDED REMINDERS (schedule tab) --- */
+.pt-schedule-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.pt-reminder-add-btn {
+    flex-shrink: 0;
+    border: none;
+    background: var(--db-caregiver-green, #2F8B61);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.pt-reminder-add-btn:hover {
+    background: #24704d;
+    transform: translateY(-1px);
+}
+
+.pt-reminder-form {
+    background: var(--db-bg-main, #f8fafc);
+    border: 1px solid var(--db-border-color, #e2e8f0);
+    border-radius: 14px;
+    padding: 1.1rem;
+}
+
+.pt-reminder-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 160px;
+    gap: 0.85rem;
+}
+
+.pt-reminder-form-wide {
+    grid-column: 1 / -1;
+}
+
+.pt-reminder-form-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: var(--db-slate-text, #64748b);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.pt-reminder-form-grid input,
+.pt-reminder-form-grid textarea {
+    width: 100%;
+    border: 1px solid var(--db-border-color, #e2e8f0);
+    border-radius: 9px;
+    padding: 0.65rem 0.75rem;
+    background: #ffffff;
+    color: var(--db-navy-text, #1a365d);
+    font: inherit;
+    resize: vertical;
+}
+
+.pt-reminder-form-grid input:focus,
+.pt-reminder-form-grid textarea:focus {
+    outline: 3px solid rgba(47, 139, 97, 0.15);
+    border-color: var(--db-caregiver-green, #2F8B61);
+}
+
+.pt-reminder-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+}
+
+.pt-reminder-cancel-btn {
+    border: 1px solid var(--db-border-color, #e2e8f0);
+    background: #ffffff;
+    color: var(--db-slate-text, #64748b);
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 0.55rem 1rem;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.pt-reminder-cancel-btn:hover {
+    border-color: #cbd5e1;
+    color: var(--db-navy-text, #1a365d);
+}
+
+.pt-reminder-save-btn {
+    border: none;
+    background: var(--db-caregiver-green, #2F8B61);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.pt-reminder-save-btn:hover {
+    background: #24704d;
+}
+
+.pt-reminder-save-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.pt-reminder-row-end {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+}
+
+.pt-reminder-delete-btn {
+    border: none;
+    background: transparent;
+    color: #b91c1c;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+}
+
+.pt-reminder-delete-btn:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+    .pt-reminder-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pt-reminder-form-wide {
+        grid-column: auto;
+    }
+}

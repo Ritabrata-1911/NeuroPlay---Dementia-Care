@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from './SupabaseClient';
 import AddPatientForm from './AddPatientForm';
 import CodeCountdown from './CodeCountdown';
@@ -27,6 +28,14 @@ const getPatientAvatar = (patient) => {
     }
 
     return { emoji: '🧓', label: 'patient', ring: 'ring-neutral' };
+};
+
+const getMessageInitials = (name) => {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 };
 
 const formatJoinedDate = (isoString) => {
@@ -89,27 +98,6 @@ const todayLabel = new Date().toLocaleDateString(undefined, {
     day: 'numeric',
 });
 
-// ---------------------------------------------------------------------------
-// REPORTS — SAMPLE DATA
-//
-// The games (MemoryMatchGame, NumberMemoryGame, PictureRecallGame) don't
-// write session results to Supabase yet. This block stands in for that
-// table so the Reports UI has something real to render.
-//
-// Once a `game_sessions` table exists (suggested shape: patient_id, game,
-// score, accuracy, duration_seconds, played_at), replace
-// `getSampleSessionsForPatient(patientId)` with a supabase query like:
-//
-//   const { data } = await supabase
-//     .from('game_sessions')
-//     .select('*')
-//     .eq('patient_id', patientId)
-//     .order('played_at', { ascending: false });
-//
-// and the rest of renderReports() below needs no other changes — it already
-// reads from a flat array of session objects with these same field names.
-// ---------------------------------------------------------------------------
-
 const GAME_META = {
     memory_match: { label: 'Memory Match', icon: '🧩' },
     number_memory: { label: 'Number Memory', icon: '🔢' },
@@ -157,6 +145,7 @@ const summarizeSessionsByGame = (sessions) => {
 };
 
 export default function CaregiverDashboard() {
+    const navigate = useNavigate();
     const [view, setView] = useState('dashboard');
     const [user, setUser] = useState(null);
     const [patients, setPatients] = useState([]);
@@ -167,7 +156,6 @@ export default function CaregiverDashboard() {
     const [activeResourceModal, setActiveResourceModal] = useState(null);
     const [emergencyCardPatientId, setEmergencyCardPatientId] = useState(null);
 
-    // --- Shared patient reminders (Supabase-ready, local fallback until the table exists) ---
     const [reminders, setReminders] = useState([]);
     const [reminderPatientId, setReminderPatientId] = useState(null);
     const [reminderLoading, setReminderLoading] = useState(false);
@@ -180,7 +168,6 @@ export default function CaregiverDashboard() {
         category: 'custom',
     });
 
-    // --- Quick Calm breathing tool state (lives here so it stops cleanly on modal close) ---
     const BREATHING_PHASES = ['inhale', 'hold1', 'exhale', 'hold2'];
     const BREATHING_LABELS = { inhale: 'Inhale', hold1: 'Hold', exhale: 'Exhale', hold2: 'Hold' };
     const [breathingActive, setBreathingActive] = useState(false);
@@ -199,7 +186,6 @@ export default function CaregiverDashboard() {
         return () => clearInterval(interval);
     }, [breathingActive]);
 
-    // --- Daily care checklist state (persists to localStorage, resets each calendar day) ---
     const todayKey = `neuroplay_checklist_${new Date().toISOString().slice(0, 10)}`;
     const CHECKLIST_ITEMS = [
         { key: 'medication', label: 'Medication given on schedule' },
@@ -228,46 +214,123 @@ export default function CaregiverDashboard() {
         });
     };
 
-    /*
-     * FRONTEND-ONLY ONLINE STATUS
-     *
-     * Stores:
-     * {
-     *   patientId: true/false
-     * }
-     *
-     * true  = patient dashboard is currently connected
-     * false = patient dashboard is not connected
-     */
     const [patientOnlineStatus, setPatientOnlineStatus] = useState({});
 
-    // --- Patient notes sent from the Patient Dashboard ---
-    // Frontend-only shared inbox. Notes are stored in localStorage so the
-    // caregiver dashboard can display them without changing the existing backend.
     const [patientMessages, setPatientMessages] = useState([]);
 
+    const unreadMessageCount = patientMessages.filter(
+        (message) => !message.read_at
+    ).length;
+
     useEffect(() => {
-        const loadPatientMessages = () => {
-            try {
-                const saved = localStorage.getItem('neuroplay_caregiver_messages');
-                const parsed = saved ? JSON.parse(saved) : [];
-                setPatientMessages(Array.isArray(parsed) ? parsed : []);
-            } catch {
+        if (!user?.id) return;
+
+        let mounted = true;
+
+        const loadPatientMessages = async () => {
+            const { data, error } = await supabase
+                .from('patient_notes')
+                .select('*')
+                .eq('caregiver_id', user.id)
+                .is('archived_at', null)
+                .order('created_at', { ascending: false });
+
+            if (!mounted) return;
+
+            if (error) {
+                console.error('Unable to load patient notes:', error.message);
                 setPatientMessages([]);
+                return;
             }
+
+            setPatientMessages(data || []);
         };
 
         loadPatientMessages();
 
-        const handleStorage = (event) => {
-            if (event.key === 'neuroplay_caregiver_messages') {
-                loadPatientMessages();
-            }
-        };
+        const channel = supabase
+            .channel(`caregiver-notes-${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'patient_notes',
+                    filter: `caregiver_id=eq.${user.id}`
+                },
+                (payload) => {
+                    if (!mounted) return;
+                    setPatientMessages((previous) => [payload.new, ...previous]);
+                }
+            )
+            .subscribe();
 
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
-    }, []);
+        return () => {
+            mounted = false;
+            supabase.removeChannel(channel);
+        };
+    }, [user?.id]);
+
+    const markNoteAsRead = async (noteId) => {
+        setPatientMessages((previous) =>
+            previous.map((message) =>
+                message.id === noteId
+                    ? { ...message, read_at: new Date().toISOString() }
+                    : message
+            )
+        );
+
+        const { error } = await supabase
+            .from('patient_notes')
+            .update({ read_at: new Date().toISOString() })
+            .eq('id', noteId);
+
+        if (error) {
+            console.error('Unable to mark note as read:', error.message);
+        }
+    };
+
+    const markAllNotesAsRead = async () => {
+        const unreadIds = patientMessages
+            .filter((message) => !message.read_at)
+            .map((message) => message.id);
+
+        if (unreadIds.length === 0) return;
+
+        const nowIso = new Date().toISOString();
+
+        setPatientMessages((previous) =>
+            previous.map((message) =>
+                unreadIds.includes(message.id)
+                    ? { ...message, read_at: nowIso }
+                    : message
+            )
+        );
+
+        const { error } = await supabase
+            .from('patient_notes')
+            .update({ read_at: nowIso })
+            .in('id', unreadIds);
+
+        if (error) {
+            console.error('Unable to mark all notes as read:', error.message);
+        }
+    };
+
+    const archiveNote = async (noteId) => {
+        setPatientMessages((previous) =>
+            previous.filter((message) => message.id !== noteId)
+        );
+
+        const { error } = await supabase
+            .from('patient_notes')
+            .update({ archived_at: new Date().toISOString() })
+            .eq('id', noteId);
+
+        if (error) {
+            console.error('Unable to archive note:', error.message);
+        }
+    };
 
     useEffect(() => {
         fetchUserAndPatients();
@@ -290,21 +353,6 @@ export default function CaregiverDashboard() {
         }
     }, [patients, reportsPatientId]);
 
-    /*
-     * SUPABASE REALTIME PRESENCE
-     *
-     * Every patient gets their own presence channel.
-     *
-     * Example:
-     * neuroplay-patient-presence-123
-     *
-     * If a patient is logged in, their PatientDashboard tracks
-     * presence on that channel.
-     *
-     * The caregiver listens to the same channel.
-     *
-     * No database column is required.
-     */
     useEffect(() => {
         if (!patients || patients.length === 0) {
             setPatientOnlineStatus({});
@@ -591,6 +639,7 @@ export default function CaregiverDashboard() {
                                     <div className="reminder-row-meta">
                                         {reminder.time && <span>🕐 {reminder.time}</span>}
                                         {reminder.completed ? <span>Completed today</span> : <span>Not completed</span>}
+                                        {reminder.created_by === 'patient' && <span>Added by patient</span>}
                                     </div>
                                 </div>
                                 {!reminder.is_basic && (
@@ -645,11 +694,6 @@ export default function CaregiverDashboard() {
         } else if (data) {
             setPatients(data);
 
-            /*
-             * Initially assume everyone is offline.
-             * Realtime Presence will immediately correct this
-             * for patients who are currently logged in.
-             */
             const initialStatus = {};
 
             data.forEach((patient) => {
@@ -749,7 +793,7 @@ export default function CaregiverDashboard() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        window.location.href = '/';
+        navigate('/');
     };
 
     const handleSidebarClick = (key) => {
@@ -809,9 +853,6 @@ export default function CaregiverDashboard() {
             .includes(searchTerm.trim().toLowerCase())
     );
 
-    /*
-     * Shared sidebar
-     */
     const renderSidebar = (activeKey) => (
         <aside className="dashboard-sidebar">
             <div className="sidebar-brand">
@@ -865,9 +906,6 @@ export default function CaregiverDashboard() {
         </aside>
     );
 
-    /*
-     * Shared page header (used by Reports & Resources too)
-     */
     const renderPageHeader = (title, subtitle) => (
         <header className="dashboard-header">
             <div className="header-title">
@@ -876,16 +914,6 @@ export default function CaregiverDashboard() {
             </div>
 
             <div className="header-actions">
-                <button
-                    className="header-icon-btn"
-                    aria-label="Notifications"
-                    onClick={() =>
-                        alert('You have no new notifications.')
-                    }
-                >
-                    🔔
-                </button>
-
                 <button
                     className="header-avatar-btn"
                     onClick={() => setShowProfileModal(true)}
@@ -903,9 +931,6 @@ export default function CaregiverDashboard() {
         </header>
     );
 
-    /*
-     * Profile modal
-     */
     const renderProfileModal = () => {
         if (!showProfileModal) return null;
 
@@ -983,9 +1008,6 @@ export default function CaregiverDashboard() {
         );
     };
 
-    /*
-     * PATIENTS VIEW
-     */
     if (view === 'patients') {
         return (
             <div className="dashboard-shell">
@@ -998,18 +1020,6 @@ export default function CaregiverDashboard() {
                         </div>
 
                         <div className="header-actions">
-                            <button
-                                className="header-icon-btn"
-                                aria-label="Notifications"
-                                onClick={() =>
-                                    alert(
-                                        'You have no new notifications.'
-                                    )
-                                }
-                            >
-                                🔔
-                            </button>
-
                             <button
                                 className="header-avatar-btn"
                                 onClick={() =>
@@ -1128,7 +1138,6 @@ export default function CaregiverDashboard() {
                                             key={patient.id}
                                             className="patient-card"
                                         >
-                                            {/* ONLINE / OFFLINE STATUS */}
                                             <span
                                                 className={`patient-status-pill ${
                                                     isOnline
@@ -1292,9 +1301,6 @@ export default function CaregiverDashboard() {
         );
     }
 
-    /*
-     * REPORTS VIEW
-     */
     if (view === 'reports') {
         const selectedPatient =
             patients.find((p) => p.id === reportsPatientId) || patients[0] || null;
@@ -1447,12 +1453,7 @@ export default function CaregiverDashboard() {
         );
     }
 
-    /*
-     * RESOURCES VIEW
-     */
     if (view === 'resources') {
-        // Cards only available once logged in — personalized or product-specific,
-        // so they can't just live on the public marketing site.
         const toolCards = [
             {
                 key: 'breathing',
@@ -1849,9 +1850,6 @@ export default function CaregiverDashboard() {
         );
     }
 
-    /*
-     * SETTINGS VIEW
-     */
     if (view === 'settings') {
         return (
             <div className="dashboard-shell">
@@ -1871,9 +1869,6 @@ export default function CaregiverDashboard() {
         );
     }
 
-    /*
-     * MAIN DASHBOARD
-     */
     return (
         <div className="dashboard-shell">
             {renderSidebar('dashboard')}
@@ -1889,18 +1884,6 @@ export default function CaregiverDashboard() {
                     </div>
 
                     <div className="header-actions">
-                        <button
-                            className="header-icon-btn"
-                            aria-label="Notifications"
-                            onClick={() =>
-                                alert(
-                                    'You have no new notifications.'
-                                )
-                            }
-                        >
-                            🔔
-                        </button>
-
                         <button
                             className="header-avatar-btn"
                             onClick={() =>
@@ -1934,7 +1917,7 @@ export default function CaregiverDashboard() {
                     </span>
                 </div>
 
-                <div className="stats-grid">
+                <div className="stats-grid stats-grid-top">
                     <div
                         className="stat-card primary-action"
                         onClick={() =>
@@ -1991,50 +1974,99 @@ export default function CaregiverDashboard() {
                             Cognitive performance trends
                         </p>
                     </div>
+                </div>
 
-                    <div className="stat-card alerts-message-card">
-                        <span className="alerts-count-badge">
-                            {patientMessages.length}
-                        </span>
-
-                        <span className="stat-card-icon stat-icon-amber">
-                            🔔
-                        </span>
-
-                        <h3>Alerts & Messages</h3>
-
-                        {patientMessages.length === 0 ? (
-                            <p className="stat-placeholder">
-                                No new messages from patients
-                            </p>
-                        ) : (
-                            <div className="alerts-message-list">
-                                {patientMessages.slice(0, 3).map((message) => (
-                                    <div
-                                        className="alerts-message-item"
-                                        key={message.id || `${message.timestamp}-${message.patientId}`}
-                                    >
-                                        <strong>
-                                            {message.patientName || 'Patient'}
-                                        </strong>
-                                        <span>{message.message}</span>
-                                        <small>
-                                            {message.timestamp
-                                                ? new Date(message.timestamp).toLocaleString()
-                                                : 'Just now'}
-                                        </small>
-                                    </div>
-                                ))}
-
-                                {patientMessages.length > 3 && (
-                                    <p className="alerts-more-message">
-                                        +{patientMessages.length - 3} more message{patientMessages.length - 3 === 1 ? '' : 's'}
-                                    </p>
-                                )}
+                <div className="stat-card alerts-panel-standalone">
+                    <div className="alerts-panel-standalone-head">
+                        <div className="alerts-panel-title-group">
+                            <span className="alerts-panel-icon">🔔</span>
+                            <div>
+                                <h3>Alerts &amp; Messages</h3>
+                                <p className="alerts-panel-subtitle">
+                                    {unreadMessageCount > 0
+                                        ? `${unreadMessageCount} unread note${unreadMessageCount === 1 ? '' : 's'} from patients`
+                                        : 'All caught up'}
+                                </p>
                             </div>
+                        </div>
+
+                        {unreadMessageCount > 1 && (
+                            <button
+                                type="button"
+                                className="alerts-mark-all-btn"
+                                onClick={markAllNotesAsRead}
+                            >
+                                Mark all as read
+                            </button>
                         )}
                     </div>
+
+                    {patientMessages.length === 0 ? (
+                        <p className="stat-placeholder">
+                            No new messages from patients
+                        </p>
+                    ) : (
+                        <div className="alerts-message-list">
+                            {patientMessages.map((message) => (
+                                <div
+                                    className={`msg-item ${message.read_at ? 'is-read' : 'unread'}`}
+                                    key={message.id}
+                                >
+                                    <span className="msg-avatar">
+                                        {message.patient_avatar_url ? (
+                                            <img src={message.patient_avatar_url} alt="" />
+                                        ) : (
+                                            getMessageInitials(message.patient_name)
+                                        )}
+                                    </span>
+
+                                    <div className="msg-body">
+                                        <div className="msg-content">
+                                            <p className="msg-meta-line">
+                                                <span className="msg-name-inline">
+                                                    {message.patient_name || 'Patient'}
+                                                </span>
+                                                <span className="msg-meta-sub">sent a note</span>
+                                                {!message.read_at && <span className="msg-unread-tag">New</span>}
+                                            </p>
+
+                                            <p className="msg-text-line">
+                                                {message.message}
+                                            </p>
+
+                                            <div className="msg-actions">
+                                                {!message.read_at && (
+                                                    <button
+                                                        type="button"
+                                                        className="msg-action-btn primary"
+                                                        onClick={() => markNoteAsRead(message.id)}
+                                                    >
+                                                        Mark as read
+                                                    </button>
+                                                )}
+
+                                                <button
+                                                    type="button"
+                                                    className="msg-action-btn"
+                                                    onClick={() => archiveNote(message.id)}
+                                                >
+                                                    Dismiss
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <span className="msg-time">
+                                            {message.created_at
+                                                ? new Date(message.created_at).toLocaleString()
+                                                : 'Just now'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
+
 
                 {renderRemindersPanel()}
 
