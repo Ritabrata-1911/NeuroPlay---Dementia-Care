@@ -1,0 +1,172 @@
+/* ============================================================
+   REMINDER STATUS BADGE
+   Small inline pill shown next to a reminder's time.
+   completed = green · missed = red · pending = amber
+   ============================================================ */
+
+.reminder-status-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    margin-left: 0.4rem;
+    white-space: nowrap;
+}
+
+.reminder-status-completed {
+    background-color: #E1F3E6;
+    color: #1F7A43;
+}
+
+.reminder-status-pending {
+    background-color: #FDF0DA;
+    color: #B5751A;
+}
+
+.reminder-status-missed {
+    background-color: #FBE3E0;
+    color: #B5322A;
+}
+
+/* ============================================================
+   REMINDER ROW TINT
+   Applied to the whole reminder row/card as an additional class,
+   alongside whatever classes it already has.
+   ============================================================ */
+
+.reminder-row-tint {
+    border-radius: 12px;
+}
+
+.reminder-row-tint-completed {
+    background-color: #F1FAF3 !important;
+    border-left: 4px solid #2F8B57;
+}
+
+.reminder-row-tint-pending {
+    background-color: #FFFAF0 !important;
+    border-left: 4px solid #D9A441;
+}
+
+.reminder-row-tint-missed {
+    background-color: #FDF1EF !important;
+    border-left: 4px solid #C0392B;
+}
+
+/* ============================================================
+   REMINDER ALARM BANNER STACK — PATIENT DASHBOARD ONLY
+   Fixed to the top-right; stacks multiple alerts if more than
+   one reminder is due at once.
+   ============================================================ */
+
+.reminder-alarm-stack {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-width: 340px;
+    width: calc(100vw - 2.5rem);
+}
+
+.reminder-alarm-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    background: #ffffff;
+    border: 1px solid #F0C4B8;
+    border-left: 5px solid #C6852A;
+    border-radius: 14px;
+    padding: 0.85rem 0.9rem;
+    box-shadow: 0 10px 30px rgba(181, 50, 42, 0.18);
+    animation: reminderAlarmIn 0.25s ease-out, reminderAlarmShake 0.6s ease-in-out 0.25s;
+}
+
+@keyframes reminderAlarmIn {
+    from { transform: translateY(-8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes reminderAlarmShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-3px); }
+    40% { transform: translateX(3px); }
+    60% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+}
+
+.reminder-alarm-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.reminder-alarm-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.reminder-alarm-body strong {
+    font-size: 0.92rem;
+    color: #2A2E27;
+}
+
+.reminder-alarm-body span {
+    font-size: 0.8rem;
+    color: #7A8A7E;
+}
+
+.reminder-alarm-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.reminder-alarm-complete-btn {
+    background: #2C4A3E;
+    color: #ffffff;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35rem 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.reminder-alarm-complete-btn:hover {
+    background: #1E332A;
+}
+
+.reminder-alarm-dismiss-btn {
+    background: none;
+    border: none;
+    font-size: 0.95rem;
+    color: #A0AA9F;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.2rem;
+}
+
+.reminder-alarm-dismiss-btn:hover {
+    color: #4B5850;
+}
+
+@media (max-width: 480px) {
+    .reminder-alarm-stack {
+        top: 0.75rem;
+        right: 0.75rem;
+        left: 0.75rem;
+        max-width: none;
+        width: auto;
+    }
+}

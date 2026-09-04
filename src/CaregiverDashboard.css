@@ -1463,6 +1463,194 @@
 .basic-reminder-chip:hover { border-color: var(--db-primary-blue); background: #f0f7ff; }
 .basic-reminder-chip-active { border-color: #b9dfcd; background: #edf9f3; }
 .basic-reminder-chip small { color: #64748b; font-weight: 700; }
+
+.reminders-routine-note { font-size: 0.85rem; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 0.9rem; margin-bottom: 1.1rem; }
+.reminders-routine-note a { color: var(--db-primary-blue); font-weight: 700; text-decoration: none; }
+.reminders-routine-note a:hover { text-decoration: underline; }
+
+/* ============================================================
+   DAILY ROUTINE PANEL — Medicine / Hydration / Activity / Appointments
+   Caregiver-only management. Sits above the custom Reminders panel.
+   ============================================================ */
+
+.daily-routine-panel {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1.75rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eef2f7;
+    margin-bottom: 1.75rem;
+}
+
+.routine-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.routine-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.1rem;
+}
+
+.routine-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.routine-card-icon { font-size: 1.25rem; }
+
+.routine-card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--db-navy-text);
+    flex: 1;
+}
+
+.routine-add-btn {
+    background: var(--db-primary-blue, #2F70B5);
+    color: #fff;
+    border: none;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.35rem 0.7rem;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.routine-add-btn:hover { opacity: 0.9; }
+
+.routine-card-hint {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0.35rem 0;
+}
+
+.routine-empty-row {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    padding: 0.5rem 0.1rem;
+}
+
+.routine-item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.routine-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.6rem 0.75rem;
+}
+
+.routine-item-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.routine-item-main strong {
+    color: var(--db-navy-text);
+    font-size: 0.9rem;
+}
+
+.routine-item-meta {
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+.routine-item-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.routine-item-actions button {
+    background: none;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4a5568;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+}
+
+.routine-item-actions button:hover {
+    border-color: var(--db-primary-blue);
+    color: var(--db-primary-blue);
+}
+
+.routine-inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.65rem;
+    margin: 0.5rem 0;
+}
+
+.routine-inline-form input {
+    border: 1.5px solid var(--db-border-color, #cbd5e1);
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    flex: 1;
+    min-width: 110px;
+}
+
+.routine-inline-form-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-left: auto;
+}
+
+.hydration-config-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.hydration-config-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.hydration-config-row input {
+    border: 1.5px solid var(--db-border-color, #cbd5e1);
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+    width: 90px;
+}
+
+@media (max-width: 640px) {
+    .routine-item-row { flex-direction: column; align-items: flex-start; }
+    .routine-inline-form-actions { margin-left: 0; }
+}
 .reminder-form-card { background: #f8fafc; border: 1px solid #dbe4ee; border-radius: 15px; padding: 1rem; margin-bottom: 1rem; }
 .reminder-form-heading { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 .reminder-form-heading h3 { margin: 0; color: var(--db-navy-text); font-size: 1rem; }
@@ -1701,5 +1889,222 @@
   .msg-body {
     flex-direction: column;
     gap: 0.3rem;
+  }
+}
+
+/* =========================================================
+   CAREGIVER DASHBOARD VISUAL REFRESH
+   Keeps the existing NeuroPlay colour palette intact.
+   ========================================================= */
+
+.dashboard-shell {
+  background: #f4f7fb;
+}
+
+.dashboard-sidebar {
+  width: 252px;
+  padding: 1.5rem 1rem;
+}
+
+.sidebar-brand {
+  margin-bottom: 2rem;
+  padding: 0 0.5rem;
+  font-size: 1.18rem;
+}
+
+.sidebar-nav {
+  gap: 0.5rem;
+}
+
+.sidebar-link {
+  min-height: 46px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+}
+
+.dashboard-main {
+  width: 100%;
+  max-width: 1440px;
+  padding: 2rem clamp(1.5rem, 3vw, 3rem) 3.5rem;
+}
+
+.dashboard-header {
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.header-subtitle {
+  margin-bottom: 0.35rem;
+  font-size: 0.92rem;
+  color: #64748b;
+}
+
+.header-title h1 {
+  font-size: clamp(1.65rem, 2.3vw, 2.05rem);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.header-actions {
+  gap: 0.55rem;
+}
+
+.header-avatar-btn,
+.header-logout-btn {
+  min-height: 42px;
+}
+
+.page-status-strip {
+  margin-bottom: 1.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dfe7f0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.page-status-date {
+  font-size: 0.84rem;
+}
+
+.sync-chip {
+  padding: 0.42rem 0.8rem;
+}
+
+.stats-grid.stats-grid-top {
+  grid-template-columns: 1.15fr 0.85fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card {
+  min-height: 154px;
+  padding: 1.35rem;
+  border-radius: 18px;
+  box-shadow: 0 5px 18px rgba(20, 44, 75, 0.055);
+  border-color: #e5ebf2;
+}
+
+.stat-card h3 {
+  margin-bottom: 0.35rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.stat-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.stat-value {
+  font-size: 2.1rem;
+  line-height: 1;
+  margin-top: 0.35rem;
+}
+
+.stat-placeholder {
+  max-width: 28rem;
+  line-height: 1.45;
+}
+
+.stat-card.primary-action {
+  min-height: 154px;
+  align-items: flex-start;
+  justify-content: space-between;
+  text-align: left;
+  padding: 1.4rem 1.5rem;
+  border-radius: 18px;
+}
+
+.stat-card.primary-action .stat-card-icon {
+  margin-bottom: 0.8rem;
+}
+
+.stat-card.primary-action h2 {
+  font-size: 1.2rem;
+  letter-spacing: -0.015em;
+}
+
+.stat-card.primary-action p {
+  max-width: 23rem;
+  line-height: 1.45;
+}
+
+/* Make the alert area feel like a dashboard section rather than a loose card. */
+.alerts-panel-standalone {
+  margin-bottom: 1.25rem;
+  padding: 1.35rem 1.5rem;
+  border-top-width: 3px;
+  border-radius: 16px;
+  box-shadow: 0 5px 18px rgba(20, 44, 75, 0.045);
+}
+
+.alerts-panel-standalone-head {
+  margin-bottom: 1rem;
+  padding-bottom: 0.9rem;
+}
+
+.alerts-panel-title-group {
+  gap: 0.75rem;
+}
+
+.alerts-panel-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+
+/* Dashboard home content cards. */
+.dashboard-home-shell .patients-section,
+.dashboard-home-shell .daily-routine-panel,
+.dashboard-home-shell .reminders-panel {
+  margin-top: 1rem;
+}
+
+.dashboard-footer {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+}
+
+/* Prevent cards from becoming cramped before the mobile breakpoint. */
+@media (max-width: 1100px) {
+  .stats-grid.stats-grid-top {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-card.primary-action {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .dashboard-main {
+    padding: 1.25rem 1rem 2.5rem;
+  }
+
+  .dashboard-header {
+    margin-bottom: 1rem;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-avatar-btn,
+  .header-logout-btn {
+    flex: 0 0 auto;
+  }
+
+  .page-status-strip {
+    margin-bottom: 1rem;
+  }
+
+  .stats-grid.stats-grid-top {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card.primary-action {
+    grid-column: auto;
   }
 }

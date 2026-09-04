@@ -441,6 +441,12 @@ body {
     gap: 1.5rem;
 }
 
+.db-section + .db-section {
+    margin-top: 2.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--db-border-color);
+}
+
 .db-section-header h3 {
     font-size: 1.25rem;
     font-weight: 700;
@@ -641,6 +647,17 @@ body {
 }
 
 /* Wellness Shortcuts Grid */
+.db-routine-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.db-routine-accordion-item {
+    display: flex;
+    flex-direction: column;
+}
+
 .db-quick-links-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -658,6 +675,7 @@ body {
     cursor: pointer;
     text-align: left;
     transition: all 0.2s;
+    width: 100%;
 }
 
 .db-shortcut-card:hover {
@@ -692,6 +710,150 @@ body {
 .db-arrow {
     color: var(--db-slate-text);
     font-weight: bold;
+}
+
+.db-shortcut-card-active {
+    border-color: var(--db-active-green);
+    background: #f1faf3;
+}
+
+.db-routine-accordion-item .db-shortcut-card-active {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.db-routine-accordion-item .db-routine-detail {
+    margin-top: 0;
+    border-top: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+/* ============================================================
+   DAILY ROUTINE DETAIL — expanded view under a Daily Care Overview
+   card. Read-only for the patient except marking complete / logging
+   water; everything here is set by the caregiver.
+   ============================================================ */
+
+.db-routine-detail {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: var(--db-card-bg);
+    border: 1px solid var(--db-border-color);
+    border-radius: 14px;
+    padding: 1rem;
+}
+
+.db-routine-empty {
+    font-size: 0.85rem;
+    color: var(--db-slate-text);
+    margin: 0;
+}
+
+.db-routine-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #f8fafc;
+    border: 1px solid var(--db-border-color);
+    border-radius: 12px;
+    padding: 0.75rem;
+}
+
+.db-routine-row.completed {
+    background: #f1faf3;
+}
+
+.db-routine-row-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--db-navy-text);
+}
+
+.db-routine-row-main strong {
+    font-size: 0.9rem;
+}
+
+.db-routine-row-main span {
+    font-size: 0.78rem;
+    color: var(--db-slate-text);
+}
+
+.db-hydration-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+}
+
+.db-hydration-bar-track {
+    width: 100%;
+    max-width: 320px;
+    height: 14px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.db-hydration-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #60a5fa, #2563eb);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.db-hydration-count {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--db-navy-text);
+    margin: 0;
+}
+
+.db-hydration-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.db-hydration-btn {
+    border: 1.5px solid var(--db-border-color);
+    background: #ffffff;
+    color: var(--db-navy-text);
+    font-size: 1.1rem;
+    font-weight: 700;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.db-hydration-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.db-hydration-btn-primary {
+    width: auto;
+    height: auto;
+    border-radius: 30px;
+    padding: 0.7rem 1.4rem;
+    background: var(--db-active-green, #2F8B61);
+    border-color: var(--db-active-green, #2F8B61);
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.db-hydration-done {
+    color: var(--db-active-green, #2F8B61);
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin: 0;
 }
 
 /* Footer Section */
@@ -732,6 +894,32 @@ body {
 }
 
 .db-checkbox-label input:checked+.db-custom-check {
+    background: var(--db-active-green);
+    border-color: var(--db-active-green);
+}
+
+/* Button-based equivalent of .db-custom-check, used for the Daily
+   Routine detail rows (medicine / activity / appointment) so they
+   don't need a wrapping <label>/<input> pair. */
+.pt-reminder-checkbox {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--db-border-color);
+    border-radius: 8px;
+    background: #ffffff;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.pt-reminder-checkbox.checked {
     background: var(--db-active-green);
     border-color: var(--db-active-green);
 }

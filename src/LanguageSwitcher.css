@@ -1,0 +1,25 @@
+/* src/LanguageSwitcher.css */
+.language-switcher {
+    background-color: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #1a365d;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 20px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.language-switcher:hover,
+.language-switcher:focus {
+    border-color: #2F70B5;
+}
+
+@media (max-width: 720px) {
+    .language-switcher {
+        font-size: 0.85rem;
+        padding: 0.45rem 0.7rem;
+    }
+}

@@ -1,0 +1,736 @@
+{
+    "brand": "NeuroPlay",
+    "nav": {
+        "home": "Home",
+        "howItWorks": "How It Works",
+        "about": "About",
+        "resources": "Resources",
+        "contact": "Contact"
+    },
+    "hero": {
+        "tagline": "AI-Powered Cognitive Gaming & Dementia Assistance for NER"
+    },
+    "cards": {
+        "patientLogin": "Patient Login",
+        "caregiverLogin": "Caregiver Login"
+    },
+    "common": {
+        "backHome": "Back to Home"
+    },
+    "howItWorks": {
+        "title": "How NeuroPlay Works",
+        "subtitle": "A seamless three-step platform designed for early cognitive tracking and rural dementia care in the North Eastern Region.",
+        "step1": {
+            "label": "Step 1",
+            "title": "Adaptive Cognitive Games",
+            "text": "Patients engage in localized memory puzzles, visual pattern recognition, and daily routine recall games crafted to slow cognitive decline."
+        },
+        "step2": {
+            "label": "Step 2",
+            "title": "Local Dialect Voice Prompts",
+            "text": "Automated daily reminders for medication, hydration, and exercise are delivered in Assamese, Bodo, Khasi, Mizo, and Manipuri, using natural phonetic scripts and regional accents."
+        },
+        "step3": {
+            "label": "Step 3",
+            "title": "Real-Time Caregiver Sync",
+            "text": "Caregivers monitor performance trends via secure dashboards, updated in real time as patients complete games and activities."
+        }
+    },
+    "about": {
+        "title": "About NeuroPlay",
+        "subtitle": "Empowering families and caregivers in the North Eastern Region with cognitive digital health tools.",
+        "coverage": "Built for all 8 North Eastern States",
+        "mission": {
+            "title": "Our Mission",
+            "text": "To bridge healthcare barriers in remote NER areas through AI-driven cognitive gaming and routine management — built for families who don't have a neurologist down the road."
+        },
+        "caregiverSupport": {
+            "title": "Caregiver Support",
+            "text": "Equipping caregivers with real-time analytics dashboards, automated alerts, and offline data synchronization."
+        },
+        "cultural": {
+            "title": "Cultural & Accessible First",
+            "text": "Designed with regional themes and accessible tools for families across the North Eastern Region."
+        }
+    },
+    "resources": {
+        "title": "Dementia Care & NER Support Resources",
+        "subtitle": "Empowering rural and remote families across the North Eastern Region with cognitive guides, audio tools, and offline support packs.",
+        "directory": {
+            "title": "NER Dementia & Neurological Care Directory",
+            "text": "Access emergency neurological helplines, medical centers, and tele-consultation points across the 8 North Eastern States.",
+            "button": "View Medical Directory"
+        },
+        "manual": {
+            "title": "Caregiver Manual & Stress Relief",
+            "text": "Step-by-step guides for continuous patient monitoring, managing memory decline anxiety, and caregiver well-being routines.",
+            "button": "Read Caregiver Guide"
+        },
+        "tips": {
+            "title": "Dementia Care Tips & Articles",
+            "text": "Practical, easy-to-follow guidance on nutrition, exercise, sleep, home safety, and everyday communication for dementia patients.",
+            "button": "Explore Care Tips"
+        },
+        "support": {
+            "title": "Support Groups & Community",
+            "text": "Connect with caregiver support networks, NGOs, and community programs working on dementia care across the North Eastern Region.",
+            "button": "Find Support Groups"
+        }
+    },
+    "breathing": {
+        "title": "Caregiver Box Breathing Exercise",
+        "description": "Follow the 4-4-4-4 pattern — inhale, hold, exhale, hold — to reset your stress levels during challenging moments.",
+        "minutes2": "2 min",
+        "minutes5": "5 min",
+        "ready": "Ready",
+        "seconds4": "4s",
+        "holdCue": "HOLD YOUR BREATH",
+        "sessionTimeLeft": "Session time left:",
+        "stopExercise": "Stop Exercise",
+        "startExercise": "Start Breathing Exercise",
+        "preview": "Previewing the \"{{phase}}\" phase. Press Start to run the real timer.",
+        "phases": {
+            "inhale": "Inhale",
+            "hold": "Hold",
+            "exhale": "Exhale"
+        }
+    },
+    "directory": {
+        "title": "North-Eastern Region (NER) Neurological Care Directory",
+        "subtitle": "Verified emergency lines, neurology departments, and memory clinics across all 8 Northeastern States:",
+        "emergency": {
+            "title": "Pan-NER Emergency Helplines",
+            "teleManas": "Tele-MANAS Mental Health Support Helpline:",
+            "national": "National Emergency Response Service:"
+        },
+        "details": {
+            "assam.gauhati": "Dept of Neurology & Memory Clinic | Ph: 0361-3582043 / 0361-2452244",
+            "assam.amc": "Department of Neurology & Geriatric Care",
+            "assam.silchar": "General Medicine & Neurology OPD",
+            "meghalaya.neigrihms": "Advanced Tertiary Care Hospital & Neurology Dept | Emergency: +91 364 2530000, Enquiry: +91 364 2530002",
+            "meghalaya.civil": "General Neurology & Senior Citizen Health Support",
+            "manipur.rims": "Centre of Excellence / Dept of Neurology | Ph: 0385-2414539 / Telemedicine Hub",
+            "manipur.jnims": "Neurology & Psychiatry Outpatient Care",
+            "tripura.agmc": "Dedicated Neurological Clinic & Emergency Care",
+            "mizoram.zmc": "State Referral Hospital & Dept of Medicine",
+            "nagaland.kohima": "Regional Health Center & Emergency Support",
+            "arunachal.sikkim.trihms": "Specialized Consultation",
+            "arunachal.sikkim.stnm": "Neurology & Geriatric Care Unit",
+            "teleManasSupport": "14416 (Free 24/7 psychological & cognitive distress support)"
+        }
+    },
+    "manual": {
+        "title": "Caregiver Manual & Stress Relief",
+        "subtitle": "Comprehensive strategies, de-escalation protocols, and well-being tools for dementia caregivers in NER.",
+        "tabs": {
+            "guide": "Monitoring Guide",
+            "deescalation": "Managing Anxiety",
+            "breathing": "Caregiver Breathing Tool",
+            "dementia": "About Dementia"
+        },
+        "guide": {
+            "title": "1. Daily Routine & Schedule Synchronization",
+            "text": "Maintain consistent mealtime and activity schedules."
+        },
+        "deescalation": {
+            "title": "1. Managing Sundowning & Agitation",
+            "text": "Reduce ambient sensory stimuli and initiate calm background audio."
+        }
+    },
+    "dementia": {
+        "whatIs": {
+            "title": "What Is Dementia?",
+            "text": "Dementia is an umbrella term for a decline in memory, thinking, and reasoning skills severe enough to interfere with daily life. It is caused by damage to brain cells and is progressive, meaning symptoms generally worsen over time. Alzheimer's disease is the most common form, accounting for a majority of cases."
+        },
+        "earlySigns": {
+            "title": "Common Early Signs",
+            "text": "Frequent memory lapses, difficulty finding words, confusion about time or place, trouble planning familiar tasks, and noticeable changes in mood or personality are often among the first signs families notice."
+        },
+        "stages": {
+            "title": "The Three Broad Stages",
+            "early": "Mild forgetfulness and occasional confusion; the person is usually still independent.",
+            "middle": "Memory gaps grow, help is needed with daily tasks, and wandering or repeating questions is common.",
+            "late": "Significant loss of ability to communicate and carry out basic activities; full-time care is typically required.",
+            "earlyLabel": "Early stage:",
+            "middleLabel": "Middle stage:",
+            "lateLabel": "Late stage:"
+        },
+        "detection": {
+            "title": "Why Early Detection Matters",
+            "text": "There is currently no cure, but early diagnosis allows families to plan care, start supportive therapies, adjust routines, and access medications that can slow symptom progression in some cases."
+        },
+        "supporting": {
+            "title": "Supporting a Person with Dementia",
+            "text": "Consistent routines, a calm and well-lit environment, patience during communication, and regular cognitive engagement (such as memory games and social interaction) can meaningfully improve quality of life for both patients and caregivers."
+        }
+    },
+    "tips": {
+        "title": "Dementia Care Tips & Articles",
+        "subtitle": "Practical guidance families and caregivers can apply at home:",
+        "nutrition": {
+            "title": "Nutrition & Diet",
+            "text": "Offer small, frequent meals with familiar regional foods. Keep water visible and accessible throughout the day, as thirst cues are often forgotten. Limit sugary and heavily processed snacks, and favor finger foods if using utensils becomes difficult."
+        },
+        "activity": {
+            "title": "Physical Activity",
+            "text": "Short daily walks, light stretching, or simple household chores help maintain mobility and improve mood. Aim for gentle, consistent movement rather than intense exercise, and always supervise outdoor activity."
+        },
+        "sleep": {
+            "title": "Sleep & Sundowning",
+            "text": "Keep a consistent bedtime routine, limit caffeine after noon, and use dim, warm lighting in the evening. If confusion or agitation increases at dusk, calm music and a familiar face nearby can help ease the transition."
+        },
+        "safety": {
+            "title": "Home Safety",
+            "text": "Remove loose rugs and clutter, install grab bars near the bathroom, label rooms clearly, and keep sharp objects, medicines, and cleaning supplies locked away or out of reach."
+        },
+        "communication": {
+            "title": "Communication",
+            "text": "Use short, simple sentences and maintain eye contact. Give the person time to respond, avoid quizzing their memory, and focus on the feeling behind their words rather than correcting every detail."
+        }
+    },
+    "support": {
+        "title": "Support Groups & Community",
+        "subtitle": "Caregivers don't have to manage alone — these are the kinds of support worth seeking out in the NER:",
+        "local": {
+            "title": "Local Caregiver Support Groups",
+            "text": "Many district hospitals and NGOs run periodic caregiver meet-ups where families share coping strategies and practical advice. Ask your nearest medical center (see the Care Directory) whether one operates in your area."
+        },
+        "organizations": {
+            "title": "National & Regional Dementia Organizations",
+            "text": "Bodies such as the Alzheimer's and Related Disorders Society of India (ARDSI) run chapters and helplines across India, offering counseling, day-care referrals, and caregiver training resources."
+        },
+        "online": {
+            "title": "Online Communities",
+            "text": "Moderated online forums and social media groups for dementia caregivers can offer round-the-clock peer support, especially useful for families in remote areas with limited access to in-person groups."
+        },
+        "mentalHealth": {
+            "title": "Mental Health Support for Caregivers",
+            "text": "Caregiver burnout is common and real. The Tele-MANAS helpline (14416) offers free, confidential psychological support for caregivers as well as patients, 24/7."
+        }
+    },
+    "quickCalm": {
+        "title": "Quick Calm",
+        "subtitle": "A short guided breathing pause, whenever you need it.",
+        "button": "Quick Calm"
+    },
+    "aria": {
+        "brain": "brain",
+        "patient": "patient",
+        "caregiver": "caregiver",
+        "gameController": "game controller",
+        "speakingHead": "speaking head",
+        "barChart": "bar chart",
+        "target": "target",
+        "handshake": "handshake",
+        "puzzlePiece": "puzzle piece",
+        "quickCalm": "Open quick calm breathing exercise"
+    },
+    "emergency": {
+        "banner": "Need urgent help?",
+        "button": "Emergency Help"
+    },
+    "caregiverAuth": {
+        "months": {
+            "january": "January",
+            "february": "February",
+            "march": "March",
+            "april": "April",
+            "may": "May",
+            "june": "June",
+            "july": "July",
+            "august": "August",
+            "september": "September",
+            "october": "October",
+            "november": "November",
+            "december": "December"
+        },
+        "brand": {
+            "login": {
+                "heading": "Welcome back",
+                "body": "Sign in to monitor your patient's progress and manage their care."
+            },
+            "forgotPassword": {
+                "heading": "Reset password",
+                "body": "We will send you a secure link to reset your password."
+            },
+            "resetPassword": {
+                "heading": "Choose a new password",
+                "body": "Create a new password for your NeuroPlay caregiver account."
+            },
+            "registerStep1": {
+                "heading": "Caregiver Portal",
+                "body": "Monitor your patient's progress, get real-time alerts, and access caregiver resources — all in one place."
+            },
+            "registerStep2": {
+                "heading": "Almost there",
+                "body": "A few more details so we can set up alerts and emergency contacts correctly."
+            },
+            "success": {
+                "heading": "You are all set",
+                "body": "Your account is ready. Sign in to start monitoring your patient's care."
+            }
+        },
+        "brandFeatures": {
+            "activityDashboards": "Real-time activity dashboards",
+            "medicationReminders": "Medication & appointment reminders",
+            "supportResources": "24/7 caregiver support resources"
+        },
+        "progress": {
+            "account": "Account",
+            "details": "Details"
+        },
+        "common": {
+            "backToHome": "← Back to Home",
+            "back": "← Back",
+            "backToLogin": "← Back to login",
+            "login": "Log in",
+            "createAccount": "Create an account",
+            "okay": "Okay"
+        },
+        "ageRestriction": {
+            "title": "Age Restriction",
+            "message": "You must be at least 18 years old to register as a caregiver on NeuroPlay."
+        },
+        "login": {
+            "title": "Caregiver login",
+            "email": "Email",
+            "emailPlaceholder": "[you@example.com](mailto:you@example.com)",
+            "password": "Password",
+            "passwordPlaceholder": "Enter your password",
+            "hidePassword": "Hide password",
+            "showPassword": "Show password",
+            "loggingIn": "Logging in…",
+            "login": "Log in",
+            "forgotPassword": "Forgot password?",
+            "createAccount": "Create an account"
+        },
+        "forgotPassword": {
+            "title": "Reset password",
+            "subtitle": "Enter your registered email address and we'll send you a link to reset your password.",
+            "email": "Email",
+            "emailPlaceholder": "[you@example.com](mailto:you@example.com)",
+            "sendingLink": "Sending link…",
+            "sendResetEmail": "Send password reset email"
+        },
+        "resetPassword": {
+            "title": "Create a new password",
+            "subtitle": "Enter a new password for your caregiver account.",
+            "newPassword": "New password",
+            "newPasswordPlaceholder": "Create a new password",
+            "confirmPassword": "Confirm new password",
+            "confirmPasswordPlaceholder": "Re-enter your new password",
+            "passwordHint": "Min 6 characters, with at least one letter, one number, and one special character.",
+            "updatingPassword": "Updating password…",
+            "updatePassword": "Update password"
+        },
+        "registration": {
+            "step1": {
+                "title": "Account credentials",
+                "email": "Email ID",
+                "emailPlaceholder": "Enter your email address",
+                "password": "Password",
+                "passwordPlaceholder": "Create a password",
+                "confirmPassword": "Confirm password",
+                "confirmPasswordPlaceholder": "Re-enter your password",
+                "checking": "Checking...",
+                "next": "Next →",
+                "existingAccount": "Already have an account? Log in"
+            },
+            "step2": {
+                "title": "Caregiver details",
+                "subtitle": "Tell us a little about yourself.",
+                "personalInformation": "Personal information",
+                "fullName": "Full name",
+                "dateOfBirth": "Date of birth",
+                "day": "Day",
+                "month": "Month",
+                "year": "Year",
+                "gender": "Gender",
+                "select": "Select...",
+                "male": "Male",
+                "female": "Female",
+                "other": "Other",
+                "preferNotToSay": "Prefer not to say",
+                "contactInformation": "Contact information",
+                "phoneNumber": "Phone number",
+                "alternatePhone": "Alternate phone (optional)",
+                "houseStreetAddress": "House/street address",
+                "city": "City",
+                "state": "State",
+                "pinCode": "PIN code",
+                "country": "Country",
+                "caregiverInformation": "Caregiver information",
+                "relationshipToPatient": "Relationship to patient",
+                "familyMember": "Family Member",
+                "professionalCaregiver": "Professional Caregiver",
+                "nurse": "Nurse",
+                "doctor": "Doctor",
+                "yearsOfExperience": "Years of experience",
+                "emergencyContactName": "Emergency contact name",
+                "emergencyContactPhone": "Emergency contact phone",
+                "confirmInformation": "I confirm that the information provided is correct.",
+                "creatingAccount": "Creating account…",
+                "createAccount": "Create account"
+            }
+        },
+        "passwordStrength": {
+            "strength": "Strength",
+            "weak": "Weak",
+            "medium": "Medium",
+            "strong": "Strong"
+        },
+        "validation": {
+            "emailRequired": "Email is required.",
+            "validEmail": "Please enter a valid email address (e.g. [name@example.com](mailto:name@example.com)).",
+            "validEmailShort": "Please enter a valid email address.",
+            "passwordRequired": "Password is required.",
+            "passwordRequirements": "Password must be at least 6 characters and include a letter, a number, and a special character.",
+            "passwordMismatch": "Passwords do not match.",
+            "fieldRequired": "This field is required.",
+            "ageRequirement": "You must be at least 18 years old to register as a caregiver.",
+            "validPhone": "Enter a valid 10-digit phone number.",
+            "validPin": "Enter a valid 6-digit PIN code.",
+            "confirmInformation": "You must confirm the information is correct.",
+            "existingAccount": "An account with this email already exists. Please log in instead."
+        },
+        "success": {
+            "title": "Account created",
+            "emailVerification": "Please check your inbox to verify your email address before logging in.",
+            "accountReady": "Welcome to NeuroPlay. Your caregiver account is ready.",
+            "proceedToLogin": "Proceed to Log in"
+        },
+        "messages": {
+            "passwordResetSent": "Password reset instructions have been sent to your email. Please check your inbox and click the reset link.",
+            "passwordResetSuccess": "Your password has been reset successfully. You can now log in with your new password."
+        }
+    },
+    "caregiverDashboard": {
+        "sidebar": {
+            "dashboard": "Dashboard",
+            "patients": "Patients",
+            "reminders": "Reminders",
+            "reports": "Reports",
+            "resources": "Resources",
+            "settings": "Settings",
+            "helpText": "Need a hand with the dashboard?",
+            "contactSupport": "Contact Support",
+            "supportComingSoon": "Support chat is coming soon. For now, use the Emergency Help Line on the main site."
+        },
+        "header": {
+            "profile": "Profile",
+            "logout": "Logout",
+            "caregiver": "Caregiver",
+            "greeting": {
+                "morning": "Good morning",
+                "afternoon": "Good afternoon",
+                "evening": "Good evening"
+            },
+            "loading": {
+                "dashboard": "Loading your dashboard…"
+            }
+        },
+        "profile": {
+            "fullName": "Full name",
+            "phoneNumber": "Phone number",
+            "alternatePhone": "Alternate phone",
+            "dateOfBirth": "Date of birth",
+            "gender": "Gender",
+            "area": "Area",
+            "address": "Address",
+            "country": "Country",
+            "relationshipToPatient": "Relationship to patient",
+            "yearsOfExperience": "Years of experience",
+            "emergencyContact": "Emergency contact",
+            "emergencyContactPhone": "Emergency contact phone",
+            "empty": "No additional profile details are on file for this account."
+        },
+        "patients": {
+            "title": "My Patients",
+            "searchPlaceholder": "Search patients by name...",
+            "all": "All",
+            "needsAttention": "Needs Attention",
+            "customFiltersComingSoon": "Custom filters are coming soon.",
+            "online": "Online",
+            "offline": "Offline",
+            "added": "Added",
+            "patientId": "Patient ID:",
+            "loginCode": "Login Code:",
+            "expiredNone": "Expired/None",
+            "copyCode": "📋 Copy Code",
+            "noActiveCode": "No active code to copy. Please regenerate one.",
+            "regenerateCode": "Regenerate Code",
+            "viewReports": "View Reports",
+            "removePatient": "Remove Patient",
+            "addFirstPatient": "+ Add Your First Patient",
+            "noPatients": "You haven't added any patients yet.",
+            "noMatch": "No patients match \"{{searchTerm}}\".",
+            "clearSearch": "Clear search",
+            "confirmRegenerate": "Are you sure? Regenerating the code will make the previous patient login code invalid.",
+            "regenerateFailed": "Failed to regenerate code. Ensure you have permission.",
+            "confirmRemove": "Are you sure you want to remove {{patientName}}? They will disappear from your dashboard and their device access will be revoked. This can be undone by contacting support, but not from this screen.",
+            "removeFailed": "Failed to remove patient. Please try again.",
+            "viewPatient": "View Patient",
+            "patientFallback": "Patient"
+        },
+        "reports": {
+            "title": "Patient Progress",
+            "noPatient": "Add a patient to start seeing their game reports here.",
+            "sessionsThisWeek": "Sessions this week",
+            "averageAccuracy": "Average accuracy",
+            "mostPlayedGame": "Most played game",
+            "recentActivity": "Recent activity",
+            "memoryMatch": "Memory Match",
+            "numberMemory": "Number Memory",
+            "pictureRecall": "Picture Recall",
+            "noActivity": "No recent activity yet.",
+            "cognitivePerformance": "Cognitive performance trends",
+            "sampleDataNote": "Sample data shown below — live game reporting is coming soon. Once game sessions are recorded, this page will reflect real activity automatically.",
+            "addFirstPatient": "+ Add Your First Patient",
+            "sessions": "Sessions",
+            "bestScore": "Best score",
+            "avgAccuracy": "Avg accuracy",
+            "game": "Game",
+            "score": "Score",
+            "accuracy": "Accuracy",
+            "duration": "Duration",
+            "played": "Played",
+            "minutes": "{{count}} min"
+        },
+        "reminders": {
+            "caregiverAdded": "Caregiver-added · one-off",
+            "customTitle": "Custom Reminders",
+            "customSubtitle": "The same reminders and completion status appear on the patient dashboard.",
+            "addReminder": "+ Add reminder",
+            "patient": "Patient:",
+            "completed": "{{completed}} of {{total}} completed",
+            "editReminder": "Edit reminder",
+            "createCustomReminder": "Create custom reminder",
+            "visibleToPatient": "Add a reminder that will be visible to the selected patient.",
+            "title": "Title",
+            "time": "Time",
+            "note": "Note",
+            "optionalNote": "Optional note",
+            "cancel": "Cancel",
+            "saveChanges": "Save changes",
+            "createReminder": "Create reminder",
+            "edit": "Edit",
+            "delete": "Delete",
+            "basic": "Basic",
+            "custom": "Custom",
+            "completedToday": "Completed today",
+            "notCompleted": "Not completed",
+            "addedByPatient": "Added by patient",
+            "addPatientFirst": "Add a patient before creating reminders.",
+            "loading": "Loading reminders…",
+            "noReminders": "No reminders yet. Add a basic or custom reminder above.",
+            "deleteConfirm": "Delete the reminder \"{{title}}\"?",
+            "subtitle": "The same reminders and completion status appear on the patient dashboard.",
+            "exampleTitle": "e.g. Morning walk",
+            "markComplete": "Mark {{title}} complete",
+            "markIncomplete": "Mark {{title}} incomplete",
+            "editItem": "Edit {{title}}",
+            "deleteItem": "Delete {{title}}"
+        },
+        "dailyRoutine": {
+            "managed": "Caregiver-managed · resets daily",
+            "title": "Daily Routine",
+            "subtitle": "Set this once — it repeats every day until you change it. Only you can add, edit, or remove these; the patient can only mark them complete.",
+            "addPatient": "Add a patient to set up their daily routine.",
+            "medicine": "Medicine",
+            "hydration": "Hydration",
+            "dailyActivity": "Daily Activity",
+            "appointments": "Appointments",
+            "add": "+ Add",
+            "save": "Save",
+            "cancel": "Cancel",
+            "remove": "Remove",
+            "medicineName": "Medicine name",
+            "activityName": "Activity name",
+            "doctorReason": "Doctor / reason",
+            "dailyTarget": "Daily target (glasses)",
+            "saveTarget": "Save target",
+            "saving": "Saving…",
+            "todaySoFar": "Today so far: {{progress}} of {{target}} glasses",
+            "goalMet": " — goal met ✓",
+            "nothingSet": "Nothing set yet.",
+            "noDate": "No date set",
+            "noTime": "No time set",
+            "routineHint": "Set a daily water goal. The patient logs each glass on their dashboard; the count resets every night.",
+            "removeConfirm": "Remove \"{{title}}\" from the daily plan? This applies to every future day too.",
+            "editItem": "Edit {{title}}",
+            "removeItem": "Remove {{title}}"
+        },
+        "resources": {
+            "toolsForYou": "Tools for you",
+            "generalReference": "General reference",
+            "quickCalm": {
+                "title": "Quick Calm",
+                "description": "A guided box-breathing timer you can run right now, between patient check-ins."
+            },
+            "emergencyCard": {
+                "title": "Emergency Contact Card",
+                "description": "A printable card with your patient's ID and emergency contact, filled in from your account.",
+                "addPatient": "Add a patient first to generate their emergency card.",
+                "patient": "Patient",
+                "patientId": "Patient ID",
+                "emergencyContact": "Emergency contact",
+                "emergencyPhone": "Emergency phone",
+                "caregiver": "Caregiver",
+                "caregiverPhone": "Caregiver phone",
+                "printCard": "🖨️ Print card",
+                "nationalEmergency": "National Emergency Response Service: 112 · Tele-MANAS: 14416",
+                "cardTitle": "NeuroPlay Emergency Card"
+            },
+            "reportsGuide": {
+                "title": "Understanding Your Reports",
+                "description": "What score, accuracy, and session counts on the Reports tab actually mean.",
+                "sessions": "Sessions",
+                "sessionsText": "How many times a patient has played a given game. More sessions generally mean more consistent engagement.",
+                "score": "Score",
+                "scoreText": "A game-specific point total. Compare a patient's own scores over time rather than against other patients — the goal is their personal trend.",
+                "accuracy": "Accuracy",
+                "accuracyText": "The share of correct responses in a session. A gradual dip across several sessions is worth mentioning at their next check-up; a single low session usually isn't.",
+                "watchFor": "What to watch for",
+                "watchForText": "Sudden drops, not gradual ones, matter most — they're more likely to reflect an off day (poor sleep, discomfort) than a real change."
+            },
+            "faq": {
+                "title": "NeuroPlay Help & FAQ",
+                "description": "How login codes work, adding a patient, and what online/offline status means.",
+                "whatIsLoginCode": "What is a login code?",
+                "loginCodeText": "A short code your patient enters on their device to open their own dashboard. Each code expires after a set time for security.",
+                "codeExpires": "What if a code expires?",
+                "codeExpiresText": "Use \"Regenerate Code\" on the patient's card in the Patients tab. This invalidates the old code immediately.",
+                "onlineOffline": "What does Online/Offline mean?",
+                "onlineOfflineText": "Online means that patient's dashboard is currently open on their device. It updates in real time as they log in or out.",
+                "addPatient": "How do I add a patient?",
+                "addPatientText": "Select \"Add Patient\" from the dashboard overview. You'll get a Patient ID and login code to share with them."
+            },
+            "glossary": {
+                "title": "Dementia Glossary",
+                "description": "Plain-language definitions for terms you'll see in care notes and reports.",
+                "sundowning": "Sundowning",
+                "sundowningText": "Increased confusion or agitation in the late afternoon and evening.",
+                "cognitiveDecline": "Cognitive decline",
+                "cognitiveDeclineText": "A gradual reduction in memory, reasoning, or thinking skills over time.",
+                "caregiverBurnout": "Caregiver burnout",
+                "caregiverBurnoutText": "Physical and emotional exhaustion from sustained caregiving, often with reduced patience or motivation.",
+                "reminiscenceTherapy": "Reminiscence therapy",
+                "reminiscenceTherapyText": "Using familiar memories, photos, or music to support engagement and mood.",
+                "validationApproach": "Validation approach",
+                "validationApproachText": "Responding to the emotion behind what someone says, rather than correcting the facts."
+            },
+            "directory": {
+                "title": "NER Neurological Care Directory",
+                "description": "Emergency neurological helplines and memory clinics across the 8 North Eastern states.",
+                "assam": "Assam",
+                "meghalaya": "Meghalaya",
+                "manipur": "Manipur",
+                "otherStates": "Tripura, Mizoram, Nagaland, Arunachal Pradesh & Sikkim",
+                "emergencyHelplines": "Emergency helplines",
+                "assamDetails": "Dept of Neurology & Memory Clinic | Ph: 0361-3582043 / 0361-2452244",
+                "assamAmc": "Department of Neurology & Geriatric Care",
+                "assamSilchar": "General Medicine & Neurology OPD",
+                "meghalayaNeigrihms": "Advanced Tertiary Care Hospital & Neurology Dept | Emergency: +91 364 2530000, Enquiry: +91 364 2530002",
+                "meghalayaCivil": "General Neurology & Senior Citizen Health Support",
+                "manipurRims": "Centre of Excellence / Dept of Neurology | Ph: 0385-2414539 / Telemedicine Hub",
+                "manipurJnims": "Neurology & Psychiatry Outpatient Care",
+                "tripuraAgmc": "Dedicated Neurological Clinic & Emergency Care",
+                "mizoramZmc": "State Referral Hospital & Dept of Medicine",
+                "nagalandKohima": "Regional Health Center & Emergency Support",
+                "trihms": "Specialized Consultation",
+                "stnm": "Neurology & Geriatric Care Unit",
+                "teleManas": "Tele-MANAS Mental Health Support:",
+                "nationalEmergency": "National Emergency Response Service:"
+            },
+            "manual": {
+                "title": "Caregiver Manual & Stress Relief",
+                "description": "Monitoring guides and anxiety de-escalation steps for hard moments.",
+                "dailyRoutine": "Daily routine",
+                "dailyRoutineText": "Keep mealtimes and activities consistent. Mornings tend to bring the most cognitive clarity — a good window for memory exercises and light movement.",
+                "managingSundowning": "Managing sundowning & agitation",
+                "managingSundowningText": "Reduce noise and bright light in the late afternoon. Validate emotions rather than correcting facts, and redirect toward calm, familiar activities.",
+                "breathingReset": "A quick breathing reset",
+                "breathingResetText": "Box breathing: inhale for 4 seconds, hold for 4, exhale for 4, hold for 4. Repeat for two to five minutes whenever things feel like too much."
+            },
+            "tips": {
+                "title": "Dementia Care Tips",
+                "description": "Practical guidance on nutrition, sleep, home safety, and everyday communication.",
+                "nutrition": "Nutrition",
+                "nutritionText": "Small, frequent meals with familiar foods. Keep water visible, since thirst cues are often forgotten.",
+                "sleep": "Sleep",
+                "sleepText": "A consistent bedtime routine and dim evening lighting help. Calm music can ease dusk confusion.",
+                "homeSafety": "Home safety",
+                "homeSafetyText": "Remove loose rugs, add grab bars near the bathroom, and keep medicines and sharp objects out of reach.",
+                "communication": "Communication",
+                "communicationText": "Short, simple sentences. Give time to respond, and focus on the feeling behind the words rather than correcting every detail."
+            },
+            "support": {
+                "title": "Support Groups & Community",
+                "description": "Local caregiver networks, national organizations, and 24/7 mental health support.",
+                "localGroups": "Local groups",
+                "localGroupsText": "Many district hospitals and NGOs run caregiver meet-ups — ask your nearest medical center from the directory above.",
+                "nationalOrganizations": "National organizations",
+                "nationalOrganizationsText": "ARDSI (Alzheimer's and Related Disorders Society of India) runs chapters and helplines with counseling and training resources.",
+                "caregiverMentalHealth": "Caregiver mental health",
+                "caregiverMentalHealthText": "Burnout is common and real. Tele-MANAS (14416) offers free, confidential support for caregivers too, 24/7."
+            },
+            "title": "Dementia Care & NER Support Resources",
+            "subtitle": "Empowering rural and remote families across the North Eastern Region with cognitive guides, audio tools, and offline support packs.",
+            "open": "Open"
+        },
+        "breathing": {
+            "inhale": "Inhale",
+            "hold": "Hold",
+            "exhale": "Exhale",
+            "ready": "Ready",
+            "start": "Start breathing",
+            "stop": "Stop",
+            "duration": "4s",
+            "instruction": "A short breathing pause, whenever you need it — inhale, hold, exhale, hold, each for 4 seconds."
+        },
+        "checklist": {
+            "title": "Today's Care Checklist",
+            "subtitle": "Resets automatically each day. Just for your own tracking — nothing is shared.",
+            "medication": "Medication given on schedule",
+            "hydration": "Hydration check",
+            "activity": "Cognitive activity completed",
+            "mood": "Mood & behavior noted"
+        },
+        "games": {
+            "memoryMatch": "Memory Match",
+            "numberMemory": "Number Memory",
+            "pictureRecall": "Picture Recall"
+        },
+        "errors": {
+            "loadPatients": "Failed to load patients. Check database permissions.",
+            "regenerateCode": "Failed to regenerate code. Ensure you have permission.",
+            "removePatient": "Failed to remove patient. Please try again."
+        },
+        "brand": "NeuroPlay",
+        "footer": "NeuroPlay · Built for families across the North Eastern Region",
+        "accessibility": {
+            "brain": "brain",
+            "malePatient": "male patient",
+            "femalePatient": "female patient",
+            "patient": "patient"
+        },
+        "dashboard": {
+            "overview": "Dashboard Overview",
+            "allDataSynced": "All data synced",
+            "addPatient": "Add Patient",
+            "registerPatientCredentials": "Register a patient & generate credentials",
+            "patientProgress": "Patient Progress",
+            "cognitivePerformanceTrends": "Cognitive performance trends",
+            "alertsMessages": "Alerts & Messages",
+            "allCaughtUp": "All caught up",
+            "sentNote": "sent a note",
+            "new": "New",
+            "markAllRead": "Mark all as read",
+            "noNewMessages": "No new messages.",
+            "markAsRead": "Mark as read",
+            "dismiss": "Dismiss",
+            "justNow": "Just now",
+            "unreadNotes": "{{count}} unread notes from patients"
+        }
+    }
+}

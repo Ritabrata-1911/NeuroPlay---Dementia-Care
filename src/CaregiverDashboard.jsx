@@ -1,18 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from './SupabaseClient';
 import AddPatientForm from './AddPatientForm';
 import CodeCountdown from './CodeCountdown';
 import SettingsPanel from './SettingsPanel';
 import './CaregiverDashboard.css';
 import {
-    BASIC_REMINDERS,
     fetchRemindersForPatient,
     saveReminder,
     toggleReminderCompletion,
     deleteReminder,
     subscribeToReminderChanges,
+    saveRoutineItem,
+    deleteRoutineItem,
+    setHydrationTarget,
 } from './ReminderService';
+import {
+    useStatusTick,
+    ReminderStatusBadge,
+    getReminderRowClassName,
+} from './useReminderAlarms';
 
 // Picks a gender-appropriate avatar for a patient card.
 const getPatientAvatar = (patient) => {
@@ -45,7 +53,7 @@ const formatJoinedDate = (isoString) => {
 
     if (Number.isNaN(d.getTime())) return null;
 
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric'
@@ -56,52 +64,53 @@ const formatSessionDate = (isoString) => {
     if (!isoString) return '—';
     const d = new Date(isoString);
     if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
-        ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+        ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 };
 
 const getGreeting = () => {
     const hour = new Date().getHours();
 
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
+    if (hour < 12) return 'caregiverDashboard.header.greeting.morning';
+    if (hour < 17) return 'caregiverDashboard.header.greeting.afternoon';
 
-    return 'Good evening';
+    return 'caregiverDashboard.header.greeting.evening';
 };
 
 const PROFILE_FIELDS = [
-    { key: 'full_name', label: 'Full name' },
-    { key: 'phone_number', label: 'Phone number' },
-    { key: 'alt_phone', label: 'Alternate phone' },
-    { key: 'dob', label: 'Date of birth' },
-    { key: 'gender', label: 'Gender' },
-    { key: 'area', label: 'Area' },
-    { key: 'address', label: 'Address' },
-    { key: 'country', label: 'Country' },
-    { key: 'relationship', label: 'Relationship to patient' },
-    { key: 'experience', label: 'Years of experience' },
-    { key: 'emergency_name', label: 'Emergency contact' },
-    { key: 'emergency_phone', label: 'Emergency contact phone' },
+    { key: 'full_name', labelKey: 'caregiverDashboard.profile.fullName' },
+    { key: 'phone_number', labelKey: 'caregiverDashboard.profile.phoneNumber' },
+    { key: 'alt_phone', labelKey: 'caregiverDashboard.profile.alternatePhone' },
+    { key: 'dob', labelKey: 'caregiverDashboard.profile.dateOfBirth' },
+    { key: 'gender', labelKey: 'caregiverDashboard.profile.gender' },
+    { key: 'area', labelKey: 'caregiverDashboard.profile.area' },
+    { key: 'address', labelKey: 'caregiverDashboard.profile.address' },
+    { key: 'country', labelKey: 'caregiverDashboard.profile.country' },
+    { key: 'relationship', labelKey: 'caregiverDashboard.profile.relationshipToPatient' },
+    { key: 'experience', labelKey: 'caregiverDashboard.profile.yearsOfExperience' },
+    { key: 'emergency_name', labelKey: 'caregiverDashboard.profile.emergencyContact' },
+    { key: 'emergency_phone', labelKey: 'caregiverDashboard.profile.emergencyContactPhone' },
 ];
 
 const SIDEBAR_LINKS = [
-    { key: 'dashboard', icon: '🏠', label: 'Dashboard' },
-    { key: 'patients', icon: '🧑‍🤝‍🧑', label: 'Patients' },
-    { key: 'reports', icon: '📊', label: 'Reports' },
-    { key: 'resources', icon: '📘', label: 'Resources' },
-    { key: 'settings', icon: '⚙️', label: 'Settings' },
+    { key: 'dashboard', icon: '🏠', labelKey: 'caregiverDashboard.sidebar.dashboard' },
+    { key: 'patients', icon: '🧑‍🤝‍🧑', labelKey: 'caregiverDashboard.sidebar.patients' },
+    { key: 'reminders', icon: '⏰', labelKey: 'caregiverDashboard.sidebar.reminders' },
+    { key: 'reports', icon: '📊', labelKey: 'caregiverDashboard.sidebar.reports' },
+    { key: 'resources', icon: '📘', labelKey: 'caregiverDashboard.sidebar.resources' },
+    { key: 'settings', icon: '⚙️', labelKey: 'caregiverDashboard.sidebar.settings' },
 ];
 
-const todayLabel = new Date().toLocaleDateString(undefined, {
+const todayLabel = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
 });
 
 const GAME_META = {
-    memory_match: { label: 'Memory Match', icon: '🧩' },
-    number_memory: { label: 'Number Memory', icon: '🔢' },
-    picture_recall: { label: 'Picture Recall', icon: '🖼️' },
+    memory_match: { labelKey: 'caregiverDashboard.games.memoryMatch', icon: '🧩' },
+    number_memory: { labelKey: 'caregiverDashboard.games.numberMemory', icon: '🔢' },
+    picture_recall: { labelKey: 'caregiverDashboard.games.pictureRecall', icon: '🖼️' },
 };
 
 const buildSampleSessions = (seed) => {
@@ -146,6 +155,7 @@ const summarizeSessionsByGame = (sessions) => {
 
 export default function CaregiverDashboard() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [view, setView] = useState('dashboard');
     const [user, setUser] = useState(null);
     const [patients, setPatients] = useState([]);
@@ -168,6 +178,17 @@ export default function CaregiverDashboard() {
         category: 'custom',
     });
 
+    // Daily Routine (medicine / activity / appointment / hydration) —
+    // caregiver-only. Set once, repeats every day until edited; the
+    // patient can only mark items complete, never add/edit/delete.
+    const [routineForms, setRoutineForms] = useState({
+        medicine: { open: false, editingId: null, title: '', time: '' },
+        activity: { open: false, editingId: null, title: '', time: '' },
+        appointment: { open: false, editingId: null, title: '', event_date: '' },
+    });
+    const [hydrationTargetInput, setHydrationTargetInput] = useState(8);
+    const [hydrationSaving, setHydrationSaving] = useState(false);
+
     const BREATHING_PHASES = ['inhale', 'hold1', 'exhale', 'hold2'];
     const BREATHING_LABELS = { inhale: 'Inhale', hold1: 'Hold', exhale: 'Exhale', hold2: 'Hold' };
     const [breathingActive, setBreathingActive] = useState(false);
@@ -188,10 +209,10 @@ export default function CaregiverDashboard() {
 
     const todayKey = `neuroplay_checklist_${new Date().toISOString().slice(0, 10)}`;
     const CHECKLIST_ITEMS = [
-        { key: 'medication', label: 'Medication given on schedule' },
-        { key: 'hydration', label: 'Hydration check' },
-        { key: 'activity', label: 'Cognitive activity completed' },
-        { key: 'mood', label: 'Mood & behavior noted' },
+        { key: 'medication', labelKey: 'caregiverDashboard.checklist.medication' },
+        { key: 'hydration', labelKey: 'caregiverDashboard.checklist.hydration' },
+        { key: 'activity', labelKey: 'caregiverDashboard.checklist.activity' },
+        { key: 'mood', labelKey: 'caregiverDashboard.checklist.mood' },
     ];
     const [checklistState, setChecklistState] = useState(() => {
         try {
@@ -353,6 +374,7 @@ export default function CaregiverDashboard() {
         }
     }, [patients, reportsPatientId]);
 
+
     useEffect(() => {
         if (!patients || patients.length === 0) {
             setPatientOnlineStatus({});
@@ -491,6 +513,11 @@ export default function CaregiverDashboard() {
         }
     };
 
+    // Status colors only, no sound/banner — the alarm itself is
+    // patient-dashboard-only. This just keeps the badges/tints below
+    // ticking live as reminders cross into "missed".
+    useStatusTick();
+
     const handleReminderDelete = async (reminder) => {
         if (!window.confirm(`Delete the reminder "${reminder.title}"?`)) return;
         const removed = await deleteReminder(reminder);
@@ -508,21 +535,69 @@ export default function CaregiverDashboard() {
         setShowReminderForm(true);
     };
 
-    const handleBasicReminderToggle = async (basicReminder) => {
+    // Pulls the caregiver's saved hydration target into the input
+    // whenever the selected patient (or their loaded reminders) change,
+    // so the field always opens showing what's actually saved.
+    useEffect(() => {
+        const hydration = reminders.find((r) => r.routine_type === 'hydration');
+        if (hydration) setHydrationTargetInput(hydration.target_count || 8);
+        else setHydrationTargetInput(8);
+    }, [reminderPatientId, reminders]);
+
+    const updateRoutineForm = (type, patch) => {
+        setRoutineForms((prev) => ({ ...prev, [type]: { ...prev[type], ...patch } }));
+    };
+
+    const openRoutineForm = (type, item = null) => {
+        updateRoutineForm(type, item
+            ? { open: true, editingId: item.id, title: item.title, time: item.time || '', event_date: item.event_date || '' }
+            : { open: true, editingId: null, title: '', time: '', event_date: '' });
+    };
+
+    const closeRoutineForm = (type) => {
+        updateRoutineForm(type, { open: false, editingId: null, title: '', time: '', event_date: '' });
+    };
+
+    const handleRoutineSubmit = async (type, event) => {
+        event.preventDefault();
         if (!reminderPatientId) return;
-        const existing = reminders.find((item) => item.id === `basic-${basicReminder.id}-${reminderPatientId}`);
-        const saved = await saveReminder({
-            id: existing?.id,
+        const form = routineForms[type];
+        if (!form.title.trim()) return;
+
+        const saved = await saveRoutineItem({
+            id: form.editingId || undefined,
             patient_id: reminderPatientId,
             caregiver_id: user?.id || null,
-            title: basicReminder.title,
-            description: basicReminder.description,
-            time: basicReminder.time,
-            category: basicReminder.category,
-            is_basic: true,
-            enabled: existing ? !existing.enabled : true,
-            completion_date: existing?.completion_date || null,
-            completed: existing?.completed || false,
+            routine_type: type,
+            title: form.title.trim(),
+            time: type !== 'appointment' ? (form.time || null) : null,
+            event_date: type === 'appointment' ? (form.event_date || null) : null,
+        });
+
+        if (saved) {
+            setReminders((prev) => {
+                const exists = prev.some((item) => item.id === saved.id);
+                return exists ? prev.map((item) => item.id === saved.id ? saved : item) : [saved, ...prev];
+            });
+        }
+        closeRoutineForm(type);
+    };
+
+    const handleRoutineDelete = async (item) => {
+        if (!window.confirm(`Remove "${item.title}" from the daily plan? This applies to every future day too.`)) return;
+        const removed = await deleteRoutineItem(item);
+        if (removed) setReminders((prev) => prev.filter((r) => r.id !== item.id));
+    };
+
+    const handleHydrationSave = async () => {
+        if (!reminderPatientId) return;
+        setHydrationSaving(true);
+        const existing = reminders.find((r) => r.routine_type === 'hydration');
+        const saved = await setHydrationTarget({
+            patientId: reminderPatientId,
+            caregiverId: user?.id || null,
+            target: Math.max(1, Number(hydrationTargetInput) || 8),
+            existing,
         });
         if (saved) {
             setReminders((prev) => {
@@ -530,30 +605,169 @@ export default function CaregiverDashboard() {
                 return exists ? prev.map((item) => item.id === saved.id ? saved : item) : [saved, ...prev];
             });
         }
+        setHydrationSaving(false);
+    };
+
+    const renderDailyRoutinePanel = () => {
+        const selectedReminderPatient = patients.find((p) => p.id === reminderPatientId) || patients[0] || null;
+        const medicines = reminders.filter((r) => r.routine_type === 'medicine' && r.enabled !== false);
+        const activities = reminders.filter((r) => r.routine_type === 'activity' && r.enabled !== false);
+        const appointments = reminders.filter((r) => r.routine_type === 'appointment' && r.enabled !== false);
+        const hydration = reminders.find((r) => r.routine_type === 'hydration');
+
+        const renderInlineForm = (type, dateField = false) => {
+            const form = routineForms[type];
+            return (
+                <form className="routine-inline-form" onSubmit={(e) => handleRoutineSubmit(type, e)}>
+                    <input
+                        value={form.title}
+                        onChange={(e) => updateRoutineForm(type, { title: e.target.value })}
+                        placeholder={type === 'medicine'
+                            ? t('caregiverDashboard.dailyRoutine.medicineName')
+                            : type === 'activity'
+                                ? t('caregiverDashboard.dailyRoutine.activityName')
+                                : t('caregiverDashboard.dailyRoutine.doctorReason')}
+                        maxLength={80}
+                        required
+                    />
+                    {dateField ? (
+                        <input type="date" value={form.event_date} onChange={(e) => updateRoutineForm(type, { event_date: e.target.value })} />
+                    ) : (
+                        <input type="time" value={form.time} onChange={(e) => updateRoutineForm(type, { time: e.target.value })} />
+                    )}
+                    <div className="routine-inline-form-actions">
+                        <button type="button" className="btn-outline" onClick={() => closeRoutineForm(type)}>{t('caregiverDashboard.dailyRoutine.cancel')}</button>
+                        <button type="submit" className="reminder-save-btn">{form.editingId ? t('caregiverDashboard.dailyRoutine.save') : t('caregiverDashboard.dailyRoutine.add')}</button>
+                    </div>
+                </form>
+            );
+        };
+
+        const renderRoutineList = (items, type, dateField = false) => (
+            items.length === 0 ? (
+                <div className="routine-empty-row">{t('caregiverDashboard.dailyRoutine.nothingSet')}</div>
+            ) : (
+                <div className="routine-item-list">
+                    {items.map((item) => (
+                        <div key={item.id} className={`routine-item-row ${getReminderRowClassName(item)}`}>
+                            <div className="routine-item-main">
+                                <strong>{item.title}</strong>
+                                <span className="routine-item-meta">
+                                    {dateField
+                                        ? (item.event_date ? `📅 ${item.event_date}` : t('caregiverDashboard.dailyRoutine.noDate'))
+                                        : (item.time ? `🕐 ${item.time}` : t('caregiverDashboard.dailyRoutine.noTime'))}
+                                </span>
+                                <ReminderStatusBadge reminder={item} />
+                            </div>
+                            <div className="routine-item-actions">
+                                <button type="button" onClick={() => openRoutineForm(type, item)} aria-label={t('caregiverDashboard.dailyRoutine.editItem', { title: item.title })}>{t('caregiverDashboard.reminders.edit')}</button>
+                                <button type="button" onClick={() => handleRoutineDelete(item)} aria-label={t('caregiverDashboard.dailyRoutine.removeItem', { title: item.title })}>{t('caregiverDashboard.dailyRoutine.remove')}</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )
+        );
+
+        return (
+            <section className="daily-routine-panel" id="daily-routine-section">
+                <div className="reminders-panel-header">
+                    <div>
+                        <p className="reminders-eyebrow">{t('caregiverDashboard.dailyRoutine.managed')}</p>
+                        <h2 className="section-title">{t('caregiverDashboard.dailyRoutine.title')}</h2>
+                        <p className="section-subtitle">{t('caregiverDashboard.dailyRoutine.subtitle')}</p>
+                    </div>
+                </div>
+
+                {!selectedReminderPatient ? (
+                    <div className="reminder-empty-state">{t('caregiverDashboard.dailyRoutine.addPatient')}</div>
+                ) : (
+                    <div className="routine-grid">
+                        <div className="routine-card">
+                            <div className="routine-card-header">
+                                <span className="routine-card-icon">💊</span>
+                                <h3>{t('caregiverDashboard.dailyRoutine.medicine')}</h3>
+                                <button type="button" className="routine-add-btn" onClick={() => openRoutineForm('medicine')}>{t('caregiverDashboard.dailyRoutine.add')}</button>
+                            </div>
+                            {routineForms.medicine.open && renderInlineForm('medicine')}
+                            {renderRoutineList(medicines, 'medicine')}
+                        </div>
+
+                        <div className="routine-card">
+                            <div className="routine-card-header">
+                                <span className="routine-card-icon">💧</span>
+                                <h3>{t('caregiverDashboard.dailyRoutine.hydration')}</h3>
+                            </div>
+                            <p className="routine-card-hint">{t('caregiverDashboard.dailyRoutine.routineHint')}</p>
+                            <div className="hydration-config-row">
+                                <label>
+                                     {t('caregiverDashboard.dailyRoutine.dailyTarget')}
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={20}
+                                        value={hydrationTargetInput}
+                                        onChange={(e) => setHydrationTargetInput(e.target.value)}
+                                    />
+                                </label>
+                                <button type="button" className="reminder-save-btn" onClick={handleHydrationSave} disabled={hydrationSaving}>
+                                    {hydrationSaving ? t('caregiverDashboard.dailyRoutine.saving') : t('caregiverDashboard.dailyRoutine.saveTarget')}
+                                </button>
+                            </div>
+                            {hydration && (
+                                <p className="routine-card-hint">
+                                     {t('caregiverDashboard.dailyRoutine.todaySoFar', { progress: hydration.progress_count || 0, target: hydration.target_count || 8 })}
+                                     {hydration.completed ? t('caregiverDashboard.dailyRoutine.goalMet') : ''}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="routine-card">
+                            <div className="routine-card-header">
+                                <span className="routine-card-icon">📅</span>
+                                <h3>{t('caregiverDashboard.dailyRoutine.dailyActivity')}</h3>
+                                <button type="button" className="routine-add-btn" onClick={() => openRoutineForm('activity')}>{t('caregiverDashboard.dailyRoutine.add')}</button>
+                            </div>
+                            {routineForms.activity.open && renderInlineForm('activity')}
+                            {renderRoutineList(activities, 'activity')}
+                        </div>
+
+                        <div className="routine-card">
+                            <div className="routine-card-header">
+                                <span className="routine-card-icon">🏥</span>
+                                <h3>{t('caregiverDashboard.dailyRoutine.appointments')}</h3>
+                                <button type="button" className="routine-add-btn" onClick={() => openRoutineForm('appointment')}>{t('caregiverDashboard.dailyRoutine.add')}</button>
+                            </div>
+                            {routineForms.appointment.open && renderInlineForm('appointment', true)}
+                            {renderRoutineList(appointments, 'appointment', true)}
+                        </div>
+                    </div>
+                )}
+            </section>
+        );
     };
 
     const renderRemindersPanel = () => {
         const selectedReminderPatient = patients.find((p) => p.id === reminderPatientId) || patients[0] || null;
-        const activeBasicIds = new Set(reminders.filter((r) => r.is_basic && r.enabled !== false).map((r) => r.title));
-        const visibleReminders = reminders.filter((r) => r.enabled !== false);
+        const visibleReminders = reminders.filter((r) => r.enabled !== false && !r.routine_type);
         const completedCount = visibleReminders.filter((r) => r.completed).length;
 
         return (
             <section className="reminders-panel" id="reminders-section">
                 <div className="reminders-panel-header">
                     <div>
-                        <p className="reminders-eyebrow">Shared care plan</p>
-                        <h2 className="section-title">Today&apos;s Reminders</h2>
-                        <p className="section-subtitle">The same reminders and completion status appear on the patient dashboard.</p>
+                        <p className="reminders-eyebrow">{t('caregiverDashboard.reminders.caregiverAdded')}</p>
+                        <h2 className="section-title">{t('caregiverDashboard.reminders.customTitle')}</h2>
+                        <p className="section-subtitle">{t('caregiverDashboard.reminders.customSubtitle')}</p>
                     </div>
                     <button className="reminder-add-btn" type="button" onClick={() => { setEditingReminder(null); setReminderForm({ title: '', description: '', time: '', category: 'custom' }); setShowReminderForm(true); }} disabled={!selectedReminderPatient}>
-                        + Add reminder
+                        {t('caregiverDashboard.reminders.addReminder')}
                     </button>
                 </div>
 
                 {patients.length > 1 && (
                     <div className="reminder-patient-picker">
-                        <span>Patient:</span>
+                        <span>{t('caregiverDashboard.reminders.patient')}</span>
                         {patients.map((patient) => (
                             <button
                                 type="button"
@@ -574,32 +788,19 @@ export default function CaregiverDashboard() {
                     </div>
                 )}
 
-                <div className="reminder-basic-grid">
-                    {BASIC_REMINDERS.map((basic) => (
-                        <div
-                            key={basic.id}
-                            className={`basic-reminder-chip basic-reminder-chip-static ${activeBasicIds.has(basic.title) ? 'basic-reminder-chip-active' : ''}`}
-                        >
-                            <span>{basic.icon}</span>
-                            <span>{basic.title}</span>
-                            <small>Included</small>
-                        </div>
-                    ))}
-                </div>
-
                 {showReminderForm && (
                     <form className="reminder-form-card" onSubmit={handleReminderSubmit}>
                         <div className="reminder-form-heading">
                             <div>
-                                <h3>{editingReminder ? 'Edit reminder' : 'Create custom reminder'}</h3>
-                                <p>Add a reminder that will be visible to the selected patient.</p>
+                                <h3>{editingReminder ? t('caregiverDashboard.reminders.editReminder') : t('caregiverDashboard.reminders.createCustomReminder')}</h3>
+                                <p>{t('caregiverDashboard.reminders.visibleToPatient')}</p>
                             </div>
                             <button type="button" className="reminder-close-btn" onClick={resetReminderForm}>✕</button>
                         </div>
                         <div className="reminder-form-grid">
                             <label>
                                 Title
-                                <input value={reminderForm.title} onChange={(e) => setReminderForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="e.g. Morning walk" maxLength={80} required />
+                                <input value={reminderForm.title} onChange={(e) => setReminderForm((prev) => ({ ...prev, title: e.target.value }))} placeholder={t('caregiverDashboard.reminders.exampleTitle')} maxLength={80} required />
                             </label>
                             <label>
                                 Time
@@ -607,27 +808,27 @@ export default function CaregiverDashboard() {
                             </label>
                             <label className="reminder-form-wide">
                                 Note
-                                <textarea value={reminderForm.description} onChange={(e) => setReminderForm((prev) => ({ ...prev, description: e.target.value }))} placeholder="Optional note" maxLength={180} rows={3} />
+                                <textarea value={reminderForm.description} onChange={(e) => setReminderForm((prev) => ({ ...prev, description: e.target.value }))} placeholder={t('caregiverDashboard.reminders.optionalNote')} maxLength={180} rows={3} />
                             </label>
                         </div>
                         <div className="reminder-form-actions">
-                            <button type="button" className="btn-outline" onClick={resetReminderForm}>Cancel</button>
-                            <button type="submit" className="reminder-save-btn" disabled={reminderLoading}>{editingReminder ? 'Save changes' : 'Create reminder'}</button>
+                            <button type="button" className="btn-outline" onClick={resetReminderForm}>{t('caregiverDashboard.reminders.cancel')}</button>
+                            <button type="submit" className="reminder-save-btn" disabled={reminderLoading}>{editingReminder ? t('caregiverDashboard.reminders.saveChanges') : t('caregiverDashboard.reminders.createReminder')}</button>
                         </div>
                     </form>
                 )}
 
                 {!selectedReminderPatient ? (
-                    <div className="reminder-empty-state">Add a patient before creating reminders.</div>
+                    <div className="reminder-empty-state">{t('caregiverDashboard.reminders.addPatientFirst')}</div>
                 ) : reminderLoading ? (
-                    <div className="reminder-empty-state">Loading reminders…</div>
+                    <div className="reminder-empty-state">{t('caregiverDashboard.reminders.loading')}</div>
                 ) : visibleReminders.length === 0 ? (
-                    <div className="reminder-empty-state">No reminders yet. Add a basic or custom reminder above.</div>
+                    <div className="reminder-empty-state">{t('caregiverDashboard.reminders.noReminders')}</div>
                 ) : (
                     <div className="reminder-list">
                         {visibleReminders.map((reminder) => (
-                            <div key={reminder.id} className={`reminder-row-card ${reminder.completed ? 'reminder-row-completed' : ''}`}>
-                                <button type="button" className={`reminder-check ${reminder.completed ? 'checked' : ''}`} onClick={() => handleReminderToggle(reminder)} aria-label={reminder.completed ? `Mark ${reminder.title} incomplete` : `Mark ${reminder.title} complete`}>
+                            <div key={reminder.id} className={`reminder-row-card ${reminder.completed ? 'reminder-row-completed' : ''} ${getReminderRowClassName(reminder)}`}>
+                                <button type="button" className={`reminder-check ${reminder.completed ? 'checked' : ''}`} onClick={() => handleReminderToggle(reminder)} aria-label={t(reminder.completed ? 'caregiverDashboard.reminders.markIncomplete' : 'caregiverDashboard.reminders.markComplete', { title: reminder.title })}>
                                     {reminder.completed ? '✓' : ''}
                                 </button>
                                 <div className="reminder-row-main">
@@ -638,14 +839,15 @@ export default function CaregiverDashboard() {
                                     {reminder.description && <p>{reminder.description}</p>}
                                     <div className="reminder-row-meta">
                                         {reminder.time && <span>🕐 {reminder.time}</span>}
-                                        {reminder.completed ? <span>Completed today</span> : <span>Not completed</span>}
-                                        {reminder.created_by === 'patient' && <span>Added by patient</span>}
+                                        {reminder.completed ? <span>{t('caregiverDashboard.reminders.completedToday')}</span> : <span>{t('caregiverDashboard.reminders.notCompleted')}</span>}
+                                        {reminder.created_by === 'patient' && <span>{t('caregiverDashboard.reminders.addedByPatient')}</span>}
+                                        <ReminderStatusBadge reminder={reminder} />
                                     </div>
                                 </div>
                                 {!reminder.is_basic && (
                                     <div className="reminder-row-actions">
-                                        <button type="button" onClick={() => openReminderEditor(reminder)} aria-label={`Edit ${reminder.title}`}>Edit</button>
-                                        <button type="button" onClick={() => handleReminderDelete(reminder)} aria-label={`Delete ${reminder.title}`}>Delete</button>
+                                        <button type="button" onClick={() => openReminderEditor(reminder)} aria-label={t('caregiverDashboard.reminders.editItem', { title: reminder.title })}>{t('caregiverDashboard.reminders.edit')}</button>
+                                        <button type="button" onClick={() => handleReminderDelete(reminder)} aria-label={t('caregiverDashboard.reminders.deleteItem', { title: reminder.title })}>{t('caregiverDashboard.reminders.delete')}</button>
                                     </div>
                                 )}
                             </div>
@@ -810,7 +1012,7 @@ export default function CaregiverDashboard() {
             return;
         }
 
-        if (key === 'patients' || key === 'settings' || key === 'reports' || key === 'resources') {
+        if (key === 'patients' || key === 'settings' || key === 'reports' || key === 'resources' || key === 'reminders') {
             setView(key);
             return;
         }
@@ -820,7 +1022,7 @@ export default function CaregiverDashboard() {
         return (
             <div className="dashboard-loading">
                 <div className="loading-spinner" />
-                <p>Loading your dashboard…</p>
+                <p>{t('caregiverDashboard.loading.dashboard')}</p>
             </div>
         );
     }
@@ -846,6 +1048,9 @@ export default function CaregiverDashboard() {
 
     const caregiverInitial =
         caregiverName.trim().charAt(0).toUpperCase() || 'C';
+
+    const caregiverFirstName =
+        caregiverName.trim().split(/\s+/)[0] || t('caregiverDashboard.header.caregiver');
 
     const filteredPatients = patients.filter((p) =>
         (p.full_name || '')
@@ -879,7 +1084,7 @@ export default function CaregiverDashboard() {
                             {link.icon}
                         </span>
 
-                        {link.label}
+                        {t(link.labelKey)}
                     </button>
                 ))}
             </nav>
@@ -890,17 +1095,17 @@ export default function CaregiverDashboard() {
                 </span>
 
                 <p>
-                    Need a hand with the dashboard?
+                    {t('caregiverDashboard.sidebar.helpText')}
                 </p>
 
                 <button
                     onClick={() =>
                         alert(
-                            'Support chat is coming soon. For now, use the Emergency Help Line on the main site.'
+                            t('caregiverDashboard.sidebar.supportComingSoon')
                         )
                     }
                 >
-                    Contact Support
+                    {t('caregiverDashboard.sidebar.contactSupport')}
                 </button>
             </div>
         </aside>
@@ -921,11 +1126,11 @@ export default function CaregiverDashboard() {
                     <span className="header-avatar-circle">
                         {caregiverInitial}
                     </span>
-                    Profile
+                    {caregiverFirstName}
                 </button>
 
                 <button className="header-logout-btn" onClick={handleLogout}>
-                    Logout
+                    {t('caregiverDashboard.header.logout')}
                 </button>
             </div>
         </header>
@@ -972,7 +1177,7 @@ export default function CaregiverDashboard() {
 
                     <div className="profile-details-grid">
                         {PROFILE_FIELDS.map(
-                            ({ key, label }) => {
+                            ({ key, labelKey }) => {
                                 const value = meta[key];
 
                                 if (!value) return null;
@@ -983,7 +1188,7 @@ export default function CaregiverDashboard() {
                                         key={key}
                                     >
                                         <span className="profile-detail-label">
-                                            {label}
+                                            {t(labelKey)}
                                         </span>
 
                                         <span className="profile-detail-value">
@@ -999,8 +1204,7 @@ export default function CaregiverDashboard() {
                         ({ key }) => !meta[key]
                     ) && (
                         <p className="profile-empty-note">
-                            No additional profile details are on
-                            file for this account.
+                            {t('caregiverDashboard.profile.empty')}
                         </p>
                     )}
                 </div>
@@ -1016,7 +1220,7 @@ export default function CaregiverDashboard() {
                 <div className="dashboard-main">
                     <header className="dashboard-header">
                         <div className="header-title">
-                            <h1>My Patients</h1>
+                            <h1>{t('caregiverDashboard.patients.title')}</h1>
                         </div>
 
                         <div className="header-actions">
@@ -1030,14 +1234,14 @@ export default function CaregiverDashboard() {
                                     {caregiverInitial}
                                 </span>
 
-                                Profile
+                                {caregiverFirstName}
                             </button>
 
                             <button
                                 className="header-logout-btn"
                                 onClick={handleLogout}
                             >
-                                Logout
+                                {t('caregiverDashboard.header.logout')}
                             </button>
                         </div>
                     </header>
@@ -1054,7 +1258,7 @@ export default function CaregiverDashboard() {
 
                                 <input
                                     type="text"
-                                    placeholder="Search patients by name..."
+                                    placeholder={t('caregiverDashboard.patients.searchPlaceholder')}
                                     value={searchTerm}
                                     onChange={(e) =>
                                         setSearchTerm(
@@ -1066,18 +1270,18 @@ export default function CaregiverDashboard() {
 
                             <div className="patient-filter-pills">
                                 <button className="filter-pill filter-pill-active">
-                                    All
+                                    {t('caregiverDashboard.patients.all')}
                                 </button>
 
                                 <button
                                     className="filter-pill"
                                     onClick={() =>
                                         alert(
-                                            'Custom filters are coming soon.'
+                                            t('caregiverDashboard.patients.customFiltersComingSoon')
                                         )
                                     }
                                 >
-                                    Needs Attention
+                                    {t('caregiverDashboard.patients.needsAttention')}
                                 </button>
                             </div>
                         </div>
@@ -1086,8 +1290,7 @@ export default function CaregiverDashboard() {
                     {patients.length === 0 ? (
                         <div className="empty-state">
                             <p>
-                                You haven't added any patients
-                                yet.
+                                {t('caregiverDashboard.patients.noPatients')}
                             </p>
 
                             <button
@@ -1096,13 +1299,13 @@ export default function CaregiverDashboard() {
                                     setView('addPatient')
                                 }
                             >
-                                + Add Your First Patient
+                                {t('caregiverDashboard.patients.addFirstPatient')}
                             </button>
                         </div>
                     ) : filteredPatients.length === 0 ? (
                         <div className="empty-state">
                             <p>
-                                No patients match "{searchTerm}".
+                                {t('caregiverDashboard.patients.noMatch', { searchTerm })}
                             </p>
 
                             <button
@@ -1111,7 +1314,7 @@ export default function CaregiverDashboard() {
                                     setSearchTerm('')
                                 }
                             >
-                                Clear search
+                                {t('caregiverDashboard.patients.clearSearch')}
                             </button>
                         </div>
                     ) : (
@@ -1150,8 +1353,8 @@ export default function CaregiverDashboard() {
                                                 </span>
 
                                                 {isOnline
-                                                    ? 'Online'
-                                                    : 'Offline'}
+                                                    ? t('caregiverDashboard.patients.online')
+                                                    : t('caregiverDashboard.patients.offline')}
                                             </span>
 
                                             <div className="patient-card-header">
@@ -1174,7 +1377,7 @@ export default function CaregiverDashboard() {
 
                                                     {joined && (
                                                         <p className="patient-joined-date">
-                                                            Added{' '}
+                                                            {t('caregiverDashboard.patients.added')}{' '}
                                                             {
                                                                 joined
                                                             }
@@ -1186,7 +1389,7 @@ export default function CaregiverDashboard() {
                                             <div className="patient-credentials">
                                                 <div className="credential-row">
                                                     <span className="credential-label">
-                                                        Patient ID:
+                                                        {t('caregiverDashboard.patients.patientId')}
                                                     </span>
 
                                                     <span className="credential-value">
@@ -1198,7 +1401,7 @@ export default function CaregiverDashboard() {
 
                                                 <div className="credential-row">
                                                     <span className="credential-label">
-                                                        Login Code:
+                                                        {t('caregiverDashboard.patients.loginCode')}
                                                     </span>
 
                                                     <div
@@ -1212,7 +1415,7 @@ export default function CaregiverDashboard() {
                                                     >
                                                         <span className="credential-value code">
                                                             {patient.login_code ||
-                                                                'Expired/None'}
+                                                                t('caregiverDashboard.patients.expiredNone')}
                                                         </span>
 
                                                         {patient.login_code &&
@@ -1242,12 +1445,12 @@ export default function CaregiverDashboard() {
                                                             );
                                                         } else {
                                                             alert(
-                                                                'No active code to copy. Please regenerate one.'
+                                                                t('caregiverDashboard.patients.noActiveCode')
                                                             );
                                                         }
                                                     }}
                                                 >
-                                                    📋 Copy Code
+                                                    {t('caregiverDashboard.patients.copyCode')}
                                                 </button>
 
                                                 <button
@@ -1257,7 +1460,7 @@ export default function CaregiverDashboard() {
                                                         setView('reports');
                                                     }}
                                                 >
-                                                    👁️ View Patient
+                                                    👁️ {t('caregiverDashboard.patients.viewPatient')}
                                                 </button>
 
                                                 <button
@@ -1268,7 +1471,7 @@ export default function CaregiverDashboard() {
                                                         )
                                                     }
                                                 >
-                                                    🔄 Regenerate Code
+                                                    🔄 {t('caregiverDashboard.patients.regenerateCode')}
                                                 </button>
 
                                                 <button
@@ -1280,7 +1483,7 @@ export default function CaregiverDashboard() {
                                                         )
                                                     }
                                                 >
-                                                    🗑️ Remove Patient
+                                                    🗑️ {t('caregiverDashboard.patients.removePatient')}
                                                 </button>
                                             </div>
                                         </div>
@@ -1291,8 +1494,7 @@ export default function CaregiverDashboard() {
                     )}
 
                     <footer className="dashboard-footer">
-                        NeuroPlay · Built for families across the
-                        North Eastern Region
+                        {t('caregiverDashboard.footer')}
                     </footer>
                 </div>
 
@@ -1332,17 +1534,17 @@ export default function CaregiverDashboard() {
                 {renderSidebar('reports')}
 
                 <div className="dashboard-main">
-                    {renderPageHeader('Reports', 'Cognitive game performance')}
+                    {renderPageHeader(t('caregiverDashboard.reports.title'), t('caregiverDashboard.reports.cognitivePerformance'))}
 
                     <div className="sample-data-note">
-                        Sample data shown below — live game reporting is coming soon. Once game sessions are recorded, this page will reflect real activity automatically.
+                        {t('caregiverDashboard.reports.sampleDataNote')}
                     </div>
 
                     {patients.length === 0 ? (
                         <div className="empty-state">
-                            <p>Add a patient to start seeing their game reports here.</p>
+                            <p>{t('caregiverDashboard.reports.noPatient')}</p>
                             <button className="nav-btn" onClick={() => setView('addPatient')}>
-                                + Add Your First Patient
+                                {t('caregiverDashboard.patients.addFirstPatient')}
                             </button>
                         </div>
                     ) : (
@@ -1350,17 +1552,17 @@ export default function CaregiverDashboard() {
                             <div className="stats-grid reports-stats-grid">
                                 <div className="stat-card">
                                     <span className="stat-card-icon stat-icon-blue">🗓️</span>
-                                    <h3>Sessions this week</h3>
+                                    <h3>{t('caregiverDashboard.reports.sessionsThisWeek')}</h3>
                                     <p className="stat-value">{totalSessionsThisWeek}</p>
                                 </div>
                                 <div className="stat-card">
                                     <span className="stat-card-icon stat-icon-navy">🎯</span>
-                                    <h3>Average accuracy</h3>
+                                    <h3>{t('caregiverDashboard.reports.averageAccuracy')}</h3>
                                     <p className="stat-value">{avgAccuracy}%</p>
                                 </div>
                                 <div className="stat-card">
                                     <span className="stat-card-icon stat-icon-amber">🏆</span>
-                                    <h3>Most played game</h3>
+                                    <h3>{t('caregiverDashboard.reports.mostPlayedGame')}</h3>
                                     <p className="stat-value stat-value-text">
                                         {mostPlayedGame ? GAME_META[mostPlayedGame[0]].label : '—'}
                                     </p>
@@ -1387,20 +1589,20 @@ export default function CaregiverDashboard() {
                                         <div key={key} className="report-game-card">
                                             <div className="report-game-card-head">
                                                 <span className="report-game-icon">{meta.icon}</span>
-                                                <h3>{meta.label}</h3>
+                                                <h3>{t(meta.labelKey)}</h3>
                                             </div>
                                             <div className="report-game-metrics">
                                                 <div>
                                                     <span className="report-metric-value">{stat.count}</span>
-                                                    <span className="report-metric-label">Sessions</span>
+                                                    <span className="report-metric-label">{t('caregiverDashboard.reports.sessions')}</span>
                                                 </div>
                                                 <div>
                                                     <span className="report-metric-value">{stat.bestScore}</span>
-                                                    <span className="report-metric-label">Best score</span>
+                                                    <span className="report-metric-label">{t('caregiverDashboard.reports.bestScore')}</span>
                                                 </div>
                                                 <div>
                                                     <span className="report-metric-value">{avg}%</span>
-                                                    <span className="report-metric-label">Avg accuracy</span>
+                                                    <span className="report-metric-label">{t('caregiverDashboard.reports.avgAccuracy')}</span>
                                                 </div>
                                             </div>
                                             <div className="report-accuracy-bar">
@@ -1412,15 +1614,15 @@ export default function CaregiverDashboard() {
                             </div>
 
                             <div className="report-history-card">
-                                <h3 className="section-title">Recent activity</h3>
+                                <h3 className="section-title">{t('caregiverDashboard.reports.recentActivity')}</h3>
                                 <table className="report-history-table">
                                     <thead>
                                         <tr>
-                                            <th>Game</th>
-                                            <th>Score</th>
-                                            <th>Accuracy</th>
-                                            <th>Duration</th>
-                                            <th>Played</th>
+                                            <th>{t('caregiverDashboard.reports.game')}</th>
+                                            <th>{t('caregiverDashboard.reports.score')}</th>
+                                            <th>{t('caregiverDashboard.reports.accuracy')}</th>
+                                            <th>{t('caregiverDashboard.reports.duration')}</th>
+                                            <th>{t('caregiverDashboard.reports.played')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1428,12 +1630,12 @@ export default function CaregiverDashboard() {
                                             <tr key={s.id}>
                                                 <td>
                                                     <span className="report-history-game">
-                                                        {GAME_META[s.game].icon} {GAME_META[s.game].label}
+                                                        {GAME_META[s.game].icon} {t(GAME_META[s.game].labelKey)}
                                                     </span>
                                                 </td>
                                                 <td>{s.score}</td>
                                                 <td>{s.accuracy}%</td>
-                                                <td>{Math.round(s.duration_seconds / 60)} min</td>
+                                                <td>{t('caregiverDashboard.reports.minutes', { count: Math.round(s.duration_seconds / 60) })}</td>
                                                 <td>{formatSessionDate(s.played_at)}</td>
                                             </tr>
                                         ))}
@@ -1444,7 +1646,29 @@ export default function CaregiverDashboard() {
                     )}
 
                     <footer className="dashboard-footer">
-                        NeuroPlay · Built for families across the North Eastern Region
+                        {t('caregiverDashboard.footer')}
+                    </footer>
+                </div>
+
+                {renderProfileModal()}
+            </div>
+        );
+    }
+
+    if (view === 'reminders') {
+        return (
+            <div className="dashboard-shell">
+                {renderSidebar('reminders')}
+
+                <div className="dashboard-main">
+                    {renderPageHeader(t('caregiverDashboard.reminders.title'), t('caregiverDashboard.reminders.subtitle'))}
+
+                    {renderDailyRoutinePanel()}
+
+                    {renderRemindersPanel()}
+
+                    <footer className="dashboard-footer">
+                        {t('caregiverDashboard.footer')}
                     </footer>
                 </div>
 
@@ -1458,32 +1682,32 @@ export default function CaregiverDashboard() {
             {
                 key: 'breathing',
                 icon: '🧘',
-                title: 'Quick Calm',
-                desc: 'A guided box-breathing timer you can run right now, between patient check-ins.',
+                titleKey: 'caregiverDashboard.resources.quickCalm.title',
+                descKey: 'caregiverDashboard.resources.quickCalm.description',
             },
             {
                 key: 'emergencyCard',
                 icon: '🪪',
-                title: 'Emergency Contact Card',
-                desc: 'A printable card with your patient\'s ID and emergency contact, filled in from your account.',
+                titleKey: 'caregiverDashboard.resources.emergencyCard.title',
+                descKey: 'caregiverDashboard.resources.emergencyCard.description',
             },
             {
                 key: 'reportsGuide',
                 icon: '📈',
-                title: 'Understanding Your Reports',
-                desc: 'What score, accuracy, and session counts on the Reports tab actually mean.',
+                titleKey: 'caregiverDashboard.resources.reportsGuide.title',
+                descKey: 'caregiverDashboard.resources.reportsGuide.description',
             },
             {
                 key: 'faq',
                 icon: '❓',
-                title: 'NeuroPlay Help & FAQ',
-                desc: 'How login codes work, adding a patient, and what online/offline status means.',
+                titleKey: 'caregiverDashboard.resources.faq.title',
+                descKey: 'caregiverDashboard.resources.faq.description',
             },
             {
                 key: 'glossary',
                 icon: '🧠',
-                title: 'Dementia Glossary',
-                desc: 'Plain-language definitions for terms you\'ll see in care notes and reports.',
+                titleKey: 'caregiverDashboard.resources.glossary.title',
+                descKey: 'caregiverDashboard.resources.glossary.description',
             },
         ];
 
@@ -1491,26 +1715,26 @@ export default function CaregiverDashboard() {
             {
                 key: 'directory',
                 icon: '🩺',
-                title: 'NER Medical Directory',
-                desc: 'Emergency neurological helplines and memory clinics across the 8 North Eastern states.',
+                titleKey: 'caregiverDashboard.resources.directory.title',
+                descKey: 'caregiverDashboard.resources.directory.description',
             },
             {
                 key: 'manual',
                 icon: '📘',
-                title: 'Caregiver Manual & Stress Relief',
-                desc: 'Monitoring guides and anxiety de-escalation steps for hard moments.',
+                titleKey: 'caregiverDashboard.resources.manual.title',
+                descKey: 'caregiverDashboard.resources.manual.description',
             },
             {
                 key: 'tips',
                 icon: '📚',
-                title: 'Dementia Care Tips',
-                desc: 'Practical guidance on nutrition, sleep, home safety, and everyday communication.',
+                titleKey: 'caregiverDashboard.resources.tips.title',
+                descKey: 'caregiverDashboard.resources.tips.description',
             },
             {
                 key: 'support',
                 icon: '🤝',
-                title: 'Support Groups & Community',
-                desc: 'Local caregiver networks, national organizations, and 24/7 mental health support.',
+                titleKey: 'caregiverDashboard.resources.support.title',
+                descKey: 'caregiverDashboard.resources.support.description',
             },
         ];
 
@@ -1544,15 +1768,15 @@ export default function CaregiverDashboard() {
 
                         {activeResourceModal === 'breathing' && (
                             <div>
-                                <h2>🧘 Quick Calm</h2>
-                                <p className="resource-modal-lead">A short breathing pause, whenever you need it — inhale, hold, exhale, hold, each for 4 seconds.</p>
+                                <h2>🧘 {t('caregiverDashboard.resources.quickCalm.title')}</h2>
+                                <p className="resource-modal-lead">{t('caregiverDashboard.breathing.instruction')}</p>
                                 <div className="breathing-tool">
                                     <div className={`breathing-tool-circle ${breathingActive ? `phase-${breathingPhase}` : ''}`}>
-                                        <span className="breathing-tool-label">{breathingActive ? BREATHING_LABELS[breathingPhase] : 'Ready'}</span>
+                                        <span className="breathing-tool-label">{breathingActive ? t(`caregiverDashboard.breathing.${breathingPhase === 'hold1' || breathingPhase === 'hold2' ? 'hold' : breathingPhase}`) : t('caregiverDashboard.breathing.ready')}</span>
                                         <span className="breathing-tool-timer">{breathingActive ? breathingTimer : '4s'}</span>
                                     </div>
                                     <button type="button" className="btn-primary" onClick={toggleBreathing}>
-                                        {breathingActive ? 'Stop' : 'Start breathing'}
+                                        {breathingActive ? t('caregiverDashboard.breathing.stop') : t('caregiverDashboard.breathing.start')}
                                     </button>
                                 </div>
                             </div>
@@ -1560,9 +1784,9 @@ export default function CaregiverDashboard() {
 
                         {activeResourceModal === 'emergencyCard' && (
                             <div>
-                                <h2>🪪 Emergency Contact Card</h2>
+                                <h2>🪪 {t('caregiverDashboard.resources.emergencyCard.title')}</h2>
                                 {patients.length === 0 ? (
-                                    <p>Add a patient first to generate their emergency card.</p>
+                                    <p>{t('caregiverDashboard.resources.emergencyCard.addPatient')}</p>
                                 ) : (
                                     <>
                                         {patients.length > 1 && (
@@ -1581,39 +1805,39 @@ export default function CaregiverDashboard() {
 
                                         <div className="emergency-card-print">
                                             <div className="emergency-card-header">
-                                                <span role="img" aria-label="brain">🧠</span> NeuroPlay Emergency Card
+                                                <span role="img" aria-label={t('caregiverDashboard.accessibility.brain')}>🧠</span> {t('caregiverDashboard.resources.emergencyCard.cardTitle')}
                                             </div>
                                             <div className="emergency-card-row">
-                                                <span>Patient</span>
+                                                <span>{t('caregiverDashboard.resources.emergencyCard.patient')}</span>
                                                 <strong>{emergencyPatient?.full_name || '—'}</strong>
                                             </div>
                                             <div className="emergency-card-row">
-                                                <span>Patient ID</span>
+                                                <span>{t('caregiverDashboard.resources.emergencyCard.patientId')}</span>
                                                 <strong>{emergencyPatient?.patient_id || '—'}</strong>
                                             </div>
                                             <div className="emergency-card-row">
-                                                <span>Emergency contact</span>
+                                                <span>{t('caregiverDashboard.resources.emergencyCard.emergencyContact')}</span>
                                                 <strong>{meta.emergency_name || '—'}</strong>
                                             </div>
                                             <div className="emergency-card-row">
-                                                <span>Emergency phone</span>
+                                                <span>{t('caregiverDashboard.resources.emergencyCard.emergencyPhone')}</span>
                                                 <strong>{meta.emergency_phone || '—'}</strong>
                                             </div>
                                             <div className="emergency-card-row">
-                                                <span>Caregiver</span>
+                                                <span>{t('caregiverDashboard.resources.emergencyCard.caregiver')}</span>
                                                 <strong>{caregiverName}</strong>
                                             </div>
                                             <div className="emergency-card-row">
-                                                <span>Caregiver phone</span>
+                                                <span>{t('caregiverDashboard.resources.emergencyCard.caregiverPhone')}</span>
                                                 <strong>{meta.phone_number || '—'}</strong>
                                             </div>
                                             <div className="emergency-card-footer">
-                                                National Emergency Response Service: 112 · Tele-MANAS: 14416
+                                                {t('caregiverDashboard.resources.emergencyCard.nationalEmergency')}
                                             </div>
                                         </div>
 
                                         <button type="button" className="btn-primary" onClick={() => window.print()}>
-                                            🖨️ Print card
+                                            {t('caregiverDashboard.resources.emergencyCard.printCard')}
                                         </button>
                                     </>
                                 )}
@@ -1622,154 +1846,154 @@ export default function CaregiverDashboard() {
 
                         {activeResourceModal === 'reportsGuide' && (
                             <div>
-                                <h2>📈 Understanding Your Reports</h2>
+                                <h2>📈 {t('caregiverDashboard.resources.reportsGuide.title')}</h2>
                                 <div className="resource-modal-block">
-                                    <h4>Sessions</h4>
-                                    <p>How many times a patient has played a given game. More sessions generally mean more consistent engagement.</p>
+                                    <h4>{t('caregiverDashboard.resources.reportsGuide.sessions')}</h4>
+                                    <p>{t('caregiverDashboard.resources.reportsGuide.sessionsText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Score</h4>
-                                    <p>A game-specific point total. Compare a patient's own scores over time rather than against other patients — the goal is their personal trend.</p>
+                                    <h4>{t('caregiverDashboard.resources.reportsGuide.score')}</h4>
+                                    <p>{t('caregiverDashboard.resources.reportsGuide.scoreText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Accuracy</h4>
-                                    <p>The share of correct responses in a session. A gradual dip across several sessions is worth mentioning at their next check-up; a single low session usually isn't.</p>
+                                    <h4>{t('caregiverDashboard.resources.reportsGuide.accuracy')}</h4>
+                                    <p>{t('caregiverDashboard.resources.reportsGuide.accuracyText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>What to watch for</h4>
-                                    <p>Sudden drops, not gradual ones, matter most — they're more likely to reflect an off day (poor sleep, discomfort) than a real change.</p>
+                                    <h4>{t('caregiverDashboard.resources.reportsGuide.watchFor')}</h4>
+                                    <p>{t('caregiverDashboard.resources.reportsGuide.watchForText')}</p>
                                 </div>
                             </div>
                         )}
 
                         {activeResourceModal === 'faq' && (
                             <div>
-                                <h2>❓ NeuroPlay Help & FAQ</h2>
+                                <h2>❓ {t('caregiverDashboard.resources.faq.title')}</h2>
                                 <div className="resource-modal-block">
-                                    <h4>What is a login code?</h4>
-                                    <p>A short code your patient enters on their device to open their own dashboard. Each code expires after a set time for security.</p>
+                                    <h4>{t('caregiverDashboard.resources.faq.whatIsLoginCode')}</h4>
+                                    <p>{t('caregiverDashboard.resources.faq.loginCodeText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>What if a code expires?</h4>
-                                    <p>Use "Regenerate Code" on the patient's card in the Patients tab. This invalidates the old code immediately.</p>
+                                    <h4>{t('caregiverDashboard.resources.faq.codeExpires')}</h4>
+                                    <p>{t('caregiverDashboard.resources.faq.codeExpiresText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>What does Online/Offline mean?</h4>
-                                    <p>Online means that patient's dashboard is currently open on their device. It updates in real time as they log in or out.</p>
+                                    <h4>{t('caregiverDashboard.resources.faq.onlineOffline')}</h4>
+                                    <p>{t('caregiverDashboard.resources.faq.onlineOfflineText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>How do I add a patient?</h4>
-                                    <p>Select "Add Patient" from the dashboard overview. You'll get a Patient ID and login code to share with them.</p>
+                                    <h4>{t('caregiverDashboard.resources.faq.addPatient')}</h4>
+                                    <p>{t('caregiverDashboard.resources.faq.addPatientText')}</p>
                                 </div>
                             </div>
                         )}
 
                         {activeResourceModal === 'glossary' && (
                             <div>
-                                <h2>🧠 Dementia Glossary</h2>
+                                <h2>🧠 {t('caregiverDashboard.resources.glossary.title')}</h2>
                                 <div className="resource-modal-block">
-                                    <h4>Sundowning</h4>
-                                    <p>Increased confusion or agitation in the late afternoon and evening.</p>
+                                    <h4>{t('caregiverDashboard.resources.glossary.sundowning')}</h4>
+                                    <p>{t('caregiverDashboard.resources.glossary.sundowningText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Cognitive decline</h4>
-                                    <p>A gradual reduction in memory, reasoning, or thinking skills over time.</p>
+                                    <h4>{t('caregiverDashboard.resources.glossary.cognitiveDecline')}</h4>
+                                    <p>{t('caregiverDashboard.resources.glossary.cognitiveDeclineText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Caregiver burnout</h4>
-                                    <p>Physical and emotional exhaustion from sustained caregiving, often with reduced patience or motivation.</p>
+                                    <h4>{t('caregiverDashboard.resources.glossary.caregiverBurnout')}</h4>
+                                    <p>{t('caregiverDashboard.resources.glossary.caregiverBurnoutText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Reminiscence therapy</h4>
-                                    <p>Using familiar memories, photos, or music to support engagement and mood.</p>
+                                    <h4>{t('caregiverDashboard.resources.glossary.reminiscenceTherapy')}</h4>
+                                    <p>{t('caregiverDashboard.resources.glossary.reminiscenceTherapyText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Validation approach</h4>
-                                    <p>Responding to the emotion behind what someone says, rather than correcting the facts.</p>
+                                    <h4>{t('caregiverDashboard.resources.glossary.validationApproach')}</h4>
+                                    <p>{t('caregiverDashboard.resources.glossary.validationApproachText')}</p>
                                 </div>
                             </div>
                         )}
 
                         {activeResourceModal === 'directory' && (
                             <div>
-                                <h2>🩺 NER Neurological Care Directory</h2>
+                                <h2>🩺 {t('caregiverDashboard.resources.directory.title')}</h2>
                                 <div className="resource-modal-block">
-                                    <h4>Assam</h4>
-                                    <p>Gauhati Medical College & Hospital, Guwahati — Neurology & Memory Clinic. Assam Medical College, Dibrugarh. Silchar Medical College & Hospital, Silchar.</p>
+                                    <h4>{t('caregiverDashboard.resources.directory.assam')}</h4>
+                                    <p>{t('caregiverDashboard.resources.directory.assamDetails')} {t('caregiverDashboard.resources.directory.assamAmc')} {t('caregiverDashboard.resources.directory.assamSilchar')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Meghalaya</h4>
-                                    <p>NEIGRIHMS, Shillong — Emergency: +91 364 2530000. Civil Hospital Shillong.</p>
+                                    <h4>{t('caregiverDashboard.resources.directory.meghalaya')}</h4>
+                                    <p>{t('caregiverDashboard.resources.directory.meghalayaNeigrihms')} {t('caregiverDashboard.resources.directory.meghalayaCivil')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Manipur</h4>
-                                    <p>RIMS, Imphal — Neurology dept & telemedicine hub. JNIMS, Imphal.</p>
+                                    <h4>{t('caregiverDashboard.resources.directory.manipur')}</h4>
+                                    <p>{t('caregiverDashboard.resources.directory.manipurRims')} {t('caregiverDashboard.resources.directory.manipurJnims')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Tripura, Mizoram, Nagaland, Arunachal Pradesh & Sikkim</h4>
-                                    <p>Agartala Government Medical College. Zoram Medical College, Aizawl. Kohima Naga Hospital Authority. TRIHMS, Naharlagun. STNM Hospital, Gangtok.</p>
+                                    <h4>{t('caregiverDashboard.resources.directory.otherStates')}</h4>
+                                    <p>{t('caregiverDashboard.resources.directory.tripuraAgmc')} {t('caregiverDashboard.resources.directory.mizoramZmc')} {t('caregiverDashboard.resources.directory.nagalandKohima')} {t('caregiverDashboard.resources.directory.trihms')} {t('caregiverDashboard.resources.directory.stnm')}</p>
                                 </div>
                                 <div className="resource-modal-block resource-modal-emergency">
-                                    <h4>Emergency helplines</h4>
-                                    <p>Tele-MANAS Mental Health Support: 14416 (free, 24/7). National Emergency Response Service: 112.</p>
+                                    <h4>{t('caregiverDashboard.resources.directory.emergencyHelplines')}</h4>
+                                    <p>{t('caregiverDashboard.resources.directory.teleManas')} 14416. {t('caregiverDashboard.resources.directory.nationalEmergency')} 112.</p>
                                 </div>
                             </div>
                         )}
 
                         {activeResourceModal === 'manual' && (
                             <div>
-                                <h2>📘 Caregiver Manual & Stress Relief</h2>
+                                <h2>📘 {t('caregiverDashboard.resources.manual.title')}</h2>
                                 <div className="resource-modal-block">
-                                    <h4>Daily routine</h4>
-                                    <p>Keep mealtimes and activities consistent. Mornings tend to bring the most cognitive clarity — a good window for memory exercises and light movement.</p>
+                                    <h4>{t('caregiverDashboard.resources.manual.dailyRoutine')}</h4>
+                                    <p>{t('caregiverDashboard.resources.manual.dailyRoutineText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Managing sundowning & agitation</h4>
-                                    <p>Reduce noise and bright light in the late afternoon. Validate emotions rather than correcting facts, and redirect toward calm, familiar activities.</p>
+                                    <h4>{t('caregiverDashboard.resources.manual.managingSundowning')}</h4>
+                                    <p>{t('caregiverDashboard.resources.manual.managingSundowningText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>A quick breathing reset</h4>
-                                    <p>Box breathing: inhale for 4 seconds, hold for 4, exhale for 4, hold for 4. Repeat for two to five minutes whenever things feel like too much.</p>
+                                    <h4>{t('caregiverDashboard.resources.manual.breathingReset')}</h4>
+                                    <p>{t('caregiverDashboard.resources.manual.breathingResetText')}</p>
                                 </div>
                             </div>
                         )}
 
                         {activeResourceModal === 'tips' && (
                             <div>
-                                <h2>📚 Dementia Care Tips</h2>
+                                <h2>📚 {t('caregiverDashboard.resources.tips.title')}</h2>
                                 <div className="resource-modal-block">
-                                    <h4>Nutrition</h4>
-                                    <p>Small, frequent meals with familiar foods. Keep water visible, since thirst cues are often forgotten.</p>
+                                    <h4>{t('caregiverDashboard.resources.tips.nutrition')}</h4>
+                                    <p>{t('caregiverDashboard.resources.tips.nutritionText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Sleep</h4>
-                                    <p>A consistent bedtime routine and dim evening lighting help. Calm music can ease dusk confusion.</p>
+                                    <h4>{t('caregiverDashboard.resources.tips.sleep')}</h4>
+                                    <p>{t('caregiverDashboard.resources.tips.sleepText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Home safety</h4>
-                                    <p>Remove loose rugs, add grab bars near the bathroom, and keep medicines and sharp objects out of reach.</p>
+                                    <h4>{t('caregiverDashboard.resources.tips.homeSafety')}</h4>
+                                    <p>{t('caregiverDashboard.resources.tips.homeSafetyText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>Communication</h4>
-                                    <p>Short, simple sentences. Give time to respond, and focus on the feeling behind the words rather than correcting every detail.</p>
+                                    <h4>{t('caregiverDashboard.resources.tips.communication')}</h4>
+                                    <p>{t('caregiverDashboard.resources.tips.communicationText')}</p>
                                 </div>
                             </div>
                         )}
 
                         {activeResourceModal === 'support' && (
                             <div>
-                                <h2>🤝 Support Groups & Community</h2>
+                                <h2>🤝 {t('caregiverDashboard.resources.support.title')}</h2>
                                 <div className="resource-modal-block">
-                                    <h4>Local groups</h4>
-                                    <p>Many district hospitals and NGOs run caregiver meet-ups — ask your nearest medical center from the directory above.</p>
+                                    <h4>{t('caregiverDashboard.resources.support.localGroups')}</h4>
+                                    <p>{t('caregiverDashboard.resources.support.localGroupsText')}</p>
                                 </div>
                                 <div className="resource-modal-block">
-                                    <h4>National organizations</h4>
-                                    <p>ARDSI (Alzheimer's and Related Disorders Society of India) runs chapters and helplines with counseling and training resources.</p>
+                                    <h4>{t('caregiverDashboard.resources.support.nationalOrganizations')}</h4>
+                                    <p>{t('caregiverDashboard.resources.support.nationalOrganizationsText')}</p>
                                 </div>
                                 <div className="resource-modal-block resource-modal-emergency">
-                                    <h4>Caregiver mental health</h4>
-                                    <p>Burnout is common and real. Tele-MANAS (14416) offers free, confidential support for caregivers too, 24/7.</p>
+                                    <h4>{t('caregiverDashboard.resources.support.caregiverMentalHealth')}</h4>
+                                    <p>{t('caregiverDashboard.resources.support.caregiverMentalHealthText')}</p>
                                 </div>
                             </div>
                         )}
@@ -1783,28 +2007,28 @@ export default function CaregiverDashboard() {
                 {renderSidebar('resources')}
 
                 <div className="dashboard-main">
-                    {renderPageHeader('Resources', 'Tools for you, and reference material for everyone')}
+                    {renderPageHeader(t('caregiverDashboard.resources.title'), t('caregiverDashboard.resources.subtitle'))}
 
-                    <h3 className="section-title resources-section-heading">Tools for you</h3>
+                    <h3 className="section-title resources-section-heading">{t('caregiverDashboard.resources.toolsForYou')}</h3>
                     <div className="resources-dashboard-grid">
                         {toolCards.map((card) => (
                             <div key={card.key} className="resource-dash-card">
                                 <span className="resource-dash-icon">{card.icon}</span>
-                                <h3>{card.title}</h3>
-                                <p>{card.desc}</p>
+                                <h3>{t(card.titleKey)}</h3>
+                                <p>{t(card.descKey)}</p>
                                 <button
                                     className="btn-outline"
                                     onClick={() => setActiveResourceModal(card.key)}
                                 >
-                                    Open
+                                    {t('caregiverDashboard.resources.open')}
                                 </button>
                             </div>
                         ))}
 
                         <div className="resource-dash-card checklist-card">
                             <span className="resource-dash-icon">✅</span>
-                            <h3>Today's Care Checklist</h3>
-                            <p>Resets automatically each day. Just for your own tracking — nothing is shared.</p>
+                            <h3>{t('caregiverDashboard.checklist.title')}</h3>
+                            <p>{t('caregiverDashboard.checklist.subtitle')}</p>
                             <div className="checklist-items">
                                 {CHECKLIST_ITEMS.map((item) => (
                                     <label key={item.key} className="checklist-row">
@@ -1814,7 +2038,7 @@ export default function CaregiverDashboard() {
                                             onChange={() => toggleChecklistItem(item.key)}
                                         />
                                         <span className={checklistState[item.key] ? 'checklist-done' : ''}>
-                                            {item.label}
+                                            {t(item.labelKey)}
                                         </span>
                                     </label>
                                 ))}
@@ -1822,25 +2046,25 @@ export default function CaregiverDashboard() {
                         </div>
                     </div>
 
-                    <h3 className="section-title resources-section-heading">General reference</h3>
+                    <h3 className="section-title resources-section-heading">{t('caregiverDashboard.resources.generalReference')}</h3>
                     <div className="resources-dashboard-grid">
                         {referenceCards.map((card) => (
                             <div key={card.key} className="resource-dash-card">
                                 <span className="resource-dash-icon">{card.icon}</span>
-                                <h3>{card.title}</h3>
-                                <p>{card.desc}</p>
+                                <h3>{t(card.titleKey)}</h3>
+                                <p>{t(card.descKey)}</p>
                                 <button
                                     className="btn-outline"
                                     onClick={() => setActiveResourceModal(card.key)}
                                 >
-                                    Open
+                                    {t('caregiverDashboard.resources.open')}
                                 </button>
                             </div>
                         ))}
                     </div>
 
                     <footer className="dashboard-footer">
-                        NeuroPlay · Built for families across the North Eastern Region
+                        {t('caregiverDashboard.footer')}
                     </footer>
                 </div>
 
@@ -1870,17 +2094,17 @@ export default function CaregiverDashboard() {
     }
 
     return (
-        <div className="dashboard-shell">
+        <div className="dashboard-shell dashboard-home-shell">
             {renderSidebar('dashboard')}
 
             <div className="dashboard-main">
                 <header className="dashboard-header">
                     <div className="header-title">
                         <p className="header-subtitle">
-                            {getGreeting()}, {caregiverName} 👋
+                            {t(getGreeting())}, {caregiverName} 👋
                         </p>
 
-                        <h1>Dashboard Overview</h1>
+                        <h1>{t('caregiverDashboard.dashboard.overview')}</h1>
                     </div>
 
                     <div className="header-actions">
@@ -1894,14 +2118,14 @@ export default function CaregiverDashboard() {
                                 {caregiverInitial}
                             </span>
 
-                            Profile
+                            {caregiverFirstName}
                         </button>
 
                         <button
                             className="header-logout-btn"
                             onClick={handleLogout}
                         >
-                            Logout
+                            {t('caregiverDashboard.header.logout')}
                         </button>
                     </div>
                 </header>
@@ -1909,7 +2133,7 @@ export default function CaregiverDashboard() {
                 <div className="page-status-strip">
                     <span className="sync-chip">
                         <span className="sync-dot" />
-                        All data synced
+                        {t('caregiverDashboard.dashboard.allDataSynced')}
                     </span>
 
                     <span className="page-status-date">
@@ -1928,7 +2152,7 @@ export default function CaregiverDashboard() {
                             ➕
                         </span>
 
-                        <h2>Add Patient</h2>
+                        <h2>{t('caregiverDashboard.dashboard.addPatient')}</h2>
 
                         <p
                             style={{
@@ -1936,8 +2160,7 @@ export default function CaregiverDashboard() {
                                 opacity: 0.9
                             }}
                         >
-                            Register a patient & generate
-                            credentials
+                            {t('caregiverDashboard.dashboard.registerPatientCredentials')}
                         </p>
                     </div>
 
@@ -1952,7 +2175,7 @@ export default function CaregiverDashboard() {
                             👥
                         </span>
 
-                        <h3>My Patients</h3>
+                        <h3>{t('caregiverDashboard.patients.title')}</h3>
 
                         <p className="stat-value">
                             {patients.length}
@@ -1968,10 +2191,10 @@ export default function CaregiverDashboard() {
                             📈
                         </span>
 
-                        <h3>Patient Progress</h3>
+                        <h3>{t('caregiverDashboard.dashboard.patientProgress')}</h3>
 
                         <p className="stat-placeholder">
-                            Cognitive performance trends
+                            {t('caregiverDashboard.dashboard.cognitivePerformanceTrends')}
                         </p>
                     </div>
                 </div>
@@ -1981,11 +2204,11 @@ export default function CaregiverDashboard() {
                         <div className="alerts-panel-title-group">
                             <span className="alerts-panel-icon">🔔</span>
                             <div>
-                                <h3>Alerts &amp; Messages</h3>
+                                <h3>{t('caregiverDashboard.dashboard.alertsMessages')}</h3>
                                 <p className="alerts-panel-subtitle">
                                     {unreadMessageCount > 0
-                                        ? `${unreadMessageCount} unread note${unreadMessageCount === 1 ? '' : 's'} from patients`
-                                        : 'All caught up'}
+                                        ? t('caregiverDashboard.dashboard.unreadNotes', { count: unreadMessageCount })
+                                        : t('caregiverDashboard.dashboard.allCaughtUp')}
                                 </p>
                             </div>
                         </div>
@@ -1996,14 +2219,14 @@ export default function CaregiverDashboard() {
                                 className="alerts-mark-all-btn"
                                 onClick={markAllNotesAsRead}
                             >
-                                Mark all as read
+                                {t('caregiverDashboard.dashboard.markAllRead')}
                             </button>
                         )}
                     </div>
 
                     {patientMessages.length === 0 ? (
                         <p className="stat-placeholder">
-                            No new messages from patients
+                            {t('caregiverDashboard.dashboard.noNewMessages')}
                         </p>
                     ) : (
                         <div className="alerts-message-list">
@@ -2026,8 +2249,8 @@ export default function CaregiverDashboard() {
                                                 <span className="msg-name-inline">
                                                     {message.patient_name || 'Patient'}
                                                 </span>
-                                                <span className="msg-meta-sub">sent a note</span>
-                                                {!message.read_at && <span className="msg-unread-tag">New</span>}
+                                                <span className="msg-meta-sub">{t('caregiverDashboard.dashboard.sentNote')}</span>
+                                                {!message.read_at && <span className="msg-unread-tag">{t('caregiverDashboard.dashboard.new')}</span>}
                                             </p>
 
                                             <p className="msg-text-line">
@@ -2041,7 +2264,7 @@ export default function CaregiverDashboard() {
                                                         className="msg-action-btn primary"
                                                         onClick={() => markNoteAsRead(message.id)}
                                                     >
-                                                        Mark as read
+                                                        {t('caregiverDashboard.dashboard.markAsRead')}
                                                     </button>
                                                 )}
 
@@ -2050,15 +2273,15 @@ export default function CaregiverDashboard() {
                                                     className="msg-action-btn"
                                                     onClick={() => archiveNote(message.id)}
                                                 >
-                                                    Dismiss
+                                                    {t('caregiverDashboard.dashboard.dismiss')}
                                                 </button>
                                             </div>
                                         </div>
 
                                         <span className="msg-time">
                                             {message.created_at
-                                                ? new Date(message.created_at).toLocaleString()
-                                                : 'Just now'}
+                                                ? new Date(message.created_at).toLocaleString('en-US')
+                                                : t('caregiverDashboard.dashboard.justNow')}
                                         </span>
                                     </div>
                                 </div>
@@ -2067,12 +2290,8 @@ export default function CaregiverDashboard() {
                     )}
                 </div>
 
-
-                {renderRemindersPanel()}
-
                 <footer className="dashboard-footer">
-                    NeuroPlay · Built for families across the
-                    North Eastern Region
+                    {t('caregiverDashboard.footer')}
                 </footer>
             </div>
 

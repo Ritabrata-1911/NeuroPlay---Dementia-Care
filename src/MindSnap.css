@@ -1,185 +1,1422 @@
+/* ============================================================
+   MIND SNAP
+   Visual Sequence Memory Game
+   ============================================================ */
+
+
+/* ============================================================
+   MAIN CONTAINER
+   ============================================================ */
+
 .mindsnap-container {
+    min-height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
+
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2rem;
-    min-height: 100vh;
-    background-color: #f8fafc;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    padding: 30px 20px 50px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f1f6fb 0%,
+            #f8fafc 50%,
+            #eef5f9 100%
+        );
+
     color: #1a365d;
-    text-align: center;
+
+    font-family:
+        'Segoe UI',
+        Tahoma,
+        Geneva,
+        Verdana,
+        sans-serif;
 }
 
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
 .ms-header {
-    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 900px;
+
+    text-align: center;
+
+    margin-bottom: 22px;
 }
 
 .ms-header h1 {
-    font-size: 2.5rem;
+    margin: 0;
+
+    font-size: 2.2rem;
+    font-weight: 700;
+
     color: #1a365d;
-    margin: 0 0 0.5rem 0;
 }
+
+.ms-header h2 {
+    margin: 6px 0 0;
+
+    font-size: 1.7rem;
+    font-weight: 650;
+
+    color: #2f70b5;
+}
+
+.ms-header-subtitle {
+    margin: 5px 0 0;
+
+    color: #64748b;
+
+    font-size: 1rem;
+}
+
+
+/* ============================================================
+   CARD
+   ============================================================ */
 
 .ms-card {
-    background: white;
+    width: 100%;
+    max-width: 900px;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+
+    border: 1px solid #dce5ee;
+
     border-radius: 20px;
-    padding: 3rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    max-width: 800px;
-    width: 100%;
+
+    padding: 30px;
+
+    box-shadow:
+        0 8px 28px rgba(30, 60, 90, 0.10);
+
+    text-align: center;
 }
 
-.ms-instruction {
-    font-size: 1.4rem;
-    color: #4a5568;
-    margin-bottom: 2rem;
-    line-height: 1.6;
-}
 
-.ms-timer {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #e53e3e;
-    background: #fef2f2;
-    padding: 0.5rem 1.5rem;
-    border-radius: 12px;
-    display: inline-block;
-    margin-bottom: 1rem;
-    border: 2px solid #fecaca;
-}
+/* ============================================================
+   START SCREEN
+   ============================================================ */
 
-.ms-top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 2rem;
-}
-
-.ms-score-board {
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: #2F70B5;
-    background: #ebf8ff;
-    padding: 0.5rem 1.5rem;
-    border-radius: 12px;
-    border: 2px solid #bee3f8;
-}
-
-/* Grid & Cells */
-.ms-grid-wrapper {
-    background: #f1f5f9;
-    border: 4px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin: 2rem auto;
-    display: inline-block;
-}
-
-.ms-grid {
-    display: grid;
-    gap: 10px;
-    justify-content: center;
-    align-items: center;
-}
-
-.ms-cell {
-    width: clamp(60px, 12vw, 90px);
-    height: clamp(60px, 12vw, 90px);
-    background: white;
-    border: 3px solid #cbd5e1;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-}
-
-/* Cell States */
-.ms-cell.interactive:hover {
-    border-color: #94a3b8;
-    background: #f8fafc;
-}
-
-.ms-cell.highlighted {
-    background: #2F70B5;
-    border-color: #1e4f85;
-    box-shadow: 0 0 15px rgba(47, 112, 181, 0.4);
-    transform: scale(1.05);
-}
-
-.ms-cell.selected {
-    background: #ebf8ff;
-    border-color: #2F70B5;
-    color: #2F70B5;
-}
-
-/* Buttons */
-.ms-primary-btn {
-    background: #2F8B61;
-    color: white;
-    border: none;
-    padding: 1.2rem 3rem;
-    font-size: 1.5rem;
-    font-weight: bold;
-    border-radius: 12px;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(47, 139, 97, 0.3);
-    transition: transform 0.2s;
-    margin: 0.5rem;
-}
-
-.ms-primary-btn:hover {
-    background: #246c4b;
-    transform: translateY(-2px);
-}
-
-.ms-secondary-btn {
-    background: white;
-    color: #4a5568;
-    border: 3px solid #cbd5e1;
-    padding: 1.2rem 3rem;
-    font-size: 1.5rem;
-    font-weight: bold;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin: 0.5rem;
-}
-
-.ms-secondary-btn:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-}
-
-/* Results & Feedback */
-.ms-feedback-text {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #2F8B61;
-    height: 40px;
-    margin-bottom: 1rem;
-}
-
-.ms-stats {
-    font-size: 1.4rem;
-    line-height: 2;
-    color: #4a5568;
-    background: #f8fafc;
-    padding: 2rem;
-    border-radius: 16px;
-    margin-bottom: 2rem;
-    text-align: left;
-    display: inline-block;
-}
-
-.ms-stats strong {
-    color: #1a365d;
+.ms-start-card {
+    max-width: 700px;
 }
 
 .ms-icon-lg {
-    font-size: 5rem;
-    margin-bottom: 1rem;
+    font-size: 4rem;
+
+    line-height: 1;
+
+    margin-bottom: 18px;
+}
+
+.ms-start-card h2,
+.ms-game-over-card h2 {
+    margin: 0 0 14px;
+
+    color: #1a365d;
+
+    font-size: 2rem;
+}
+
+
+/* ============================================================
+   INSTRUCTIONS
+   ============================================================ */
+
+.ms-instruction {
+    color: #475569;
+
+    font-size: 1.15rem;
+
+    line-height: 1.75;
+
+    margin: 10px auto 24px;
+
+    max-width: 600px;
+}
+
+
+/* ============================================================
+   HOW TO PLAY
+   ============================================================ */
+
+.ms-how-to-play {
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    max-width: 520px;
+
+    margin: 25px auto;
+}
+
+.ms-how-step {
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    text-align: left;
+
+    padding: 14px 18px;
+
+    background: #f5f8fc;
+
+    border: 1px solid #e2e8f0;
+
+    border-radius: 12px;
+
+    color: #334155;
+
+    font-size: 1.05rem;
+}
+
+.ms-step-number {
+    flex-shrink: 0;
+
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #2f70b5;
+
+    color: white;
+
+    font-weight: 700;
+}
+
+
+/* ============================================================
+   ROUND SELECTION
+   ============================================================ */
+
+.ms-round-selection {
+    margin: 28px auto;
+
+    padding: 22px;
+
+    max-width: 530px;
+
+    background: #f8fafc;
+
+    border: 1px solid #dce5ee;
+
+    border-radius: 15px;
+}
+
+.ms-round-selection h3 {
+    margin: 0 0 7px;
+
+    color: #1a365d;
+
+    font-size: 1.3rem;
+}
+
+.ms-round-selection p {
+    margin: 0 0 20px;
+
+    color: #64748b;
+
+    font-size: 0.95rem;
+}
+
+
+/* ============================================================
+   ROUND INPUT
+   ============================================================ */
+
+.ms-round-input-wrapper {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.ms-round-input-label {
+    color: #334155;
+
+    font-size: 1rem;
+
+    font-weight: 700;
+}
+
+.ms-round-input {
+    width: 180px;
+
+    box-sizing: border-box;
+
+    padding: 14px 18px;
+
+    border: 2px solid #b8c9d9;
+
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #1a365d;
+
+    text-align: center;
+
+    font-size: 1.5rem;
+
+    font-weight: 700;
+
+    font-family: inherit;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.ms-round-input:hover {
+    border-color: #8da8bf;
+}
+
+.ms-round-input:focus {
+    border-color: #2f70b5;
+
+    box-shadow:
+        0 0 0 4px rgba(47, 112, 181, 0.12);
+}
+
+
+/* Remove browser number arrows where appropriate */
+
+.ms-round-input::-webkit-inner-spin-button,
+.ms-round-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+
+/* ============================================================
+   INVALID ROUND INPUT
+   ============================================================ */
+
+.ms-round-input.input-error {
+    border-color: #d63f3f;
+
+    background: #fff6f6;
+
+    color: #a63131;
+
+    box-shadow:
+        0 0 0 4px rgba(214, 63, 63, 0.10);
+}
+
+
+/* ============================================================
+   RED ALERT
+   ============================================================ */
+
+.ms-round-error {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    margin: 16px auto 0;
+
+    padding: 13px 16px;
+
+    border-radius: 10px;
+
+    background: #fff0f0;
+
+    border: 1px solid #efb4b4;
+
+    color: #a63131;
+
+    font-size: 0.98rem;
+
+    font-weight: 700;
+
+    line-height: 1.4;
+
+    animation: ms-alert-appear 0.2s ease;
+}
+
+.ms-error-icon {
+    width: 27px;
+    height: 27px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #d63f3f;
+
+    color: #ffffff;
+
+    font-weight: 800;
+}
+
+
+/* ============================================================
+   VALID INPUT MESSAGE
+   ============================================================ */
+
+.ms-round-valid {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    margin-top: 13px;
+
+    color: #2f6b52;
+
+    font-size: 0.9rem;
+
+    font-weight: 600;
+}
+
+.ms-round-valid span:first-child {
+    width: 21px;
+    height: 21px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #2f8b61;
+
+    color: #ffffff;
+
+    font-size: 0.75rem;
+}
+
+
+/* ============================================================
+   ROUND INFORMATION
+   ============================================================ */
+
+.ms-round-info {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    margin: 25px auto;
+
+    padding: 15px;
+
+    max-width: 450px;
+
+    background: #eef6f3;
+
+    border: 1px solid #cfe4db;
+
+    border-radius: 12px;
+
+    color: #2f5f4c;
+}
+
+.ms-round-info strong {
+    font-size: 1.15rem;
+}
+
+.ms-round-info span {
+    font-size: 0.95rem;
+
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.ms-primary-btn,
+.ms-secondary-btn {
+    border: none;
+
+    border-radius: 10px;
+
+    padding: 14px 25px;
+
+    min-height: 50px;
+
+    font-size: 1rem;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    font-family: inherit;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.ms-primary-btn {
+    background: #2f70b5;
+
+    color: #ffffff;
+
+    box-shadow:
+        0 4px 10px rgba(47, 112, 181, 0.22);
+}
+
+.ms-primary-btn:hover:not(:disabled) {
+    background: #245e99;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 6px 14px rgba(47, 112, 181, 0.28);
+}
+
+.ms-primary-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+
+/* Disabled start button */
+
+.ms-primary-btn:disabled {
+    background: #aebdca;
+
+    color: #eef2f5;
+
+    cursor: not-allowed;
+
+    box-shadow: none;
+
+    transform: none;
+
+    opacity: 0.9;
+}
+
+.ms-secondary-btn {
+    background: #e8eef5;
+
+    color: #334e68;
+
+    margin-left: 10px;
+}
+
+.ms-secondary-btn:hover {
+    background: #dce6f0;
+}
+
+
+/* ============================================================
+   GAME CARD
+   ============================================================ */
+
+.ms-game-card {
+    max-width: 900px;
+}
+
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+
+.ms-top-bar {
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        1fr
+        1fr;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 22px;
+}
+
+.ms-round-board,
+.ms-level-board,
+.ms-score-board {
+    min-height: 45px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 8px 12px;
+
+    border-radius: 10px;
+
+    font-size: 0.98rem;
+
+    font-weight: 700;
+}
+
+.ms-round-board {
+    background: #edf4fb;
+
+    color: #285c91;
+}
+
+.ms-level-board {
+    background: #f5f1e8;
+
+    color: #806328;
+}
+
+.ms-score-board {
+    background: #eef6f3;
+
+    color: #2f6b52;
+}
+
+
+/* ============================================================
+   FEEDBACK AREA
+   ============================================================ */
+
+.ms-feedback-area {
+    min-height: 125px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 15px;
+}
+
+.ms-phase-title {
+    font-size: 1.25rem;
+
+    font-weight: 800;
+
+    letter-spacing: 0.4px;
+
+    color: #2f70b5;
+
+    margin-bottom: 7px;
+}
+
+.ms-answer-title {
+    color: #2f8b61;
+}
+
+.ms-feedback-text {
+    margin: 4px 0;
+
+    color: #475569;
+
+    font-size: 1.12rem;
+
+    line-height: 1.5;
+}
+
+.ms-sequence-progress {
+    margin-top: 9px;
+
+    padding: 7px 15px;
+
+    border-radius: 20px;
+
+    background: #edf4fb;
+
+    color: #285c91;
+
+    font-size: 0.95rem;
+
+    font-weight: 600;
+}
+
+.ms-selection-progress {
+    margin-top: 9px;
+
+    padding: 9px 16px;
+
+    border-radius: 20px;
+
+    background: #eef6f3;
+
+    color: #2f6b52;
+
+    font-size: 0.95rem;
+}
+
+
+/* ============================================================
+   EVALUATION MESSAGES
+   ============================================================ */
+
+.ms-result-message {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 12px;
+
+    padding: 15px 18px;
+
+    border-radius: 12px;
+
+    font-size: 1.05rem;
+
+    font-weight: 700;
+
+    line-height: 1.4;
+}
+
+.ms-success-message {
+    background: #eaf7f0;
+
+    border: 1px solid #b9dfcc;
+
+    color: #256347;
+}
+
+.ms-error-message {
+    background: #fff0f0;
+
+    border: 1px solid #f0bcbc;
+
+    color: #a63131;
+}
+
+.ms-result-icon {
+    width: 32px;
+    height: 32px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    font-size: 1.2rem;
+
+    background: rgba(255, 255, 255, 0.8);
+}
+
+
+/* ============================================================
+   GRID WRAPPER
+   ============================================================ */
+
+.ms-grid-wrapper {
+    width: 100%;
+
+    display: flex;
+
+    justify-content: center;
+
+    margin: 10px 0 20px;
+}
+
+
+/* ============================================================
+   GRID
+   ============================================================ */
+
+.ms-grid {
+    width: min(560px, 100%);
+
+    display: grid;
+
+    gap: 12px;
+
+    margin: 0 auto;
+}
+
+
+/* ============================================================
+   CELL
+   ============================================================ */
+
+.ms-cell {
+    position: relative;
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    min-height: 65px;
+
+    border-radius: 13px;
+
+    border: 3px solid #d8e2ec;
+
+    background: #f5f8fb;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    cursor: default;
+
+    transition:
+        transform 0.15s ease,
+        background 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+
+/* ============================================================
+   HIGHLIGHTED BOX
+   ============================================================ */
+
+.ms-cell.highlighted {
+    background:
+        linear-gradient(
+            145deg,
+            #3d83c8,
+            #2f70b5
+        );
+
+    border-color: #245e99;
+
+    box-shadow:
+        0 8px 20px rgba(47, 112, 181, 0.30);
+
+    transform: scale(1.04);
+
+    animation:
+        ms-highlight-pulse 0.55s ease;
+}
+
+
+/* ============================================================
+   DISPLAY NUMBER
+   ============================================================ */
+
+.ms-display-number {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 60%;
+
+    height: 60%;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.97);
+
+    color: #2f70b5;
+
+    font-size:
+        clamp(
+            1.7rem,
+            5vw,
+            2.8rem
+        );
+
+    font-weight: 800;
+
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.12);
+}
+
+
+/* ============================================================
+   INTERACTIVE CELLS
+   ============================================================ */
+
+.ms-cell.interactive {
+    cursor: pointer;
+
+    background: #f8fafc;
+
+    border-color: #b8c9d9;
+}
+
+.ms-cell.interactive:hover {
+    background: #eef5fb;
+
+    border-color: #2f70b5;
+
+    transform: scale(1.025);
+
+    box-shadow:
+        0 5px 12px rgba(47, 112, 181, 0.14);
+}
+
+.ms-cell.interactive:active {
+    transform: scale(0.97);
+}
+
+
+/* ============================================================
+   SELECTED CELL
+   ============================================================ */
+
+.ms-cell.selected {
+    background:
+        linear-gradient(
+            145deg,
+            #3b966f,
+            #2f8b61
+        );
+
+    border-color: #267451;
+
+    color: white;
+
+    box-shadow:
+        0 6px 14px rgba(47, 139, 97, 0.25);
+}
+
+.ms-selected-number {
+    width: 52px;
+
+    height: 52px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #ffffff;
+
+    color: #2f8b61;
+
+    font-size: 1.6rem;
+
+    font-weight: 800;
+
+    box-shadow:
+        0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+
+/* ============================================================
+   WRONG ANSWER
+   ============================================================ */
+
+.ms-cell.wrong {
+    background:
+        linear-gradient(
+            145deg,
+            #e85b5b,
+            #d63f3f
+        );
+
+    border-color: #b82f2f;
+
+    box-shadow:
+        0 0 0 5px rgba(214, 63, 63, 0.14),
+        0 8px 18px rgba(214, 63, 63, 0.25);
+
+    animation:
+        ms-wrong-shake 0.45s ease;
+}
+
+.ms-wrong-symbol {
+    font-size: 2rem;
+
+    font-weight: 800;
+
+    color: #ffffff;
+}
+
+
+/* ============================================================
+   HELPER TEXT
+   ============================================================ */
+
+.ms-helper-text {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    color: #64748b;
+
+    font-size: 0.95rem;
+
+    margin-top: 5px;
+}
+
+
+/* ============================================================
+   GAME OVER
+   ============================================================ */
+
+.ms-game-over-card {
+    max-width: 700px;
+}
+
+.ms-stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 14px;
+
+    max-width: 520px;
+
+    margin: 25px auto;
+}
+
+.ms-stat-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    text-align: left;
+
+    padding: 15px;
+
+    background: #f7f9fc;
+
+    border: 1px solid #e2e8f0;
+
+    border-radius: 12px;
+}
+
+.ms-stat-full {
+    grid-column: span 2;
+
+    justify-content: center;
+}
+
+.ms-stat-icon {
+    font-size: 1.8rem;
+}
+
+.ms-stat-item div {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+}
+
+.ms-stat-label {
+    color: #64748b;
+
+    font-size: 0.85rem;
+}
+
+.ms-stat-item strong {
+    color: #1a365d;
+
+    font-size: 1.25rem;
+}
+
+.ms-game-over-buttons {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    flex-wrap: wrap;
+
+    margin-top: 25px;
+}
+
+.ms-game-over-buttons .ms-secondary-btn {
+    margin-left: 0;
+}
+
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes ms-highlight-pulse {
+
+    0% {
+        transform: scale(0.94);
+        opacity: 0.75;
+    }
+
+    55% {
+        transform: scale(1.06);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.04);
+        opacity: 1;
+    }
+}
+
+
+@keyframes ms-wrong-shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-7px);
+    }
+
+    40% {
+        transform: translateX(7px);
+    }
+
+    60% {
+        transform: translateX(-5px);
+    }
+
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+
+@keyframes ms-alert-appear {
+
+    0% {
+        opacity: 0;
+
+        transform: translateY(-5px);
+    }
+
+    100% {
+        opacity: 1;
+
+        transform: translateY(0);
+    }
+}
+
+
+/* ============================================================
+   ACCESSIBILITY
+   ============================================================ */
+
+.ms-cell:focus-visible {
+    outline: 4px solid #f0a500;
+
+    outline-offset: 3px;
+}
+
+.ms-primary-btn:focus-visible,
+.ms-secondary-btn:focus-visible,
+.ms-round-input:focus-visible {
+    outline: 4px solid #f0a500;
+
+    outline-offset: 3px;
+}
+
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+    .mindsnap-container {
+        padding: 22px 15px 35px;
+    }
+
+    .ms-card {
+        padding: 22px 18px;
+    }
+
+    .ms-header h1 {
+        font-size: 1.9rem;
+    }
+
+    .ms-header h2 {
+        font-size: 1.45rem;
+    }
+
+    .ms-top-bar {
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+    .ms-score-board {
+        grid-column: span 2;
+    }
+
+    .ms-grid {
+        gap: 9px;
+    }
+
+    .ms-cell {
+        min-height: 58px;
+    }
+
+    .ms-stats {
+        gap: 10px;
+    }
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 520px) {
+
+    .mindsnap-container {
+        padding: 15px 10px 30px;
+    }
+
+    .ms-card {
+        padding: 20px 13px;
+
+        border-radius: 16px;
+    }
+
+    .ms-header {
+        margin-bottom: 15px;
+    }
+
+    .ms-header h1 {
+        font-size: 1.65rem;
+    }
+
+    .ms-header h2 {
+        font-size: 1.3rem;
+    }
+
+    .ms-header-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .ms-start-card h2,
+    .ms-game-over-card h2 {
+        font-size: 1.55rem;
+    }
+
+    .ms-instruction {
+        font-size: 1rem;
+
+        line-height: 1.6;
+    }
+
+    .ms-how-step {
+        font-size: 0.95rem;
+
+        padding: 11px 13px;
+    }
+
+
+    /* Round selection */
+
+    .ms-round-selection {
+        padding: 18px 13px;
+    }
+
+    .ms-round-selection h3 {
+        font-size: 1.15rem;
+    }
+
+    .ms-round-input {
+        width: 160px;
+
+        font-size: 1.35rem;
+    }
+
+    .ms-round-error {
+        font-size: 0.88rem;
+
+        padding: 11px 12px;
+    }
+
+
+    /* Top bar */
+
+    .ms-top-bar {
+        grid-template-columns:
+            1fr 1fr;
+
+        gap: 8px;
+    }
+
+    .ms-round-board,
+    .ms-level-board,
+    .ms-score-board {
+        font-size: 0.85rem;
+
+        min-height: 42px;
+
+        padding: 6px 5px;
+    }
+
+    .ms-score-board {
+        grid-column: span 2;
+    }
+
+
+    /* Feedback */
+
+    .ms-feedback-area {
+        min-height: 135px;
+    }
+
+    .ms-phase-title {
+        font-size: 1.05rem;
+    }
+
+    .ms-feedback-text {
+        font-size: 0.98rem;
+    }
+
+
+    /* Grid */
+
+    .ms-grid {
+        gap: 7px;
+    }
+
+    .ms-cell {
+        min-height: 52px;
+
+        border-width: 2px;
+
+        border-radius: 10px;
+    }
+
+    .ms-display-number {
+        font-size: 1.5rem;
+    }
+
+    .ms-selected-number {
+        width: 38px;
+
+        height: 38px;
+
+        font-size: 1.25rem;
+    }
+
+    .ms-wrong-symbol {
+        font-size: 1.6rem;
+    }
+
+
+    /* Statistics */
+
+    .ms-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .ms-stat-full {
+        grid-column: span 1;
+    }
+
+
+    /* Buttons */
+
+    .ms-primary-btn,
+    .ms-secondary-btn {
+        width: 100%;
+
+        margin-left: 0;
+    }
+
+    .ms-game-over-buttons {
+        flex-direction: column;
+    }
+
+
+    /* Helper */
+
+    .ms-helper-text {
+        font-size: 0.85rem;
+
+        line-height: 1.4;
+    }
+}
+
+
+/* ============================================================
+   VERY SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 360px) {
+
+    .ms-card {
+        padding: 17px 10px;
+    }
+
+    .ms-grid {
+        gap: 5px;
+    }
+
+    .ms-cell {
+        min-height: 45px;
+
+        border-radius: 8px;
+    }
+
+    .ms-display-number {
+        font-size: 1.25rem;
+    }
+
+    .ms-selected-number {
+        width: 32px;
+
+        height: 32px;
+
+        font-size: 1rem;
+    }
 }

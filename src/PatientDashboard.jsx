@@ -7,7 +7,15 @@ import {
     toggleReminderCompletion,
     deleteReminder,
     subscribeToReminderChanges,
+    incrementHydration,
+    decrementHydration,
 } from './ReminderService';
+import {
+    useReminderAlarms,
+    ReminderAlarmBanner,
+    ReminderStatusBadge,
+    getReminderRowClassName,
+} from './useReminderAlarms';
 
 import MemoryMatchGame from './MemoryMatchGame';
 import PictureRecallGame from './PictureRecallGame';
@@ -150,6 +158,14 @@ export default function PatientDashboard({ onLogout }) {
     const [noteSaved, setNoteSaved] = useState(false);
     const [sendingNote, setSendingNote] = useState(false);
 
+    // Which Daily Care Overview cards are currently expanded — these 4
+    // (medicine / hydration / activity / appointments) are set by the
+    // caregiver only; the patient can view and mark complete but never
+    // add, edit, or delete them. Stored as a list so more than one card
+    // can stay open at once.
+    const [expandedRoutine, setExpandedRoutine] = useState([]);
+    const [hydrationBusy, setHydrationBusy] = useState(false);
+
     useEffect(() => {
         const storedSession = sessionStorage.getItem(
             'neuroplay_patient_session'
@@ -211,6 +227,8 @@ export default function PatientDashboard({ onLogout }) {
             setReminders((prev) => prev.map((item) => item.id === updated.id ? normalizeReminder(updated) : item));
         }
     };
+
+    const { activeAlerts, dismissAlert } = useReminderAlarms(reminders);
 
     const handleReminderSubmit = async (event) => {
         event.preventDefault();
@@ -283,6 +301,23 @@ export default function PatientDashboard({ onLogout }) {
 
     function handleFeatureClick(featureName) {
         window.alert(`${featureName} module is coming soon.`);
+    }
+
+    function toggleRoutineCard(type) {
+        setExpandedRoutine((prev) =>
+            prev.includes(type) ? prev.filter((item) => item !== type) : [...prev, type]
+        );
+    }
+
+    async function handleHydrationChange(hydrationReminder, delta) {
+        if (!hydrationReminder || hydrationBusy) return;
+        setHydrationBusy(true);
+        const updater = delta > 0 ? incrementHydration : decrementHydration;
+        const updated = await updater(hydrationReminder);
+        if (updated) {
+            setReminders((prev) => prev.map((item) => item.id === updated.id ? normalizeReminder(updated) : item));
+        }
+        setHydrationBusy(false);
     }
 
     function handleGameHome() {
@@ -382,13 +417,6 @@ export default function PatientDashboard({ onLogout }) {
                         <span>Brain Exercises</span>
                     </button>
                     <button
-                        className={`db-nav-item ${activeTab === 'wellness' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('wellness')}
-                    >
-                        <span className="db-nav-icon">💧</span>
-                        <span>Wellness Logs</span>
-                    </button>
-                    <button
                         className={`db-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
                         onClick={() => setActiveTab('settings')}
                     >
@@ -411,13 +439,18 @@ export default function PatientDashboard({ onLogout }) {
             </aside>
 
             <div className="db-main-wrapper">
+                <ReminderAlarmBanner
+                    alerts={activeAlerts}
+                    onDismiss={dismissAlert}
+                    onComplete={handleReminderToggle}
+                />
+
                 <header className="db-topbar">
                     <div className="db-topbar-title">
                         <h2>
                             {activeTab === 'dashboard' && 'Overview'}
                             {activeTab === 'schedule' && 'Schedule & Reminders'}
                             {activeTab === 'exercises' && 'Cognitive Exercises'}
-                            {activeTab === 'wellness' && 'Daily Care Overview'}
                             {activeTab === 'settings' && 'Account Settings'}
                         </h2>
                     </div>
@@ -527,12 +560,203 @@ export default function PatientDashboard({ onLogout }) {
                         </>
                     )}
 
-                    {activeTab === 'schedule' && (
+                    {activeTab === 'schedule' && (() => {
+                        const medicines = reminders.filter((r) => r.routine_type === 'medicine' && r.enabled !== false);
+                        const activities = reminders.filter((r) => r.routine_type === 'activity' && r.enabled !== false);
+                        const appointments = reminders.filter((r) => r.routine_type === 'appointment' && r.enabled !== false);
+                        const hydration = reminders.find((r) => r.routine_type === 'hydration');
+                        const hydrationProgress = hydration?.progress_count || 0;
+                        const hydrationTarget = hydration?.target_count || 8;
+
+                        return (
+                        <>
+                        <section className="db-section">
+                            <div className="db-section-header">
+                                <div>
+                                    <h3>Daily Care Overview</h3>
+                                    <p>Set by your caregiver. Tap a card to see today's details.</p>
+                                </div>
+                            </div>
+
+                            <div className="db-routine-accordion">
+                                <div className="db-routine-accordion-item">
+                                    <button
+                                        className={`db-shortcut-card ${expandedRoutine.includes('medicine') ? 'db-shortcut-card-active' : ''}`}
+                                        onClick={() => toggleRoutineCard('medicine')}
+                                    >
+                                        <span className="db-shortcut-icon">💊</span>
+                                        <div>
+                                            <strong>Medicine Log</strong>
+                                            <small>{medicines.length > 0 ? `${medicines.filter((m) => m.completed).length} of ${medicines.length} taken today` : 'Review scheduled prescriptions.'}</small>
+                                        </div>
+                                        <span className="db-arrow">{expandedRoutine.includes('medicine') ? '▾' : '→'}</span>
+                                    </button>
+
+                                    {expandedRoutine.includes('medicine') && (
+                                        <div className="db-routine-detail">
+                                            {medicines.length === 0 ? (
+                                                <p className="db-routine-empty">No medicines have been set by your caregiver yet.</p>
+                                            ) : (
+                                                medicines.map((item) => (
+                                                    <div key={item.id} className={`db-routine-row ${item.completed ? 'completed' : ''} ${getReminderRowClassName(item)}`}>
+                                                        <button
+                                                            type="button"
+                                                            className={`pt-reminder-checkbox ${item.completed ? 'checked' : ''}`}
+                                                            onClick={() => handleReminderToggle(item)}
+                                                            aria-label={`Mark ${item.title} ${item.completed ? 'not taken' : 'taken'}`}
+                                                        >
+                                                            {item.completed ? '✓' : ''}
+                                                        </button>
+                                                        <div className="db-routine-row-main">
+                                                            <strong>{item.title}</strong>
+                                                            {item.time && <span>🕐 {item.time}</span>}
+                                                            <ReminderStatusBadge reminder={item} />
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="db-routine-accordion-item">
+                                    <button
+                                        className={`db-shortcut-card ${expandedRoutine.includes('hydration') ? 'db-shortcut-card-active' : ''}`}
+                                        onClick={() => toggleRoutineCard('hydration')}
+                                    >
+                                        <span className="db-shortcut-icon">💧</span>
+                                        <div>
+                                            <strong>Hydration Tracker</strong>
+                                            <small>{hydration ? `${hydrationProgress} of ${hydrationTarget} glasses today` : 'Monitor daily water intake.'}</small>
+                                        </div>
+                                        <span className="db-arrow">{expandedRoutine.includes('hydration') ? '▾' : '→'}</span>
+                                    </button>
+
+                                    {expandedRoutine.includes('hydration') && (
+                                        <div className="db-routine-detail">
+                                            {!hydration ? (
+                                                <p className="db-routine-empty">Your caregiver hasn't set a hydration goal yet.</p>
+                                            ) : (
+                                                <div className="db-hydration-panel">
+                                                    <div className="db-hydration-bar-track">
+                                                        <div
+                                                            className="db-hydration-bar-fill"
+                                                            style={{ width: `${Math.min(100, (hydrationProgress / hydrationTarget) * 100)}%` }}
+                                                        />
+                                                    </div>
+                                                    <p className="db-hydration-count">{hydrationProgress} of {hydrationTarget} glasses today</p>
+                                                    <div className="db-hydration-actions">
+                                                        <button
+                                                            type="button"
+                                                            className="db-hydration-btn"
+                                                            onClick={() => handleHydrationChange(hydration, -1)}
+                                                            disabled={hydrationBusy || hydrationProgress <= 0}
+                                                            aria-label="Remove one glass"
+                                                        >
+                                                            −
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="db-hydration-btn db-hydration-btn-primary"
+                                                            onClick={() => handleHydrationChange(hydration, 1)}
+                                                            disabled={hydrationBusy}
+                                                        >
+                                                            + Add a glass
+                                                        </button>
+                                                    </div>
+                                                    {hydration.completed && <p className="db-hydration-done">Goal reached for today ✓</p>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="db-routine-accordion-item">
+                                    <button
+                                        className={`db-shortcut-card ${expandedRoutine.includes('activity') ? 'db-shortcut-card-active' : ''}`}
+                                        onClick={() => toggleRoutineCard('activity')}
+                                    >
+                                        <span className="db-shortcut-icon">📅</span>
+                                        <div>
+                                            <strong>Routine Calendar</strong>
+                                            <small>{activities.length > 0 ? `${activities.filter((a) => a.completed).length} of ${activities.length} done today` : 'Check today\'s daily activities.'}</small>
+                                        </div>
+                                        <span className="db-arrow">{expandedRoutine.includes('activity') ? '▾' : '→'}</span>
+                                    </button>
+
+                                    {expandedRoutine.includes('activity') && (
+                                        <div className="db-routine-detail">
+                                            {activities.length === 0 ? (
+                                                <p className="db-routine-empty">No daily activities have been set by your caregiver yet.</p>
+                                            ) : (
+                                                activities.map((item) => (
+                                                    <div key={item.id} className={`db-routine-row ${item.completed ? 'completed' : ''} ${getReminderRowClassName(item)}`}>
+                                                        <button
+                                                            type="button"
+                                                            className={`pt-reminder-checkbox ${item.completed ? 'checked' : ''}`}
+                                                            onClick={() => handleReminderToggle(item)}
+                                                            aria-label={`Mark ${item.title} ${item.completed ? 'not done' : 'done'}`}
+                                                        >
+                                                            {item.completed ? '✓' : ''}
+                                                        </button>
+                                                        <div className="db-routine-row-main">
+                                                            <strong>{item.title}</strong>
+                                                            {item.time && <span>🕐 {item.time}</span>}
+                                                            <ReminderStatusBadge reminder={item} />
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="db-routine-accordion-item">
+                                    <button
+                                        className={`db-shortcut-card ${expandedRoutine.includes('appointment') ? 'db-shortcut-card-active' : ''}`}
+                                        onClick={() => toggleRoutineCard('appointment')}
+                                    >
+                                        <span className="db-shortcut-icon">🏥</span>
+                                        <div>
+                                            <strong>Appointments</strong>
+                                            <small>{appointments.length > 0 ? `${appointments.length} on file` : 'View scheduled clinical visits.'}</small>
+                                        </div>
+                                        <span className="db-arrow">{expandedRoutine.includes('appointment') ? '▾' : '→'}</span>
+                                    </button>
+
+                                    {expandedRoutine.includes('appointment') && (
+                                        <div className="db-routine-detail">
+                                            {appointments.length === 0 ? (
+                                                <p className="db-routine-empty">No appointments have been added by your caregiver yet.</p>
+                                            ) : (
+                                                appointments.map((item) => (
+                                                    <div key={item.id} className={`db-routine-row ${item.completed ? 'completed' : ''} ${getReminderRowClassName(item)}`}>
+                                                        <button
+                                                            type="button"
+                                                            className={`pt-reminder-checkbox ${item.completed ? 'checked' : ''}`}
+                                                            onClick={() => handleReminderToggle(item)}
+                                                            aria-label={`Mark ${item.title} ${item.completed ? 'not checked' : 'checked'}`}
+                                                        >
+                                                            {item.completed ? '✓' : ''}
+                                                        </button>
+                                                        <div className="db-routine-row-main">
+                                                            <strong>{item.title}</strong>
+                                                            {item.event_date && <span>📅 {item.event_date}</span>}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+
                         <section className="db-section">
                             <div className="db-section-header pt-schedule-header">
                                <div>
-                                    <h3>Routine & Schedule Management</h3>
-                                    <p>Review all assigned tasks, medications, and daily events.</p>
+                                    <h3>Custom Reminders</h3>
+                                    <p>One-off reminders you've added yourself.</p>
                                </div>
 
                                <button
@@ -597,7 +821,7 @@ export default function PatientDashboard({ onLogout }) {
                             ) : (
                                 <div className="db-card-container">
                                     <div className="db-list-stack">
-                                        {reminders.filter((r) => r.enabled !== false).map((reminder) => (
+                                        {reminders.filter((r) => r.enabled !== false && !r.routine_type).map((reminder) => (
                                             <ReminderRow
                                                 key={reminder.id}
                                                 reminder={reminder}
@@ -609,7 +833,9 @@ export default function PatientDashboard({ onLogout }) {
                                 </div>
                             )}
                         </section>
-                    )}
+                        </>
+                        );
+                    })()}
 
                     {activeTab === 'exercises' && (
                         <section className="db-section">
@@ -670,67 +896,6 @@ export default function PatientDashboard({ onLogout }) {
                         </section>
                     )}
 
-                    {activeTab === 'wellness' && (
-                        <section className="db-section">
-                            <div className="db-section-header">
-                                <div>
-                                    <h3>Daily Care Overview</h3>
-                                    <p>Quick access shortcuts to your wellness tools.</p>
-                                </div>
-                            </div>
-
-                            <div className="db-quick-links-grid">
-                                <button
-                                    className="db-shortcut-card"
-                                    onClick={() => handleFeatureClick('Medicine Reminders')}
-                                >
-                                    <span className="db-shortcut-icon">💊</span>
-                                    <div>
-                                        <strong>Medicine Log</strong>
-                                        <small>Review scheduled prescriptions.</small>
-                                    </div>
-                                    <span className="db-arrow">→</span>
-                                </button>
-
-                                <button
-                                    className="db-shortcut-card"
-                                    onClick={() => handleFeatureClick('Hydration')}
-                                >
-                                    <span className="db-shortcut-icon">💧</span>
-                                    <div>
-                                        <strong>Hydration Tracker</strong>
-                                        <small>Monitor daily water intake.</small>
-                                    </div>
-                                    <span className="db-arrow">→</span>
-                                </button>
-
-                                <button
-                                    className="db-shortcut-card"
-                                    onClick={() => handleFeatureClick('Daily Activities')}
-                                >
-                                    <span className="db-shortcut-icon">📅</span>
-                                    <div>
-                                        <strong>Routine Calendar</strong>
-                                        <small>Check upcoming daily events.</small>
-                                    </div>
-                                    <span className="db-arrow">→</span>
-                                </button>
-
-                                <button
-                                    className="db-shortcut-card"
-                                    onClick={() => handleFeatureClick('Appointments')}
-                                >
-                                    <span className="db-shortcut-icon">🏥</span>
-                                    <div>
-                                        <strong>Appointments</strong>
-                                        <small>View scheduled clinical visits.</small>
-                                    </div>
-                                    <span className="db-arrow">→</span>
-                                </button>
-                            </div>
-                        </section>
-                    )}
-
                     {activeTab === 'settings' && (
                         <section className="db-section">
                             <div className="db-section-header">
@@ -774,7 +939,7 @@ function ReminderRow({ reminder, onToggle, onDelete }) {
     const time = formatReminderTime(reminder);
 
     return (
-        <div className={`db-row-item ${reminder.completed ? 'completed' : ''}`}>
+        <div className={`db-row-item ${reminder.completed ? 'completed' : ''} ${getReminderRowClassName(reminder)}`}>
             <label className="db-checkbox-label">
                 <input
                     type="checkbox"
@@ -807,6 +972,7 @@ function ReminderRow({ reminder, onToggle, onDelete }) {
                             <span>{time}</span>
                         </>
                     )}
+                    <ReminderStatusBadge reminder={reminder} />
                 </div>
             </div>
 

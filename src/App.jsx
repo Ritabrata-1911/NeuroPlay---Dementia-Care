@@ -1,11 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './App.css';
 import CaregiverAuth from './CaregiverAuth';
 import CaregiverDashboard from './CaregiverDashboard';
 import PatientLogin from './PatientLogin';
 import PatientDashboard from './PatientDashboard';
 import { supabase } from './SupabaseClient';
+import LanguageSwitcher from './LanguageSwitcher';
+
+// ============================================================
+// HERO BACKDROP — layered tea-garden hills, bamboo, marigold sun
+// Pure inline SVG, no image assets required.
+// ============================================================
+
+function HeroBackdrop() {
+    return (
+        <svg
+            viewBox="0 0 1400 520"
+            preserveAspectRatio="xMidYMax slice"
+            aria-hidden="true"
+            style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: 0,
+                pointerEvents: 'none'
+            }}
+        >
+            {/* drifting clouds */}
+            <g className="cloud cloud-a">
+                <ellipse cx="0" cy="0" rx="55" ry="18" fill="#FFFFFF" opacity="0.85" />
+                <ellipse cx="-38" cy="7" rx="36" ry="14" fill="#FFFFFF" opacity="0.8" />
+                <ellipse cx="40" cy="8" rx="32" ry="13" fill="#FFFFFF" opacity="0.8" />
+            </g>
+            <g className="cloud cloud-b">
+                <ellipse cx="0" cy="0" rx="42" ry="14" fill="#FFFFFF" opacity="0.75" />
+                <ellipse cx="-28" cy="5" rx="26" ry="11" fill="#FFFFFF" opacity="0.7" />
+                <ellipse cx="30" cy="6" rx="24" ry="10" fill="#FFFFFF" opacity="0.7" />
+            </g>
+            <g className="cloud cloud-c">
+                <ellipse cx="0" cy="0" rx="48" ry="16" fill="#FFFFFF" opacity="0.7" />
+                <ellipse cx="-32" cy="6" rx="28" ry="12" fill="#FFFFFF" opacity="0.65" />
+                <ellipse cx="34" cy="7" rx="26" ry="11" fill="#FFFFFF" opacity="0.65" />
+            </g>
+
+            {/* birds — each flies its own slow loop across the sky, wings flapping */}
+            <g className="bird bird-a">
+                <path
+                    className="bird-wings"
+                    d="M-16,0 Q0,-16 16,0 Q0,-7 -16,0 Z"
+                    fill="#2C4A3E"
+                    opacity="0.7"
+                />
+            </g>
+            <g className="bird bird-b">
+                <path
+                    className="bird-wings"
+                    d="M-13,0 Q0,-13 13,0 Q0,-6 -13,0 Z"
+                    fill="#2C4A3E"
+                    opacity="0.6"
+                />
+            </g>
+            <g className="bird bird-c">
+                <path
+                    className="bird-wings"
+                    d="M-11,0 Q0,-11 11,0 Q0,-5 -11,0 Z"
+                    fill="#2C4A3E"
+                    opacity="0.55"
+                />
+            </g>
+        </svg>
+    );
+}
 
 // ============================================================
 // BREATHING CONSTANTS
@@ -19,10 +87,10 @@ const breathingPhases = [
 ];
 
 const breathingPhaseLabels = {
-    inhale: 'Inhale',
-    hold1: 'Hold',
-    exhale: 'Exhale',
-    hold2: 'Hold'
+    inhale: 'breathing.phases.inhale',
+    hold1: 'breathing.phases.hold',
+    exhale: 'breathing.phases.exhale',
+    hold2: 'breathing.phases.hold'
 };
 
 function App() {
@@ -44,6 +112,7 @@ function App() {
 
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
 
     const currentScreen =
         location.pathname === '/'
@@ -94,7 +163,7 @@ function App() {
         breathingPhases[breathingPhaseIndex];
 
     const breathingPhaseLabel =
-        breathingPhaseLabels[breathingPhase];
+        t(breathingPhaseLabels[breathingPhase]);
 
     // Show a breathing phase if the exercise is running
     // OR the user is previewing a phase
@@ -461,13 +530,13 @@ function App() {
         <div className="tab-content breathing-section">
 
             <h3>
-                Caregiver Box Breathing Exercise
+                {t('breathing.title')}
             </h3>
 
             <p>
-                Follow the 4-4-4-4 pattern — inhale,
-                hold, exhale, hold — to reset your
-                stress levels during challenging moments.
+                {t('breathing.description')}
+
+
             </p>
 
             {/* ----------------------------------------------------
@@ -487,7 +556,7 @@ function App() {
                     }
                     disabled={isBreathingActive}
                 >
-                    2 min
+                    {t('breathing.minutes2')}
                 </button>
 
                 <button
@@ -501,7 +570,7 @@ function App() {
                     }
                     disabled={isBreathingActive}
                 >
-                    5 min
+                    {t('breathing.minutes5')}
                 </button>
 
             </div>
@@ -539,11 +608,7 @@ function App() {
                             </span>
 
                             <span className="phase-step-label">
-                                {
-                                    breathingPhaseLabels[
-                                        phase
-                                    ]
-                                }
+                                {t(breathingPhaseLabels[phase])}
                             </span>
 
                         </button>
@@ -576,13 +641,13 @@ function App() {
                     <span className="phase-text">
                         {isShowingPhase
                             ? breathingPhaseLabel
-                            : 'Ready'}
+                            : t('breathing.ready')}
                     </span>
 
                     <span className="timer-text">
                         {isShowingPhase
                             ? `${breathingTimer}s`
-                            : '4s'}
+                            : t('breathing.seconds4')}
                     </span>
 
                 </div>
@@ -601,7 +666,7 @@ function App() {
                         'hold2'
                 ) && (
                     <p className="hold-cue">
-                        ⏸ HOLD YOUR BREATH ⏸
+                        ⏸ {t('breathing.holdCue')} ⏸
                     </p>
                 )}
 
@@ -611,7 +676,7 @@ function App() {
 
             {isBreathingActive && (
                 <p className="session-remaining">
-                    ⏱ Session time left:{' '}
+                    ⏱ {t('breathing.sessionTimeLeft')}{' '}
                     {formatTime(
                         sessionSecondsLeft
                     )}
@@ -627,8 +692,8 @@ function App() {
                 onClick={toggleBreathing}
             >
                 {isBreathingActive
-                    ? '⏹️ Stop Exercise'
-                    : '▶️ Start Breathing Exercise'}
+                    ? `⏹️ ${t('breathing.stopExercise')}`
+                    : `▶️ ${t('breathing.startExercise')}`}
             </button>
 
             {/* ----------------------------------------------------
@@ -638,10 +703,9 @@ function App() {
             {isPreviewingPhase &&
                 !isBreathingActive && (
                     <p className="preview-hint">
-                        Previewing the "
-                        {breathingPhaseLabel}"
-                        phase. Press Start to run
-                        the real timer.
+                        {t('breathing.preview', {
+                            phase: breathingPhaseLabel
+                        })}
                     </p>
                 )}
 
@@ -759,7 +823,7 @@ function App() {
                             );
                         }}
                     >
-                        Home
+                        {t('nav.home')}
                     </a>
 
                     <a
@@ -777,7 +841,7 @@ function App() {
                             );
                         }}
                     >
-                        How It Works
+                        {t('nav.howItWorks')}
                     </a>
 
                     <a
@@ -795,7 +859,7 @@ function App() {
                             );
                         }}
                     >
-                        About Us
+                        {t('nav.about')}
                     </a>
 
                     <a
@@ -813,7 +877,7 @@ function App() {
                             );
                         }}
                     >
-                        Resources
+                        {t('nav.resources')}
                     </a>
 
                     <button
@@ -824,8 +888,10 @@ function App() {
                             )
                         }
                     >
-                        Contact Us
+                        {t('nav.contact')}
                     </button>
+
+                    <LanguageSwitcher />
 
                 </div>
 
@@ -838,6 +904,8 @@ function App() {
             {currentScreen === 'home' && (
                 <section className="hero-section">
 
+                    <HeroBackdrop />
+
                     <div className="brand-header">
 
                         <div className="logo-title">
@@ -845,21 +913,19 @@ function App() {
                             <span
                                 className="brain-icon"
                                 role="img"
-                                aria-label="brain"
+                                aria-label={t('aria.brain')}
                             >
                                 🧠
                             </span>
 
                             <h1>
-                                NeuroPlay
+                                {t('brand')}
                             </h1>
 
                         </div>
 
                         <p className="tagline">
-                            AI-Powered Cognitive Gaming
-                            & Dementia Assistance for
-                            NER
+                            {t('hero.tagline')}
                         </p>
 
                     </div>
@@ -884,13 +950,13 @@ function App() {
                             <div
                                 className="avatar"
                                 role="img"
-                                aria-label="patient"
+                                aria-label={t('aria.patient')}
                             >
                                 👴
                             </div>
 
                             <h3>
-                                PATIENT LOGIN
+                                {t('cards.patientLogin')}
                             </h3>
 
                         </div>
@@ -913,13 +979,13 @@ function App() {
                             <div
                                 className="avatar"
                                 role="img"
-                                aria-label="caregiver"
+                                aria-label={t('aria.caregiver')}
                             >
                                 👩‍⚕️
                             </div>
 
                             <h3>
-                                CAREGIVER LOGIN
+                                {t('cards.caregiverLogin')}
                             </h3>
 
                         </div>
@@ -940,16 +1006,16 @@ function App() {
                     <div className="about-header">
 
                         <h1>
-                            How NeuroPlay Works
+                            {t('howItWorks.title')}
                         </h1>
 
                         <p className="about-subtitle">
-                            A seamless three-step
-                            platform designed for
-                            early cognitive tracking
-                            and rural dementia care
-                            in the North Eastern
-                            Region.
+                            {t('howItWorks.subtitle')}
+
+
+
+
+
                         </p>
 
                     </div>
@@ -961,7 +1027,7 @@ function App() {
                             <div className="step-marker">
                                 <span
                                     role="img"
-                                    aria-label="game controller"
+                                    aria-label={t('aria.gameController')}
                                 >
                                     🎮
                                 </span>
@@ -970,23 +1036,23 @@ function App() {
                             <div className="step-body">
 
                                 <span className="step-index">
-                                    Step 1
+                                    {t('howItWorks.step1.label')}
                                 </span>
 
                                 <h2>
-                                    Adaptive Cognitive
-                                    Games
+                                    {t('howItWorks.step1.title')}
+
                                 </h2>
 
                                 <p>
-                                    Patients engage in
-                                    localized memory
-                                    puzzles, visual
-                                    pattern recognition,
-                                    and daily routine
-                                    recall games crafted
-                                    to slow cognitive
-                                    decline.
+                                    {t('howItWorks.step1.text')}
+
+
+
+
+
+
+
                                 </p>
 
                             </div>
@@ -998,7 +1064,7 @@ function App() {
                             <div className="step-marker">
                                 <span
                                     role="img"
-                                    aria-label="speaking head"
+                                    aria-label={t('aria.speakingHead')}
                                 >
                                     🗣️
                                 </span>
@@ -1007,27 +1073,27 @@ function App() {
                             <div className="step-body">
 
                                 <span className="step-index">
-                                    Step 2
+                                    {t('howItWorks.step2.label')}
                                 </span>
 
                                 <h2>
-                                    Local Dialect Voice
-                                    Prompts
+                                    {t('howItWorks.step2.title')}
+
                                 </h2>
 
                                 <p>
-                                    Automated daily
-                                    reminders for
-                                    medication,
-                                    hydration, and
-                                    exercise are
-                                    delivered in
-                                    Assamese, Bodo,
-                                    Khasi, Mizo, and
-                                    Manipuri, using
-                                    natural phonetic
-                                    scripts and
-                                    regional accents.
+                                    {t('howItWorks.step2.text')}
+
+
+
+
+
+
+
+
+
+
+
                                 </p>
 
                             </div>
@@ -1039,7 +1105,7 @@ function App() {
                             <div className="step-marker">
                                 <span
                                     role="img"
-                                    aria-label="bar chart"
+                                    aria-label={t('aria.barChart')}
                                 >
                                     📊
                                 </span>
@@ -1048,23 +1114,23 @@ function App() {
                             <div className="step-body">
 
                                 <span className="step-index">
-                                    Step 3
+                                    {t('howItWorks.step3.label')}
                                 </span>
 
                                 <h2>
-                                    Real-Time Caregiver
-                                    Sync
+                                    {t('howItWorks.step3.title')}
+
                                 </h2>
 
                                 <p>
-                                    Caregivers monitor
-                                    performance trends
-                                    via secure
-                                    dashboards,
-                                    updated in real time
-                                    as patients complete
-                                    games and
-                                    activities.
+                                    {t('howItWorks.step3.text')}
+
+
+
+
+
+
+
                                 </p>
 
                             </div>
@@ -1087,7 +1153,7 @@ function App() {
                                 )
                             }
                         >
-                            Back to Home
+                            {t('common.backHome')}
                         </button>
                     </div>
 
@@ -1104,20 +1170,20 @@ function App() {
                     <div className="about-header">
 
                         <h1>
-                            About NeuroPlay
+                            {t('about.title')}
                         </h1>
 
                         <p className="about-subtitle">
-                            Empowering families and
-                            caregivers in the North
-                            Eastern Region with
-                            cognitive digital health
-                            tools.
+                            {t('about.subtitle')}
+
+
+
+
                         </p>
 
                         <span className="coverage-badge">
-                            Built for all 8 North
-                            Eastern States
+                            {t('about.coverage')}
+
                         </span>
 
                     </div>
@@ -1129,24 +1195,24 @@ function App() {
                             <span
                                 className="about-mission-icon"
                                 role="img"
-                                aria-label="target"
+                                aria-label={t('aria.target')}
                             >
                                 🎯
                             </span>
 
                             <h2>
-                                Our Mission
+                                {t('about.mission.title')}
                             </h2>
 
                             <p>
-                                To bridge healthcare
-                                barriers in remote NER
-                                areas through AI-driven
-                                cognitive gaming and
-                                routine management —
-                                built for families who
-                                don't have a neurologist
-                                down the road.
+                                {t('about.mission.text')}
+
+
+
+
+
+
+
                             </p>
 
                         </div>
@@ -1158,7 +1224,7 @@ function App() {
                                 <span
                                     className="about-feature-icon"
                                     role="img"
-                                    aria-label="handshake"
+                                    aria-label={t('aria.handshake')}
                                 >
                                     🤝
                                 </span>
@@ -1166,19 +1232,19 @@ function App() {
                                 <div>
 
                                     <h3>
-                                        Caregiver Support
+                                        {t('about.caregiverSupport.title')}
                                     </h3>
 
                                     <p>
-                                        Equipping
-                                        caregivers with
-                                        real-time
-                                        analytics
-                                        dashboards,
-                                        automated
-                                        alerts, and
-                                        offline data
-                                        synchronization.
+                                        {t('about.caregiverSupport.text')}
+
+
+
+
+
+
+
+
                                     </p>
 
                                 </div>
@@ -1190,7 +1256,7 @@ function App() {
                                 <span
                                     className="about-feature-icon"
                                     role="img"
-                                    aria-label="puzzle piece"
+                                    aria-label={t('aria.puzzlePiece')}
                                 >
                                     🧩
                                 </span>
@@ -1198,18 +1264,18 @@ function App() {
                                 <div>
 
                                     <h3>
-                                        Cultural &
-                                        Accessible First
+                                        {t('about.cultural.title')}
+
                                     </h3>
 
                                     <p>
-                                        Designed with
-                                        regional themes
-                                        and accessible
-                                        tools for
-                                        families across
-                                        the North
-                                        Eastern Region.
+                                        {t('about.cultural.text')}
+
+
+
+
+
+
                                     </p>
 
                                 </div>
@@ -1234,7 +1300,7 @@ function App() {
                                 )
                             }
                         >
-                            Back to Home
+                            {t('common.backHome')}
                         </button>
                     </div>
 
@@ -1251,16 +1317,16 @@ function App() {
                     <div className="resources-header">
 
                         <h1>
-                            Dementia Care & NER
-                            Support Resources
+                            {t('resources.title')}
+
                         </h1>
 
                         <p className="resources-subtitle">
-                            Empowering rural and remote
-                            families across the North
-                            Eastern Region with cognitive
-                            guides, audio tools, and
-                            offline support packs.
+                            {t('resources.subtitle')}
+
+
+
+
                         </p>
 
                     </div>
@@ -1276,18 +1342,18 @@ function App() {
                             </div>
 
                             <h3>
-                                NER Dementia &
-                                Neurological Care
-                                Directory
+                                {t('resources.directory.title')}
+
+
                             </h3>
 
                             <p>
-                                Access emergency
-                                neurological helplines,
-                                medical centers, and
-                                tele-consultation points
-                                across the 8 North
-                                Eastern States.
+                                {t('resources.directory.text')}
+
+
+
+
+
                             </p>
 
                             <button
@@ -1298,7 +1364,7 @@ function App() {
                                     )
                                 }
                             >
-                                View Medical Directory
+                                {t('resources.directory.button')}
                             </button>
 
                         </div>
@@ -1312,17 +1378,17 @@ function App() {
                             </div>
 
                             <h3>
-                                Caregiver Manual &
-                                Stress Relief
+                                {t('resources.manual.title')}
+
                             </h3>
 
                             <p>
-                                Step-by-step guides for
-                                continuous patient
-                                monitoring, managing
-                                memory decline anxiety,
-                                and caregiver well-being
-                                routines.
+                                {t('resources.manual.text')}
+
+
+
+
+
                             </p>
 
                             <button
@@ -1333,7 +1399,7 @@ function App() {
                                     )
                                 }
                             >
-                                Read Caregiver Guide
+                                {t('resources.manual.button')}
                             </button>
 
                         </div>
@@ -1347,17 +1413,17 @@ function App() {
                             </div>
 
                             <h3>
-                                Dementia Care Tips &
-                                Articles
+                                {t('resources.tips.title')}
+
                             </h3>
 
                             <p>
-                                Practical,
-                                easy-to-follow guidance
-                                on nutrition, exercise,
-                                sleep, home safety, and
-                                everyday communication
-                                for dementia patients.
+                                {t('resources.tips.text')}
+
+
+
+
+
                             </p>
 
                             <button
@@ -1368,7 +1434,7 @@ function App() {
                                     )
                                 }
                             >
-                                Explore Care Tips
+                                {t('resources.tips.button')}
                             </button>
 
                         </div>
@@ -1382,17 +1448,17 @@ function App() {
                             </div>
 
                             <h3>
-                                Support Groups &
-                                Community
+                                {t('resources.support.title')}
+
                             </h3>
 
                             <p>
-                                Connect with caregiver
-                                support networks, NGOs,
-                                and community programs
-                                working on dementia care
-                                across the North Eastern
-                                Region.
+                                {t('resources.support.text')}
+
+
+
+
+
                             </p>
 
                             <button
@@ -1403,7 +1469,7 @@ function App() {
                                     )
                                 }
                             >
-                                Find Support Groups
+                                {t('resources.support.button')}
                             </button>
 
                         </div>
@@ -1424,7 +1490,7 @@ function App() {
                                 )
                             }
                         >
-                            Back to Home
+                            {t('common.backHome')}
                         </button>
                     </div>
 
@@ -1476,19 +1542,19 @@ function App() {
                             <div className="modal-body directory-modal-body">
 
                                 <h2>
-                                    🩺 North-Eastern
-                                    Region (NER)
-                                    Neurological Care
-                                    Directory
+                                    🩺 {t('directory.title')}
+
+
+
                                 </h2>
 
                                 <p className="directory-subtext">
-                                    Verified emergency
-                                    lines, neurology
-                                    departments, and
-                                    memory clinics
-                                    across all 8
-                                    Northeastern States:
+                                    {t('directory.subtitle')}
+
+
+
+
+
                                 </p>
 
                                 <div className="directory-scroll-box">
@@ -1509,12 +1575,12 @@ function App() {
                                                     (GMCH),
                                                     Guwahati:
                                                 </strong>{' '}
-                                                Dept of
-                                                Neurology &
-                                                Memory Clinic |
-                                                Ph:
-                                                0361-3582043 /
-                                                0361-2452244
+                                                {t('directory.details.assam.gauhati')}
+
+
+
+
+
                                             </li>
 
                                             <li>
@@ -1523,9 +1589,9 @@ function App() {
                                                     College (AMC),
                                                     Dibrugarh:
                                                 </strong>{' '}
-                                                Department of
-                                                Neurology &
-                                                Geriatric Care
+                                                {t('directory.details.assam.amc')}
+
+
                                             </li>
 
                                             <li>
@@ -1535,8 +1601,8 @@ function App() {
                                                     Hospital (SMCH),
                                                     Silchar:
                                                 </strong>{' '}
-                                                General Medicine
-                                                & Neurology OPD
+                                                {t('directory.details.assam.silchar')}
+
                                             </li>
 
                                         </ul>
@@ -1556,14 +1622,14 @@ function App() {
                                                     NEIGRIHMS,
                                                     Shillong:
                                                 </strong>{' '}
-                                                Advanced
-                                                Tertiary Care
-                                                Hospital &
-                                                Neurology Dept |
-                                                Emergency: +91
-                                                364 2530000,
-                                                Enquiry: +91
-                                                364 2530002
+                                                {t('directory.details.meghalaya.neigrihms')}
+
+
+
+
+
+
+
                                             </li>
 
                                             <li>
@@ -1571,9 +1637,9 @@ function App() {
                                                     Civil Hospital
                                                     Shillong:
                                                 </strong>{' '}
-                                                General Neurology
-                                                & Senior Citizen
-                                                Health Support
+                                                {t('directory.details.meghalaya.civil')}
+
+
                                             </li>
 
                                         </ul>
@@ -1596,12 +1662,12 @@ function App() {
                                                     Sciences (RIMS),
                                                     Imphal:
                                                 </strong>{' '}
-                                                Centre of
-                                                Excellence /
-                                                Dept of Neurology
-                                                | Ph:
-                                                0385-2414539 /
-                                                Telemedicine Hub
+                                                {t('directory.details.manipur.rims')}
+
+
+
+
+
                                             </li>
 
                                             <li>
@@ -1611,9 +1677,9 @@ function App() {
                                                     Medical Sciences
                                                     (JNIMS), Imphal:
                                                 </strong>{' '}
-                                                Neurology &
-                                                Psychiatry
-                                                Outpatient Care
+                                                {t('directory.details.manipur.jnims')}
+
+
                                             </li>
 
                                         </ul>
@@ -1637,10 +1703,10 @@ function App() {
                                                     Hospital,
                                                     Agartala:
                                                 </strong>{' '}
-                                                Dedicated
-                                                Neurological
-                                                Clinic &
-                                                Emergency Care
+                                                {t('directory.details.tripura.agmc')}
+
+
+
                                             </li>
 
                                         </ul>
@@ -1661,9 +1727,9 @@ function App() {
                                                     College (ZMC),
                                                     Falkawn, Aizawl:
                                                 </strong>{' '}
-                                                State Referral
-                                                Hospital & Dept
-                                                of Medicine
+                                                {t('directory.details.mizoram.zmc')}
+
+
                                             </li>
 
                                         </ul>
@@ -1685,9 +1751,9 @@ function App() {
                                                     Authority,
                                                     Kohima:
                                                 </strong>{' '}
-                                                Regional Health
-                                                Center & Emergency
-                                                Support
+                                                {t('directory.details.nagaland.kohima')}
+
+
                                             </li>
 
                                         </ul>
@@ -1713,8 +1779,8 @@ function App() {
                                                     (TRIHMS),
                                                     Naharlagun (AP):
                                                 </strong>{' '}
-                                                Specialized
-                                                Consultation
+                                                {t('directory.details.arunachal.sikkim.trihms')}
+
                                             </li>
 
                                             <li>
@@ -1725,9 +1791,9 @@ function App() {
                                                     Hospital,
                                                     Gangtok (Sikkim):
                                                 </strong>{' '}
-                                                Neurology &
-                                                Geriatric Care
-                                                Unit
+                                                {t('directory.details.arunachal.sikkim.stnm')}
+
+
                                             </li>
 
                                         </ul>
@@ -1737,34 +1803,34 @@ function App() {
                                     <div className="state-dir-block emergency-highlight-block">
 
                                         <h3>
-                                            🚨 Pan-NER
-                                            Emergency
-                                            Helplines
+                                            🚨 {t('directory.emergency.title')}
+
+
                                         </h3>
 
                                         <ul>
 
                                             <li>
                                                 <strong>
-                                                    Tele-MANAS
-                                                    Mental Health
-                                                    Support
-                                                    Helpline:
+                                                    {t('directory.emergency.teleManas')}
+
+
+
                                                 </strong>{' '}
-                                                14416 (Free
-                                                24/7
-                                                psychological
-                                                & cognitive
-                                                distress
-                                                support)
+                                                {t('directory.details.teleManasSupport')}
+
+
+
+
+
                                             </li>
 
                                             <li>
                                                 <strong>
-                                                    National
-                                                    Emergency
-                                                    Response
-                                                    Service:
+                                                    {t('directory.emergency.national')}
+
+
+
                                                 </strong>{' '}
                                                 112
                                             </li>
@@ -1788,18 +1854,18 @@ function App() {
                             <div className="modal-body manual-modal-body">
 
                                 <h2>
-                                    📘 Caregiver Manual &
-                                    Stress Relief
+                                    📘 {t('manual.title')}
+
                                 </h2>
 
                                 <p className="modal-subtitle">
-                                    Comprehensive
-                                    strategies,
-                                    de-escalation
-                                    protocols, and
-                                    well-being tools for
-                                    dementia caregivers
-                                    in NER.
+                                    {t('manual.subtitle')}
+
+
+
+
+
+
                                 </p>
 
                                 <div className="manual-tabs">
@@ -1817,7 +1883,7 @@ function App() {
                                             )
                                         }
                                     >
-                                        📖 Monitoring Guide
+                                        📖 {t('manual.tabs.guide')}
                                     </button>
 
                                     <button
@@ -1833,7 +1899,7 @@ function App() {
                                             )
                                         }
                                     >
-                                        🕊️ Managing Anxiety
+                                        🕊️ {t('manual.tabs.deescalation')}
                                     </button>
 
                                     <button
@@ -1849,8 +1915,8 @@ function App() {
                                             )
                                         }
                                     >
-                                        🧘 Caregiver
-                                        Breathing Tool
+                                        🧘 {t('manual.tabs.breathing')}
+
                                     </button>
 
                                     {/* ADDED FROM FIRST VERSION */}
@@ -1868,7 +1934,7 @@ function App() {
                                             )
                                         }
                                     >
-                                        🧠 About Dementia
+                                        🧠 {t('manual.tabs.dementia')}
                                     </button>
 
                                 </div>
@@ -1882,17 +1948,17 @@ function App() {
                                         <div className="tab-content">
 
                                             <h3>
-                                                1. Daily Routine
-                                                & Schedule
-                                                Synchronization
+                                                {t('manual.guide.title')}
+
+
                                             </h3>
 
                                             <p>
-                                                Maintain
-                                                consistent
-                                                mealtime and
-                                                activity
-                                                schedules.
+                                                {t('manual.guide.text')}
+
+
+
+
                                             </p>
 
                                         </div>
@@ -1905,19 +1971,19 @@ function App() {
                                         <div className="tab-content">
 
                                             <h3>
-                                                1. Managing
-                                                Sundowning &
-                                                Agitation
+                                                {t('manual.deescalation.title')}
+
+
                                             </h3>
 
                                             <p>
-                                                Reduce
-                                                ambient
-                                                sensory
-                                                stimuli and
-                                                initiate calm
-                                                background
-                                                audio.
+                                                {t('manual.deescalation.text')}
+
+
+
+
+
+
                                             </p>
 
                                         </div>
@@ -1936,131 +2002,131 @@ function App() {
                                         <div className="tab-content">
 
                                             <h3>
-                                                What Is Dementia?
+                                                {t('dementia.whatIs.title')}
                                             </h3>
 
                                             <p>
-                                                Dementia is an
-                                                umbrella term for
-                                                a decline in
-                                                memory, thinking,
-                                                and reasoning
-                                                skills severe
-                                                enough to
-                                                interfere with
-                                                daily life. It is
-                                                caused by damage
-                                                to brain cells and
-                                                is progressive,
-                                                meaning symptoms
-                                                generally worsen
-                                                over time.
-                                                Alzheimer's
-                                                disease is the
-                                                most common form,
-                                                accounting for a
-                                                majority of cases.
+                                                {t('dementia.whatIs.text')}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                                             </p>
 
                                             <h3>
-                                                Common Early Signs
+                                                {t('dementia.earlySigns.title')}
                                             </h3>
 
                                             <p>
-                                                Frequent memory
-                                                lapses, difficulty
-                                                finding words,
-                                                confusion about
-                                                time or place,
-                                                trouble planning
-                                                familiar tasks,
-                                                and noticeable
-                                                changes in mood or
-                                                personality are
-                                                often among the
-                                                first signs
-                                                families notice.
+                                                {t('dementia.earlySigns.text')}
+
+
+
+
+
+
+
+
+
+
+
+
                                             </p>
 
                                             <h3>
-                                                The Three Broad
-                                                Stages
+                                                {t('dementia.stages.title')}
+
                                             </h3>
 
                                             <p>
                                                 <strong>
-                                                    Early stage:
+                                                    {t('dementia.stages.earlyLabel')}
                                                 </strong>{' '}
-                                                Mild forgetfulness
-                                                and occasional
-                                                confusion; the
-                                                person is usually
-                                                still independent.
-                                                <strong>
-                                                    {' '}
-                                                    Middle stage:
-                                                </strong>{' '}
-                                                Memory gaps grow,
-                                                help is needed with
-                                                daily tasks, and
-                                                wandering or
-                                                repeating
-                                                questions is
-                                                common.
+                                                {t('dementia.stages.early')}
+
+
+
+
                                                 <strong>
                                                     {' '}
-                                                    Late stage:
+                                                    {t('dementia.stages.middleLabel')}
                                                 </strong>{' '}
-                                                Significant loss
-                                                of ability to
-                                                communicate and
-                                                carry out basic
-                                                activities;
-                                                full-time care is
-                                                typically required.
+                                                {t('dementia.stages.middle')}
+
+
+
+
+
+
+                                                <strong>
+                                                    {' '}
+                                                    {t('dementia.stages.lateLabel')}
+                                                </strong>{' '}
+                                                {t('dementia.stages.late')}
+
+
+
+
+
+
                                             </p>
 
                                             <h3>
-                                                Why Early Detection
-                                                Matters
+                                                {t('dementia.detection.title')}
+
                                             </h3>
 
                                             <p>
-                                                There is currently
-                                                no cure, but early
-                                                diagnosis allows
-                                                families to plan
-                                                care, start
-                                                supportive
-                                                therapies, adjust
-                                                routines, and
-                                                access medications
-                                                that can slow
-                                                symptom progression
-                                                in some cases.
+                                                {t('dementia.detection.text')}
+
+
+
+
+
+
+
+
+
+
+
                                             </p>
 
                                             <h3>
-                                                Supporting a Person
-                                                with Dementia
+                                                {t('dementia.supporting.title')}
+
                                             </h3>
 
                                             <p>
-                                                Consistent
-                                                routines, a calm
-                                                and well-lit
-                                                environment,
-                                                patience during
-                                                communication, and
-                                                regular cognitive
-                                                engagement (such as
-                                                memory games and
-                                                social interaction)
-                                                can meaningfully
-                                                improve quality of
-                                                life for both
-                                                patients and
-                                                caregivers.
+                                                {t('dementia.supporting.text')}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                                             </p>
 
                                         </div>
@@ -2081,14 +2147,14 @@ function App() {
                             <div className="modal-body directory-modal-body">
 
                                 <h2>
-                                    📚 Dementia Care Tips
-                                    & Articles
+                                    📚 {t('tips.title')}
+
                                 </h2>
 
                                 <p className="directory-subtext">
-                                    Practical guidance families
-                                    and caregivers can apply at
-                                    home:
+                                    {t('tips.subtitle')}
+
+
                                 </p>
 
                                 <div className="directory-scroll-box">
@@ -2096,25 +2162,25 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            🥗 Nutrition & Diet
+                                            🥗 {t('tips.nutrition.title')}
                                         </h3>
 
                                         <p>
-                                            Offer small,
-                                            frequent meals
-                                            with familiar
-                                            regional foods.
-                                            Keep water visible
-                                            and accessible
-                                            throughout the day,
-                                            as thirst cues are
-                                            often forgotten.
-                                            Limit sugary and
-                                            heavily processed
-                                            snacks, and favor
-                                            finger foods if
-                                            using utensils
-                                            becomes difficult.
+                                            {t('tips.nutrition.text')}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                                         </p>
 
                                     </div>
@@ -2122,21 +2188,21 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            🚶 Physical Activity
+                                            🚶 {t('tips.activity.title')}
                                         </h3>
 
                                         <p>
-                                            Short daily walks,
-                                            light stretching, or
-                                            simple household
-                                            chores help maintain
-                                            mobility and improve
-                                            mood. Aim for gentle,
-                                            consistent movement
-                                            rather than intense
-                                            exercise, and always
-                                            supervise outdoor
-                                            activity.
+                                            {t('tips.activity.text')}
+
+
+
+
+
+
+
+
+
+
                                         </p>
 
                                     </div>
@@ -2144,22 +2210,22 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            😴 Sleep & Sundowning
+                                            😴 {t('tips.sleep.title')}
                                         </h3>
 
                                         <p>
-                                            Keep a consistent
-                                            bedtime routine,
-                                            limit caffeine after
-                                            noon, and use dim,
-                                            warm lighting in the
-                                            evening. If confusion
-                                            or agitation
-                                            increases at dusk,
-                                            calm music and a
-                                            familiar face nearby
-                                            can help ease the
-                                            transition.
+                                            {t('tips.sleep.text')}
+
+
+
+
+
+
+
+
+
+
+
                                         </p>
 
                                     </div>
@@ -2167,20 +2233,20 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            🏠 Home Safety
+                                            🏠 {t('tips.safety.title')}
                                         </h3>
 
                                         <p>
-                                            Remove loose rugs and
-                                            clutter, install grab
-                                            bars near the
-                                            bathroom, label rooms
-                                            clearly, and keep
-                                            sharp objects,
-                                            medicines, and
-                                            cleaning supplies
-                                            locked away or out of
-                                            reach.
+                                            {t('tips.safety.text')}
+
+
+
+
+
+
+
+
+
                                         </p>
 
                                     </div>
@@ -2188,21 +2254,21 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            💬 Communication
+                                            💬 {t('tips.communication.title')}
                                         </h3>
 
                                         <p>
-                                            Use short, simple
-                                            sentences and
-                                            maintain eye contact.
-                                            Give the person time
-                                            to respond, avoid
-                                            quizzing their memory,
-                                            and focus on the
-                                            feeling behind their
-                                            words rather than
-                                            correcting every
-                                            detail.
+                                            {t('tips.communication.text')}
+
+
+
+
+
+
+
+
+
+
                                         </p>
 
                                     </div>
@@ -2222,15 +2288,15 @@ function App() {
                             <div className="modal-body directory-modal-body">
 
                                 <h2>
-                                    🤝 Support Groups &
-                                    Community
+                                    🤝 {t('support.title')}
+
                                 </h2>
 
                                 <p className="directory-subtext">
-                                    Caregivers don't have to
-                                    manage alone — these are
-                                    the kinds of support worth
-                                    seeking out in the NER:
+                                    {t('support.subtitle')}
+
+
+
                                 </p>
 
                                 <div className="directory-scroll-box">
@@ -2238,26 +2304,26 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            🧑‍🤝‍🧑 Local
-                                            Caregiver Support
-                                            Groups
+                                            🧑‍🤝‍🧑 {t('support.local.title')}
+
+
                                         </h3>
 
                                         <p>
-                                            Many district
-                                            hospitals and NGOs
-                                            run periodic
-                                            caregiver meet-ups
-                                            where families
-                                            share coping
-                                            strategies and
-                                            practical advice.
-                                            Ask your nearest
-                                            medical center (see
-                                            the Care Directory)
-                                            whether one
-                                            operates in your
-                                            area.
+                                            {t('support.local.text')}
+
+
+
+
+
+
+
+
+
+
+
+
+
                                         </p>
 
                                     </div>
@@ -2265,23 +2331,23 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            🏢 National &
-                                            Regional Dementia
-                                            Organizations
+                                            🏢 {t('support.organizations.title')}
+
+
                                         </h3>
 
                                         <p>
-                                            Bodies such as the
-                                            Alzheimer's and
-                                            Related Disorders
-                                            Society of India
-                                            (ARDSI) run chapters
-                                            and helplines across
-                                            India, offering
-                                            counseling, day-care
-                                            referrals, and
-                                            caregiver training
-                                            resources.
+                                            {t('support.organizations.text')}
+
+
+
+
+
+
+
+
+
+
                                         </p>
 
                                     </div>
@@ -2289,21 +2355,21 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            💻 Online Communities
+                                            💻 {t('support.online.title')}
                                         </h3>
 
                                         <p>
-                                            Moderated online
-                                            forums and social
-                                            media groups for
-                                            dementia caregivers
-                                            can offer round-the-
-                                            clock peer support,
-                                            especially useful
-                                            for families in
-                                            remote areas with
-                                            limited access to
-                                            in-person groups.
+                                            {t('support.online.text')}
+
+
+
+
+
+
+
+
+
+
                                         </p>
 
                                     </div>
@@ -2311,21 +2377,21 @@ function App() {
                                     <div className="state-dir-block emergency-highlight-block">
 
                                         <h3>
-                                            🕊️ Mental Health
-                                            Support for
-                                            Caregivers
+                                            🕊️ {t('support.mentalHealth.title')}
+
+
                                         </h3>
 
                                         <p>
-                                            Caregiver burnout is
-                                            common and real. The
-                                            Tele-MANAS helpline
-                                            (14416) offers free,
-                                            confidential
-                                            psychological
-                                            support for
-                                            caregivers as well
-                                            as patients, 24/7.
+                                            {t('support.mentalHealth.text')}
+
+
+
+
+
+
+
+
                                         </p>
 
                                     </div>
@@ -2344,13 +2410,13 @@ function App() {
                             <div className="modal-body quick-calm-modal-body">
 
                                 <h2>
-                                    🧘 Quick Calm
+                                    🧘 {t('quickCalm.title')}
                                 </h2>
 
                                 <p className="modal-subtitle">
-                                    A short guided
-                                    breathing pause,
-                                    whenever you need it.
+                                    {t('quickCalm.subtitle')}
+
+
                                 </p>
 
                                 {renderBreathingExercise()}
@@ -2374,9 +2440,9 @@ function App() {
                         'quickCalm'
                     )
                 }
-                aria-label="Open quick calm breathing exercise"
+                aria-label={t('aria.quickCalm')}
             >
-                🧘 Quick Calm
+                🧘 {t('quickCalm.button')}
             </button>
 
             {/* ====================================================
@@ -2386,12 +2452,11 @@ function App() {
             <div className="emergency-banner">
 
                 <span>
-                    🚨 Emergency Help Line
-                    (NER Priority Support) 🚨
+                    {t('emergency.banner')}
                 </span>
 
                 <button className="help-btn">
-                    Click for Help
+                    {t('emergency.button')}
                 </button>
 
             </div>
