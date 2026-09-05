@@ -9,6 +9,15 @@ const CURRENT_YEAR = today.getFullYear();
 const CURRENT_MONTH = today.getMonth() + 1; // 1-12
 const CURRENT_DAY = today.getDate();
 
+// Fallback used if the 'auth.months' translation key is missing or misconfigured.
+// Without this guard, i18next returns the key itself ("auth.months") when the
+// key can't be resolved, and indexing into that string produces single letters
+// instead of month names.
+const FALLBACK_MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 const PHONE_REGEX = /^\d{10}$/;
 const PIN_REGEX = /^\d{6}$/;
 const DIGIT_ONLY_FIELDS = ['phone', 'pin_code', 'emergency_contact_phone'];
@@ -71,6 +80,14 @@ export default function AddPatientForm({ onBack, user }) {
         { length: maxDayForYearMonth(dobParts.year || CURRENT_YEAR, dobParts.month || 12) },
         (_, i) => i + 1
     );
+
+    // Guard against a missing/misconfigured 'auth.months' translation key: if it
+    // doesn't resolve to a proper 12-item array, fall back to hardcoded names
+    // instead of letting i18next's key-name fallback string leak into the UI.
+    const translatedMonths = t('auth.months', { returnObjects: true });
+    const monthNames = Array.isArray(translatedMonths) && translatedMonths.length === 12
+        ? translatedMonths
+        : FALLBACK_MONTH_NAMES;
 
     const handleDobPartChange = (part, value) => {
         setDobParts(prev => {
@@ -267,7 +284,7 @@ export default function AddPatientForm({ onBack, user }) {
                                         aria-label="Month of birth"
                                     >
                                         <option value="">{t('addPatient.month')}</option>
-                                        {monthOptions.map(m => <option key={m} value={m}>{t('auth.months', { returnObjects: true })[m - 1]}</option>)}
+                                        {monthOptions.map(m => <option key={m} value={m}>{monthNames[m - 1]}</option>)}
                                     </select>
                                     <select
                                         className="form-select"

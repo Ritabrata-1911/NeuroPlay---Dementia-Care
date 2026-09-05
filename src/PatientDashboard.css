@@ -190,6 +190,13 @@ body {
     font-size: 0.85rem;
 }
 
+.db-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .db-user-info {
     display: flex;
     flex-direction: column;
@@ -2002,6 +2009,160 @@ button {
 
 .pt-reminder-delete-btn:hover {
     text-decoration: underline;
+}
+
+/* --- PROFILE MODAL (opened from the topbar user pill) --- */
+
+.db-user-pill-btn {
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 1.5rem;
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 2.25rem;
+    border-radius: 20px;
+    max-width: 480px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.1rem;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: #4a5568;
+    cursor: pointer;
+}
+
+.profile-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-modal-avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.profile-modal-avatar-img {
+    object-fit: cover;
+}
+
+.profile-modal-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.profile-modal-avatar-edit-btn {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    background: #0f9d58;
+    color: #ffffff;
+    font-size: 0.75rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-modal-avatar-edit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.profile-modal-header h2 {
+    margin: 0 0 0.2rem 0;
+    color: var(--db-navy-text);
+    font-size: 1.2rem;
+}
+
+.profile-modal-email {
+    margin: 0;
+    color: var(--db-slate-text);
+    font-size: 0.88rem;
+}
+
+.profile-avatar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.profile-avatar-action-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.profile-avatar-action-link:hover {
+    color: var(--db-navy-text);
+}
+
+.profile-avatar-action-link:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    text-decoration: none;
+}
+
+.profile-avatar-action-danger {
+    color: #b91c1c;
+}
+
+.profile-avatar-action-danger:hover {
+    color: #991b1b;
+}
+
+.error-message {
+    color: #e11d48;
+    font-size: 0.82rem;
+    margin-top: 0.3rem;
+    display: block;
 }
 
 @media (max-width: 640px) {

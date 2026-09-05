@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from './SupabaseClient';
@@ -25,6 +25,12 @@ import {
     ReminderStatusBadge,
     getReminderRowClassName,
 } from './useReminderAlarms';
+
+// Storage bucket that holds caregiver profile photos. See backend notes for
+// the required bucket + RLS setup.
+const AVATAR_BUCKET = 'avatars';
+const MAX_AVATAR_SIZE_MB = 5;
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 // Picks a gender-appropriate avatar for a patient card.
 const getPatientAvatar = (patient) => {
@@ -165,6 +171,9 @@ export default function CaregiverDashboard() {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showProfileModal, setShowProfileModal] = useState(false);
+    const [avatarUploading, setAvatarUploading] = useState(false);
+    const [avatarError, setAvatarError] = useState(null);
+    const avatarInputRef = useRef(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [reportsPatientId, setReportsPatientId] = useState(null);
     const [activeResourceModal, setActiveResourceModal] = useState(null);
@@ -1047,6 +1056,143 @@ export default function CaregiverDashboard() {
         navigate('/');
     };
 
+    // Uploads a new profile photo to Supabase Storage, then points the
+    // caregiver's user_metadata.avatar_url at the resulting public URL —
+    // same "profile lives in auth metadata" pattern as the rest of the
+    // caregiver profile fields.
+    const handleAvatarFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = ''; // allow re-selecting the same file later
+        if (!file || !user) return;
+
+        setAvatarError(null);
+
+        if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+            setAvatarError('Please choose a JPG, PNG, or WEBP image.');
+            return;
+        }
+
+        if (file.size > MAX_AVATAR_SIZE_MB * 1024 * 1024) {
+            setAvatarError(`Image must be under ${MAX_AVATAR_SIZE_MB}MB.`);
+            return;
+        }
+
+        setAvatarUploading(true);
+
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        // Fixed filename (not a timestamp) so re-uploads overwrite the old
+        // photo instead of orphaning files in storage forever.
+        const filePath = `${user.id}/profile.${fileExt}`;
+
+        // Clean up any previous avatar(s) in this caregiver's folder first.
+        // upsert only overwrites a file with the *same* name, so if someone
+        // uploads a .png after previously uploading a .jpg, the old .jpg
+        // would otherwise be left behind as an orphaned file.
+        const { data: existingFiles, error: listError } = await supabase.storage
+            .from(AVATAR_BUCKET)
+            .list(user.id);
+
+        if (listError) {
+            // Non-fatal — worst case an old file lingers in storage.
+            console.error('Failed to list existing avatar files:', listError.message);
+        } else if (existingFiles && existingFiles.length > 0) {
+            const staleFiles = existingFiles
+                .map((f) => `${user.id}/${f.name}`)
+                .filter((path) => path !== filePath);
+
+            if (staleFiles.length > 0) {
+                const { error: removeError } = await supabase.storage
+                    .from(AVATAR_BUCKET)
+                    .remove(staleFiles);
+
+                if (removeError) {
+                    // Non-fatal — proceed with the upload regardless.
+                    console.error('Failed to remove old avatar file(s):', removeError.message);
+                }
+            }
+        }
+
+        const { error: uploadError } = await supabase.storage
+            .from(AVATAR_BUCKET)
+            .upload(filePath, file, { upsert: true, cacheControl: '3600' });
+
+        if (uploadError) {
+            console.error('Failed to upload avatar:', uploadError.message);
+            setAvatarError('Upload failed. Please try again.');
+            setAvatarUploading(false);
+            return;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+            .from(AVATAR_BUCKET)
+            .getPublicUrl(filePath);
+
+        // Cache-bust so the new photo shows immediately even though the
+        // path/filename didn't change.
+        const freshAvatarUrl = `${publicUrlData.publicUrl}?updated=${Date.now()}`;
+
+        const { data: updatedUserData, error: updateError } = await supabase.auth.updateUser({
+            data: { avatar_url: freshAvatarUrl }
+        });
+
+        setAvatarUploading(false);
+
+        if (updateError) {
+            console.error('Failed to save avatar URL:', updateError.message);
+            setAvatarError('Photo uploaded, but saving it to your profile failed. Please try again.');
+            return;
+        }
+
+        setUser(updatedUserData.user);
+    };
+
+    // Deletes the caregiver's photo from Storage and clears
+    // user_metadata.avatar_url, reverting the UI back to the initials circle.
+    const handleRemoveAvatar = async () => {
+        if (!user) return;
+
+        const confirmRemove = window.confirm('Remove your profile photo?');
+        if (!confirmRemove) return;
+
+        setAvatarError(null);
+        setAvatarUploading(true);
+
+        const { data: existingFiles, error: listError } = await supabase.storage
+            .from(AVATAR_BUCKET)
+            .list(user.id);
+
+        if (listError) {
+            console.error('Failed to list avatar files for removal:', listError.message);
+        } else if (existingFiles && existingFiles.length > 0) {
+            const pathsToRemove = existingFiles.map((f) => `${user.id}/${f.name}`);
+
+            const { error: removeError } = await supabase.storage
+                .from(AVATAR_BUCKET)
+                .remove(pathsToRemove);
+
+            if (removeError) {
+                console.error('Failed to remove avatar file(s):', removeError.message);
+                setAvatarError('Could not remove photo from storage. Please try again.');
+                setAvatarUploading(false);
+                return;
+            }
+        }
+
+        const { data: updatedUserData, error: updateError } = await supabase.auth.updateUser({
+            data: { avatar_url: null }
+        });
+
+        setAvatarUploading(false);
+
+        if (updateError) {
+            console.error('Failed to clear avatar URL:', updateError.message);
+            setAvatarError('Photo removed, but updating your profile failed. Please try again.');
+            return;
+        }
+
+        setUser(updatedUserData.user);
+    };
+
     const handleSidebarClick = (key) => {
         if (key === 'dashboard') {
             setView('dashboard');
@@ -1101,6 +1247,24 @@ export default function CaregiverDashboard() {
     const caregiverFirstName =
         caregiverName.trim().split(/\s+/)[0] || t('caregiverDashboard.header.caregiver');
 
+    const avatarUrl = meta.avatar_url || null;
+
+    // Shared so the header (used on several views) and the profile modal
+    // all show the same photo-or-initials avatar without repeating markup.
+    const renderCaregiverAvatar = (extraClassName = '') => (
+        avatarUrl ? (
+            <img
+                src={avatarUrl}
+                alt={caregiverName}
+                className={`header-avatar-circle header-avatar-img ${extraClassName}`}
+            />
+        ) : (
+            <span className={`header-avatar-circle ${extraClassName}`}>
+                {caregiverInitial}
+            </span>
+        )
+    );
+
     const filteredPatients = patients.filter((p) =>
         (p.full_name || '')
             .toLowerCase()
@@ -1121,8 +1285,8 @@ export default function CaregiverDashboard() {
                     <button
                         key={link.key}
                         className={`sidebar-link ${link.key === activeKey
-                                ? 'sidebar-link-active'
-                                : ''
+                            ? 'sidebar-link-active'
+                            : ''
                             }`}
                         onClick={() =>
                             handleSidebarClick(link.key)
@@ -1171,9 +1335,7 @@ export default function CaregiverDashboard() {
                     className="header-avatar-btn"
                     onClick={() => setShowProfileModal(true)}
                 >
-                    <span className="header-avatar-circle">
-                        {caregiverInitial}
-                    </span>
+                    {renderCaregiverAvatar()}
                     {caregiverFirstName}
                 </button>
 
@@ -1210,9 +1372,38 @@ export default function CaregiverDashboard() {
                     </button>
 
                     <div className="profile-modal-header">
-                        <span className="profile-modal-avatar">
-                            {caregiverInitial}
-                        </span>
+                        <div className="profile-modal-avatar-wrap">
+                            {avatarUrl ? (
+                                <img
+                                    src={avatarUrl}
+                                    alt={caregiverName}
+                                    className="profile-modal-avatar profile-modal-avatar-img"
+                                />
+                            ) : (
+                                <span className="profile-modal-avatar">
+                                    {caregiverInitial}
+                                </span>
+                            )}
+
+                            <button
+                                type="button"
+                                className="profile-modal-avatar-edit-btn"
+                                onClick={() => avatarInputRef.current?.click()}
+                                disabled={avatarUploading}
+                                aria-label="Change profile photo"
+                                title="Change profile photo"
+                            >
+                                {avatarUploading ? '…' : '📷'}
+                            </button>
+
+                            <input
+                                ref={avatarInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                style={{ display: 'none' }}
+                                onChange={handleAvatarFileChange}
+                            />
+                        </div>
 
                         <div>
                             <h2>{caregiverName}</h2>
@@ -1220,6 +1411,34 @@ export default function CaregiverDashboard() {
                             <p className="profile-modal-email">
                                 {user?.email}
                             </p>
+
+                            <div className="profile-avatar-actions">
+                                <button
+                                    type="button"
+                                    className="profile-avatar-action-link"
+                                    onClick={() => avatarInputRef.current?.click()}
+                                    disabled={avatarUploading}
+                                >
+                                    {avatarUploading ? 'Working…' : (avatarUrl ? 'Change photo' : 'Upload photo')}
+                                </button>
+
+                                {avatarUrl && (
+                                    <button
+                                        type="button"
+                                        className="profile-avatar-action-link profile-avatar-action-danger"
+                                        onClick={handleRemoveAvatar}
+                                        disabled={avatarUploading}
+                                    >
+                                        Remove photo
+                                    </button>
+                                )}
+                            </div>
+
+                            {avatarError && (
+                                <p className="error-message" style={{ marginTop: '0.35rem' }}>
+                                    {avatarError}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -1278,9 +1497,7 @@ export default function CaregiverDashboard() {
                                     setShowProfileModal(true)
                                 }
                             >
-                                <span className="header-avatar-circle">
-                                    {caregiverInitial}
-                                </span>
+                                {renderCaregiverAvatar()}
 
                                 {caregiverFirstName}
                             </button>
@@ -1391,8 +1608,8 @@ export default function CaregiverDashboard() {
                                         >
                                             <span
                                                 className={`patient-status-pill ${isOnline
-                                                        ? 'patient-status-online'
-                                                        : 'patient-status-offline'
+                                                    ? 'patient-status-online'
+                                                    : 'patient-status-offline'
                                                     }`}
                                             >
                                                 <span className="status-dot">
@@ -2161,9 +2378,7 @@ export default function CaregiverDashboard() {
                                 setShowProfileModal(true)
                             }
                         >
-                            <span className="header-avatar-circle">
-                                {caregiverInitial}
-                            </span>
+                            {renderCaregiverAvatar()}
 
                             {caregiverFirstName}
                         </button>

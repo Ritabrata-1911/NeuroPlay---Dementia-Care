@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from './SupabaseClient';
 import './PatientDashboard.css';
@@ -39,6 +39,15 @@ const GAME_CATEGORIES = [
     { id: 'attention', icon: '🎯' },
     { id: 'engagement', icon: '💛' },
 ];
+
+// Storage bucket that holds patient profile photos. Patients don't have a
+// Supabase Auth session (they log in with a caregiver-issued code, and the
+// dashboard runs under the anon key), so the photo can't live in
+// user_metadata like it does for caregivers — it's a column on the
+// `patients` table instead, updated through an RPC. See backend notes.
+const PATIENT_AVATAR_BUCKET = 'patient-avatars';
+const MAX_AVATAR_SIZE_MB = 5;
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const GAMES = [
     { id: 'mind-snap', icon: '🧠', category: 'memory', playable: true },
@@ -121,6 +130,11 @@ export default function PatientDashboard({ onLogout }) {
     // can stay open at once.
     const [expandedRoutine, setExpandedRoutine] = useState([]);
     const [hydrationBusy, setHydrationBusy] = useState(false);
+
+    const [avatarUploading, setAvatarUploading] = useState(false);
+    const [avatarError, setAvatarError] = useState(null);
+    const [showProfileModal, setShowProfileModal] = useState(false);
+    const avatarInputRef = useRef(null);
 
     useEffect(() => {
         const storedSession = sessionStorage.getItem(
@@ -301,6 +315,159 @@ export default function PatientDashboard({ onLogout }) {
         onLogout?.();
     }
 
+    // Persists an updated patient object to both state and the session so
+    // the new avatar survives a page refresh without a full re-login.
+    function persistPatientUpdate(updatedFields) {
+        setPatient((prev) => {
+            const next = { ...prev, ...updatedFields };
+            try {
+                sessionStorage.setItem('neuroplay_patient_session', JSON.stringify(next));
+            } catch (error) {
+                console.error('Unable to persist updated patient session:', error);
+            }
+            return next;
+        });
+    }
+
+    // Uploads a new profile photo to Supabase Storage, then saves its URL
+    // on the patient's own record via the update_patient_avatar RPC.
+    // (Patients aren't Supabase Auth users, so there's no user_metadata to
+    // write to the way there is for caregivers — the photo lives directly
+    // on the `patients` row instead.)
+    async function handleAvatarFileChange(e) {
+        const file = e.target.files?.[0];
+        e.target.value = ''; // allow re-selecting the same file later
+        const patientId = patient?.id || patient?.patient_id;
+        if (!file || !patientId) return;
+
+        setAvatarError(null);
+
+        if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+            setAvatarError('Please choose a JPG, PNG, or WEBP image.');
+            return;
+        }
+
+        if (file.size > MAX_AVATAR_SIZE_MB * 1024 * 1024) {
+            setAvatarError(`Image must be under ${MAX_AVATAR_SIZE_MB}MB.`);
+            return;
+        }
+
+        setAvatarUploading(true);
+
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        // Fixed filename (not a timestamp) so re-uploads overwrite the old
+        // photo instead of orphaning files in storage forever.
+        const filePath = `${patientId}/profile.${fileExt}`;
+
+        // Clean up any previous photo(s) first — upsert only overwrites a
+        // file with the *same* name, so a .png replacing a .jpg would
+        // otherwise leave the old .jpg behind as an orphaned file.
+        const { data: existingFiles, error: listError } = await supabase.storage
+            .from(PATIENT_AVATAR_BUCKET)
+            .list(patientId);
+
+        if (listError) {
+            console.error('Failed to list existing avatar files:', listError.message);
+        } else if (existingFiles && existingFiles.length > 0) {
+            const staleFiles = existingFiles
+                .map((f) => `${patientId}/${f.name}`)
+                .filter((path) => path !== filePath);
+
+            if (staleFiles.length > 0) {
+                const { error: removeError } = await supabase.storage
+                    .from(PATIENT_AVATAR_BUCKET)
+                    .remove(staleFiles);
+
+                if (removeError) {
+                    console.error('Failed to remove old avatar file(s):', removeError.message);
+                }
+            }
+        }
+
+        const { error: uploadError } = await supabase.storage
+            .from(PATIENT_AVATAR_BUCKET)
+            .upload(filePath, file, { upsert: true, cacheControl: '3600' });
+
+        if (uploadError) {
+            console.error('Failed to upload patient avatar:', uploadError.message);
+            setAvatarError('Upload failed. Please try again.');
+            setAvatarUploading(false);
+            return;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+            .from(PATIENT_AVATAR_BUCKET)
+            .getPublicUrl(filePath);
+
+        // Cache-bust so the new photo shows immediately even though the
+        // path/filename didn't change.
+        const freshAvatarUrl = `${publicUrlData.publicUrl}?updated=${Date.now()}`;
+
+        const { error: rpcError } = await supabase.rpc('update_patient_avatar', {
+            p_patient_id: patientId,
+            p_avatar_url: freshAvatarUrl,
+        });
+
+        setAvatarUploading(false);
+
+        if (rpcError) {
+            console.error('Failed to save patient avatar URL:', rpcError.message);
+            setAvatarError('Photo uploaded, but saving it to the profile failed. Please try again.');
+            return;
+        }
+
+        persistPatientUpdate({ avatar_url: freshAvatarUrl });
+    }
+
+    // Deletes the patient's photo from Storage and clears avatar_url on
+    // their record, reverting the UI back to the initials circle.
+    async function handleRemoveAvatar() {
+        const patientId = patient?.id || patient?.patient_id;
+        if (!patientId) return;
+
+        const confirmRemove = window.confirm('Remove this profile photo?');
+        if (!confirmRemove) return;
+
+        setAvatarError(null);
+        setAvatarUploading(true);
+
+        const { data: existingFiles, error: listError } = await supabase.storage
+            .from(PATIENT_AVATAR_BUCKET)
+            .list(patientId);
+
+        if (listError) {
+            console.error('Failed to list avatar files for removal:', listError.message);
+        } else if (existingFiles && existingFiles.length > 0) {
+            const pathsToRemove = existingFiles.map((f) => `${patientId}/${f.name}`);
+
+            const { error: removeError } = await supabase.storage
+                .from(PATIENT_AVATAR_BUCKET)
+                .remove(pathsToRemove);
+
+            if (removeError) {
+                console.error('Failed to remove avatar file(s):', removeError.message);
+                setAvatarError('Could not remove photo from storage. Please try again.');
+                setAvatarUploading(false);
+                return;
+            }
+        }
+
+        const { error: rpcError } = await supabase.rpc('update_patient_avatar', {
+            p_patient_id: patientId,
+            p_avatar_url: null,
+        });
+
+        setAvatarUploading(false);
+
+        if (rpcError) {
+            console.error('Failed to clear patient avatar URL:', rpcError.message);
+            setAvatarError('Photo removed, but updating the profile failed. Please try again.');
+            return;
+        }
+
+        persistPatientUpdate({ avatar_url: null });
+    }
+
     async function handleSendNoteToCaregiver() {
         const message = window.prompt(t('patientDashboard.prompts.writeNote'));
         const trimmedMessage = message?.trim();
@@ -410,6 +577,8 @@ export default function PatientDashboard({ onLogout }) {
         patient.name ||
         t('patientDashboard.fallback.there');
 
+    const avatarUrl = patient.avatar_url || null;
+
     // FRONTEND-ONLY FALLBACK: Change the strings below to whatever caregiver name/contact you want to display
     const caregiverName =
         patient.caregiver_full_name ||
@@ -511,15 +680,23 @@ export default function PatientDashboard({ onLogout }) {
                     </div>
 
                     <div className="db-topbar-actions">
-                        <div className="db-user-pill">
+                        <button
+                            type="button"
+                            className="db-user-pill db-user-pill-btn"
+                            onClick={() => setShowProfileModal(true)}
+                        >
                             <div className="db-avatar">
-                                {patientName.charAt(0).toUpperCase()}
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt={patientName} className="db-avatar-img" />
+                                ) : (
+                                    patientName.charAt(0).toUpperCase()
+                                )}
                             </div>
                             <div className="db-user-info">
                                 <span className="db-user-name">{patientName}</span>
                                 <span className="db-user-role">{t('patientDashboard.topbar.activeSession')}</span>
                             </div>
-                        </div>
+                        </button>
 
                         <button
                             className="db-btn db-btn-secondary"
@@ -1012,6 +1189,95 @@ export default function PatientDashboard({ onLogout }) {
                     <span>{t('patientDashboard.footer.tagline')}</span>
                 </footer>
             </div>
+
+            {showProfileModal && (
+                <div
+                    className="modal-overlay"
+                    onClick={() => setShowProfileModal(false)}
+                >
+                    <div
+                        className="modal-content"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            className="modal-close-btn"
+                            onClick={() => setShowProfileModal(false)}
+                        >
+                            ✕
+                        </button>
+
+                        <div className="profile-modal-header">
+                            <div className="profile-modal-avatar-wrap">
+                                {avatarUrl ? (
+                                    <img
+                                        src={avatarUrl}
+                                        alt={patientName}
+                                        className="profile-modal-avatar profile-modal-avatar-img"
+                                    />
+                                ) : (
+                                    <span className="profile-modal-avatar">
+                                        {patientName.charAt(0).toUpperCase()}
+                                    </span>
+                                )}
+
+                                <button
+                                    type="button"
+                                    className="profile-modal-avatar-edit-btn"
+                                    onClick={() => avatarInputRef.current?.click()}
+                                    disabled={avatarUploading}
+                                    aria-label="Change profile photo"
+                                    title="Change profile photo"
+                                >
+                                    {avatarUploading ? '…' : '📷'}
+                                </button>
+
+                                <input
+                                    ref={avatarInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    style={{ display: 'none' }}
+                                    onChange={handleAvatarFileChange}
+                                />
+                            </div>
+
+                            <div>
+                                <h2>{patientName}</h2>
+                                <p className="profile-modal-email">
+                                    {t('patientDashboard.settings.patientId')}: {patient.id || patient.patient_id}
+                                </p>
+
+                                <div className="profile-avatar-actions">
+                                    <button
+                                        type="button"
+                                        className="profile-avatar-action-link"
+                                        onClick={() => avatarInputRef.current?.click()}
+                                        disabled={avatarUploading}
+                                    >
+                                        {avatarUploading ? 'Working…' : (avatarUrl ? 'Change photo' : 'Upload photo')}
+                                    </button>
+
+                                    {avatarUrl && (
+                                        <button
+                                            type="button"
+                                            className="profile-avatar-action-link profile-avatar-action-danger"
+                                            onClick={handleRemoveAvatar}
+                                            disabled={avatarUploading}
+                                        >
+                                            Remove photo
+                                        </button>
+                                    )}
+                                </div>
+
+                                {avatarError && (
+                                    <p className="error-message" style={{ marginTop: '0.35rem' }}>
+                                        {avatarError}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
