@@ -1,0 +1,197 @@
+.memlane-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem 1.25rem 3rem;
+    background: linear-gradient(180deg, #fff8ec 0%, #fdf2e3 100%);
+    font-family: inherit;
+}
+
+.memlane-header {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.memlane-header-text {
+    flex: 1;
+    text-align: center;
+}
+
+.memlane-header-text h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--db-navy-text, #1f2a44);
+}
+
+.memlane-header-text p {
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+    color: var(--db-slate-text, #5b6478);
+}
+
+.memlane-home-btn {
+    border: 1px solid var(--db-border-color, #e4dcca);
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: var(--db-navy-text, #1f2a44);
+    white-space: nowrap;
+}
+
+.memlane-home-btn:hover {
+    background: #f4ede0;
+}
+
+.memlane-visited-pill {
+    font-size: 0.8rem;
+    color: var(--db-slate-text, #5b6478);
+    background: #fff;
+    border: 1px solid var(--db-border-color, #e4dcca);
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
+    white-space: nowrap;
+}
+
+.memlane-card {
+    width: 100%;
+    max-width: 520px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(90, 70, 30, 0.08);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.memlane-prompt-emoji {
+    font-size: 4rem;
+    line-height: 1;
+}
+
+.memlane-card h2 {
+    margin: 0.25rem 0 0;
+    color: var(--db-navy-text, #1f2a44);
+}
+
+.memlane-question {
+    margin: 0 0 0.5rem;
+    color: var(--db-slate-text, #5b6478);
+    font-size: 1.05rem;
+}
+
+.memlane-reactions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.memlane-reaction-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 1rem 0.5rem;
+    border-radius: 14px;
+    border: 1.5px solid var(--db-border-color, #e4dcca);
+    background: #fffaf1;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--db-navy-text, #1f2a44);
+    transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.memlane-reaction-btn:hover {
+    transform: translateY(-2px);
+    border-color: #e0a951;
+}
+
+.memlane-reaction-btn.selected {
+    border-color: #d98c2b;
+    background: #fdecc9;
+}
+
+.memlane-reaction-emoji {
+    font-size: 1.8rem;
+}
+
+.memlane-tellmore {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.memlane-textarea {
+    width: 100%;
+    border-radius: 12px;
+    border: 1.5px solid var(--db-border-color, #e4dcca);
+    padding: 0.75rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+}
+
+.memlane-thankyou p {
+    font-size: 1.05rem;
+    color: var(--db-navy-text, #1f2a44);
+    margin: 0.5rem 0 1rem;
+}
+
+.memlane-next-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.memlane-btn {
+    border-radius: 999px;
+    padding: 0.65rem 1.4rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border: none;
+}
+
+.memlane-btn-primary {
+    background: #d98c2b;
+    color: #fff;
+}
+
+.memlane-btn-primary:hover {
+    background: #c67c1f;
+}
+
+.memlane-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.memlane-btn-secondary {
+    background: #fff;
+    border: 1.5px solid var(--db-border-color, #e4dcca);
+    color: var(--db-navy-text, #1f2a44);
+}
+
+.memlane-skip-link {
+    margin-top: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--db-slate-text, #5b6478);
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+}

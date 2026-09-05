@@ -17,6 +17,10 @@ import {
     setHydrationTarget,
 } from './ReminderService';
 import {
+    fetchMoodHistory,
+    fetchMemoryLaneResponses,
+} from './EngagementService';
+import {
     useStatusTick,
     ReminderStatusBadge,
     getReminderRowClassName,
@@ -236,6 +240,51 @@ export default function CaregiverDashboard() {
     };
 
     const [patientOnlineStatus, setPatientOnlineStatus] = useState({});
+
+    // Mood & Engagement — aggregated lightweight view across all of this
+    // caregiver's patients, for the dashboard overview card. Mood and
+    // Memory Lane tables don't carry patient_name themselves (see
+    // EngagementService.js), so it's attached client-side from `patients`.
+    const [moodByPatient, setMoodByPatient] = useState({});
+    const [memoryLaneFeed, setMemoryLaneFeed] = useState([]);
+
+    useEffect(() => {
+        if (patients.length === 0) return;
+        let mounted = true;
+
+        (async () => {
+            const moodEntries = await Promise.all(
+                patients.map(async (p) => ({ patientId: p.id, history: await fetchMoodHistory(p.id, 7) }))
+            );
+
+            const laneEntries = await Promise.all(
+                patients.map(async (p) => {
+                    const rows = await fetchMemoryLaneResponses(p.id, 3);
+                    return rows.map((row) => ({ ...row, patient_name: p.full_name || p.name }));
+                })
+            );
+
+            if (!mounted) return;
+
+            const nextMoodByPatient = {};
+            moodEntries.forEach(({ patientId, history }) => {
+                nextMoodByPatient[patientId] = history;
+            });
+            setMoodByPatient(nextMoodByPatient);
+
+            const combinedFeed = laneEntries
+                .flat()
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 5);
+            setMemoryLaneFeed(combinedFeed);
+        })();
+
+        return () => {
+            mounted = false;
+        };
+    }, [patients]);
+
+    const MOOD_EMOJI = { great: '😊', calm: '😌', tired: '🥱', unsure: '🤔' };
 
     const [patientMessages, setPatientMessages] = useState([]);
 
@@ -701,7 +750,7 @@ export default function CaregiverDashboard() {
                             <p className="routine-card-hint">{t('caregiverDashboard.dailyRoutine.routineHint')}</p>
                             <div className="hydration-config-row">
                                 <label>
-                                     {t('caregiverDashboard.dailyRoutine.dailyTarget')}
+                                    {t('caregiverDashboard.dailyRoutine.dailyTarget')}
                                     <input
                                         type="number"
                                         min={1}
@@ -716,8 +765,8 @@ export default function CaregiverDashboard() {
                             </div>
                             {hydration && (
                                 <p className="routine-card-hint">
-                                     {t('caregiverDashboard.dailyRoutine.todaySoFar', { progress: hydration.progress_count || 0, target: hydration.target_count || 8 })}
-                                     {hydration.completed ? t('caregiverDashboard.dailyRoutine.goalMet') : ''}
+                                    {t('caregiverDashboard.dailyRoutine.todaySoFar', { progress: hydration.progress_count || 0, target: hydration.target_count || 8 })}
+                                    {hydration.completed ? t('caregiverDashboard.dailyRoutine.goalMet') : ''}
                                 </p>
                             )}
                         </div>
@@ -1071,11 +1120,10 @@ export default function CaregiverDashboard() {
                 {SIDEBAR_LINKS.map((link) => (
                     <button
                         key={link.key}
-                        className={`sidebar-link ${
-                            link.key === activeKey
+                        className={`sidebar-link ${link.key === activeKey
                                 ? 'sidebar-link-active'
                                 : ''
-                        }`}
+                            }`}
                         onClick={() =>
                             handleSidebarClick(link.key)
                         }
@@ -1203,10 +1251,10 @@ export default function CaregiverDashboard() {
                     {PROFILE_FIELDS.every(
                         ({ key }) => !meta[key]
                     ) && (
-                        <p className="profile-empty-note">
-                            {t('caregiverDashboard.profile.empty')}
-                        </p>
-                    )}
+                            <p className="profile-empty-note">
+                                {t('caregiverDashboard.profile.empty')}
+                            </p>
+                        )}
                 </div>
             </div>
         );
@@ -1333,7 +1381,7 @@ export default function CaregiverDashboard() {
 
                                     const isOnline =
                                         patientOnlineStatus[
-                                            patient.id
+                                        patient.id
                                         ] === true;
 
                                     return (
@@ -1342,11 +1390,10 @@ export default function CaregiverDashboard() {
                                             className="patient-card"
                                         >
                                             <span
-                                                className={`patient-status-pill ${
-                                                    isOnline
+                                                className={`patient-status-pill ${isOnline
                                                         ? 'patient-status-online'
                                                         : 'patient-status-offline'
-                                                }`}
+                                                    }`}
                                             >
                                                 <span className="status-dot">
                                                     ●
@@ -2197,6 +2244,66 @@ export default function CaregiverDashboard() {
                             {t('caregiverDashboard.dashboard.cognitivePerformanceTrends')}
                         </p>
                     </div>
+                </div>
+
+                <div className="stat-card alerts-panel-standalone mood-engagement-card">
+                    <div className="alerts-panel-standalone-head">
+                        <div className="alerts-panel-title-group">
+                            <span className="alerts-panel-icon">💛</span>
+                            <div>
+                                <h3>Mood & Engagement</h3>
+                                <p className="alerts-panel-subtitle">Last 7 days across your patients</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {patients.length === 0 ? (
+                        <p className="stat-placeholder">No patients yet.</p>
+                    ) : (
+                        <div className="mood-engagement-body">
+                            {patients.map((p) => {
+                                const history = moodByPatient[p.id] || [];
+                                const today = new Date().toISOString().slice(0, 10);
+                                const todaysEntry = history.find((h) => h.logged_date === today);
+
+                                return (
+                                    <div className="mood-patient-row" key={p.id}>
+                                        <span className="mood-patient-name">{p.full_name || p.name}</span>
+                                        <div className="mood-week-strip">
+                                            {history.length === 0 ? (
+                                                <span className="mood-empty">No check-ins yet</span>
+                                            ) : (
+                                                history.map((h) => (
+                                                    <span key={h.id} title={`${h.logged_date}: ${h.mood}`} className="mood-day-emoji">
+                                                        {MOOD_EMOJI[h.mood] || '·'}
+                                                    </span>
+                                                ))
+                                            )}
+                                        </div>
+                                        <span className="mood-today-tag">
+                                            {todaysEntry ? `Today: ${MOOD_EMOJI[todaysEntry.mood] || ''}` : 'No check-in today'}
+                                        </span>
+                                        {todaysEntry?.reflection_response && (
+                                            <p className="mood-reflection-text">"{todaysEntry.reflection_response}"</p>
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                            {memoryLaneFeed.length > 0 && (
+                                <div className="memory-lane-feed">
+                                    <span className="mood-patient-name">Recent Memory Lane moments</span>
+                                    {memoryLaneFeed.map((row) => (
+                                        <div className="memory-lane-feed-item" key={row.id}>
+                                            <strong>{row.patient_name}</strong>
+                                            <span> — {row.prompt_id.replace(/-/g, ' ')}</span>
+                                            {row.response_text && <p>"{row.response_text}"</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="stat-card alerts-panel-standalone">

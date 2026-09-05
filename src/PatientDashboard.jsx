@@ -24,12 +24,20 @@ import PictureRecallGame from './PictureRecallGame';
 import NumberMemoryGame from './NumberMemoryGame';
 import MemoryMapGame from './MemoryMapGame';
 import MindSnap from './MindSnap'; // NEW GAME IMPORTED HERE
+import MemoryLaneGame from './MemoryLaneGame';
+import EncouragementToast from './EncouragementToast';
+import {
+    logPatientMood,
+    fetchTodaysMood,
+    getDailyReflectivePrompt,
+} from './EngagementService';
 
 const GAME_CATEGORIES = [
     { id: 'memory', icon: '🧠' },
     { id: 'numbers', icon: '🔢' },
     { id: 'visual', icon: '🖼️' },
     { id: 'attention', icon: '🎯' },
+    { id: 'engagement', icon: '💛' },
 ];
 
 const GAMES = [
@@ -39,6 +47,7 @@ const GAMES = [
     { id: 'number-memory', icon: '🔢', category: 'numbers', playable: true },
     { id: 'picture-recall', icon: '🖼️', category: 'visual', playable: true },
     { id: 'attention', icon: '🎯', category: 'attention', playable: false },
+    { id: 'memory-lane', icon: '💛', category: 'engagement', playable: true },
 ];
 
 function formatReminderTime(reminder) {
@@ -96,7 +105,13 @@ export default function PatientDashboard({ onLogout }) {
     });
 
     const [moodSelected, setMoodSelected] = useState(null);
-    const [noteSaved, setNoteSaved] = useState(false);
+    const [moodSaved, setMoodSaved] = useState(false);
+    const [moodSaving, setMoodSaving] = useState(false);
+    const [moodLoaded, setMoodLoaded] = useState(false);
+    const [reflectionResponse, setReflectionResponse] = useState('');
+    const [reflectionSubmitted, setReflectionSubmitted] = useState(false);
+    const [reflectionSaving, setReflectionSaving] = useState(false);
+    const dailyReflectivePrompt = useMemo(() => getDailyReflectivePrompt(), []);
     const [sendingNote, setSendingNote] = useState(false);
 
     // Which Daily Care Overview cards are currently expanded — these 4
@@ -162,17 +177,89 @@ export default function PatientDashboard({ onLogout }) {
         };
     }, [patient]);
 
+    useEffect(() => {
+        const patientId = patient?.id || patient?.patient_id;
+        if (!patientId) return;
+
+        let active = true;
+        fetchTodaysMood(patientId).then((entry) => {
+            if (!active || !entry) return;
+            setMoodSelected(entry.mood);
+            if (entry.reflection_response) {
+                setReflectionResponse(entry.reflection_response);
+                setReflectionSubmitted(true);
+            }
+        }).finally(() => {
+            if (active) setMoodLoaded(true);
+        });
+
+        return () => {
+            active = false;
+        };
+    }, [patient]);
+
+    async function handleMoodSelect(moodId) {
+        const patientId = patient?.id || patient?.patient_id;
+        if (!patientId || moodSaving) return;
+
+        setMoodSelected(moodId);
+        setMoodSaving(true);
+        const saved = await logPatientMood(patientId, moodId);
+        setMoodSaving(false);
+
+        if (saved) {
+            setMoodSaved(true);
+            setTimeout(() => setMoodSaved(false), 3000);
+        }
+    }
+
+    async function handleReflectionSubmit() {
+        const patientId = patient?.id || patient?.patient_id;
+        if (!patientId || !moodSelected || reflectionSaving) return;
+
+        setReflectionSaving(true);
+        const saved = await logPatientMood(
+            patientId,
+            moodSelected,
+            dailyReflectivePrompt,
+            reflectionResponse.trim() || null
+        );
+        setReflectionSaving(false);
+
+        if (saved) {
+            setReflectionSubmitted(true);
+        }
+    }
+
     // Routine items (medicine/activity/appointment) are caregiver-owned
     // and the patient device runs under the anon key, so completion is
     // toggled via the toggle_patient_reminder RPC rather than a direct
     // table update. True custom reminders (patient's own one-off items)
     // still go through the existing direct-update path.
+    const [encouragement, setEncouragement] = useState(null);
+
     const handleReminderToggle = async (reminder) => {
         const updated = reminder?.routine_type
             ? await togglePatientRoutineCompletion(reminder)
             : await toggleReminderCompletion(reminder);
         if (updated) {
-            setReminders((prev) => prev.map((item) => item.id === updated.id ? normalizeReminder(updated) : item));
+            const normalizedUpdated = normalizeReminder(updated);
+            const nextReminders = reminders.map((item) => item.id === normalizedUpdated.id ? normalizedUpdated : item);
+            setReminders(nextReminders);
+
+            if (normalizedUpdated.completed) {
+                if (normalizedUpdated.routine_type === 'hydration') {
+                    // handled separately via handleHydrationChange
+                } else {
+                    const trackable = nextReminders.filter((r) => r.enabled !== false && r.routine_type !== 'hydration');
+                    const allDone = trackable.length > 0 && trackable.every((r) => r.completed);
+                    if (allDone) {
+                        setEncouragement({ trigger: 'reminderAllDone', args: [] });
+                    } else if (normalizedUpdated.routine_type === 'medicine') {
+                        setEncouragement({ trigger: 'medicineDone', args: [] });
+                    }
+                }
+            }
         }
     };
 
@@ -263,12 +350,21 @@ export default function PatientDashboard({ onLogout }) {
         const updater = delta > 0 ? incrementHydration : decrementHydration;
         const updated = await updater(hydrationReminder);
         if (updated) {
-            setReminders((prev) => prev.map((item) => item.id === updated.id ? normalizeReminder(updated) : item));
+            const normalizedUpdated = normalizeReminder(updated);
+            setReminders((prev) => prev.map((item) => item.id === normalizedUpdated.id ? normalizedUpdated : item));
+            if (delta > 0 && normalizedUpdated.progress_count >= (normalizedUpdated.target_count || 8)) {
+                setEncouragement({ trigger: 'hydrationGoalHit', args: [] });
+            }
         }
         setHydrationBusy(false);
     }
 
     function handleGameHome() {
+        if (activeGame) {
+            const game = GAMES.find((g) => g.id === activeGame);
+            const label = game ? t(`patientDashboard.games.${game.id}.title`) : 'that activity';
+            setEncouragement({ trigger: 'gameComplete', args: [label] });
+        }
         setActiveGame(null);
     }
 
@@ -303,6 +399,10 @@ export default function PatientDashboard({ onLogout }) {
 
     if (activeGame === 'picture-recall') {
         return <PictureRecallGame patient={patient} onHome={handleGameHome} />;
+    }
+
+    if (activeGame === 'memory-lane') {
+        return <MemoryLaneGame patient={patient} onHome={handleGameHome} />;
     }
 
     const patientName =
@@ -387,6 +487,13 @@ export default function PatientDashboard({ onLogout }) {
             </aside>
 
             <div className="db-main-wrapper">
+                {encouragement && (
+                    <EncouragementToast
+                        trigger={encouragement.trigger}
+                        args={encouragement.args}
+                        onDismiss={() => setEncouragement(null)}
+                    />
+                )}
                 <ReminderAlarmBanner
                     alerts={activeAlerts}
                     onDismiss={dismissAlert}
@@ -488,19 +595,45 @@ export default function PatientDashboard({ onLogout }) {
                                                     key={m.id}
                                                     type="button"
                                                     className={`db-mood-btn ${moodSelected === m.id ? 'selected' : ''}`}
-                                                    onClick={() => {
-                                                        setMoodSelected(m.id);
-                                                        setNoteSaved(true);
-                                                        setTimeout(() => setNoteSaved(false), 3000);
-                                                    }}
+                                                    onClick={() => handleMoodSelect(m.id)}
+                                                    disabled={moodSaving}
                                                 >
                                                     <span>{m.emoji}</span>
                                                     <small>{m.label}</small>
                                                 </button>
                                             ))}
                                         </div>
-                                        {noteSaved && (
+                                        {moodSaved && (
                                             <div className="db-saved-toast">✓ {t('patientDashboard.mood.saved')}</div>
+                                        )}
+
+                                        {moodLoaded && moodSelected && (
+                                            <div className="db-reflection-block">
+                                                <span className="db-mood-label">{dailyReflectivePrompt}</span>
+                                                {reflectionSubmitted ? (
+                                                    <p className="db-reflection-submitted">
+                                                        💭 {reflectionResponse || "Thanks for checking in today."}
+                                                    </p>
+                                                ) : (
+                                                    <div className="db-reflection-input-row">
+                                                        <input
+                                                            type="text"
+                                                            className="db-reflection-input"
+                                                            placeholder="Optional — share a thought (or skip)"
+                                                            value={reflectionResponse}
+                                                            onChange={(e) => setReflectionResponse(e.target.value)}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="db-btn db-btn-secondary db-sm"
+                                                            onClick={handleReflectionSubmit}
+                                                            disabled={reflectionSaving}
+                                                        >
+                                                            {reflectionSaving ? '...' : 'Share'}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </div>

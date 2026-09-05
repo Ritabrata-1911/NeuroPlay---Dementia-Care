@@ -434,6 +434,45 @@ body {
     margin-top: 0.25rem;
 }
 
+/* Emotional & Mental Engagement: daily reflective prompt (renders
+   below the mood picker once a mood has been selected) */
+.db-reflection-block {
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--db-border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.db-reflection-input-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.db-reflection-input {
+    flex: 1;
+    border-radius: 8px;
+    border: 1px solid var(--db-border-color);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    font-family: var(--db-font-family);
+}
+
+.db-reflection-submitted {
+    font-size: 0.85rem;
+    color: var(--db-slate-text);
+    margin: 0;
+    font-style: italic;
+}
+
+.db-encouragement-toast {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 5;
+    margin-bottom: 1rem;
+}
+
 /* General Sections and Cards */
 .db-section {
     display: flex;
@@ -441,7 +480,7 @@ body {
     gap: 1.5rem;
 }
 
-.db-section + .db-section {
+.db-section+.db-section {
     margin-top: 2.5rem;
     padding-top: 2.5rem;
     border-top: 1px solid var(--db-border-color);
@@ -940,7 +979,7 @@ body {
     --db-amber: #d97706;
 
     --db-sidebar-bg: #1a365d;
-    --db-sidebar-hover: rgba(255,255,255,.08);
+    --db-sidebar-hover: rgba(255, 255, 255, .08);
     --db-active-green: #2F8B61;
     --db-bg-main: #f4f7fb;
     --db-card-bg: #ffffff;
@@ -948,7 +987,8 @@ body {
     --db-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-html, body {
+html,
+body {
     min-height: 100%;
     background: #f4f7fb;
     color: var(--db-navy-text);
@@ -1010,7 +1050,7 @@ html, body {
 }
 
 .db-nav-item:hover {
-    background: rgba(255,255,255,.08);
+    background: rgba(255, 255, 255, .08);
     color: #fff;
 }
 
@@ -1031,7 +1071,7 @@ html, body {
 }
 
 .db-sidebar-support-card {
-    background: rgba(255,255,255,.08);
+    background: rgba(255, 255, 255, .08);
     border: none;
     border-radius: 14px;
     padding: 1.25rem 1rem;
@@ -1148,7 +1188,7 @@ html, body {
     border-radius: 16px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, .05);
 }
 
 .db-welcome-text h2 {
@@ -1186,7 +1226,7 @@ html, body {
     background: #fff;
     border: 1px solid #eef2f7;
     border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, .05);
 }
 
 .db-companion-card {
@@ -1198,7 +1238,7 @@ html, body {
 .db-exercise-category-card:hover,
 .db-shortcut-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0,0,0,.08);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .08);
 }
 
 .db-companion-avatar,
@@ -1471,13 +1511,30 @@ html, body {
    caregiver stylesheet. PatientDashboard.jsx is untouched.
    ========================================================= */
 
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 
-button, input, textarea, select { font: inherit; }
-button { -webkit-tap-highlight-color: transparent; }
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
 
-.db-main-wrapper { min-height: 100vh; }
-.db-main-content { box-sizing: border-box; }
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.db-main-wrapper {
+    min-height: 100vh;
+}
+
+.db-main-content {
+    box-sizing: border-box;
+}
 
 /* Caregiver-style typography rhythm */
 .db-topbar-title h2,
@@ -1492,8 +1549,14 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 /* Sidebar alignment and interaction fidelity */
-.db-sidebar { overflow-y: auto; }
-.db-nav-item { min-height: 44px; }
+.db-sidebar {
+    overflow-y: auto;
+}
+
+.db-nav-item {
+    min-height: 44px;
+}
+
 .db-nav-item:focus-visible,
 .db-btn:focus-visible,
 .db-mood-btn:focus-visible,
@@ -1504,8 +1567,13 @@ button { -webkit-tap-highlight-color: transparent; }
 
 /* Header sizing mirrors the caregiver content canvas */
 .db-topbar,
-.db-main-content { width: 100%; }
-.db-topbar-actions > * { flex-shrink: 0; }
+.db-main-content {
+    width: 100%;
+}
+
+.db-topbar-actions>* {
+    flex-shrink: 0;
+}
 
 /* Remove inherited dark-banner appearance completely */
 .db-welcome-banner {
@@ -1513,8 +1581,16 @@ button { -webkit-tap-highlight-color: transparent; }
     position: relative;
     overflow: hidden;
 }
-.db-welcome-text { position: relative; z-index: 1; }
-.db-welcome-graphic { color: #2F8B61; opacity: .9; }
+
+.db-welcome-text {
+    position: relative;
+    z-index: 1;
+}
+
+.db-welcome-graphic {
+    color: #2F8B61;
+    opacity: .9;
+}
 
 /* Shared caregiver card behavior */
 .db-card-container,
@@ -1524,9 +1600,14 @@ button { -webkit-tap-highlight-color: transparent; }
     overflow: hidden;
 }
 
-.db-card-container { box-shadow: 0 4px 15px rgba(15, 23, 42, .045); }
+.db-card-container {
+    box-shadow: 0 4px 15px rgba(15, 23, 42, .045);
+}
+
 .db-exercise-category-card,
-.db-shortcut-card { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.db-shortcut-card {
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
 
 /* Companion details */
 .db-companion-actions {
@@ -1536,7 +1617,10 @@ button { -webkit-tap-highlight-color: transparent; }
     gap: .65rem;
     margin-top: auto;
 }
-.db-companion-actions .db-btn { min-height: 38px; }
+
+.db-companion-actions .db-btn {
+    min-height: 38px;
+}
 
 /* Weather and small information blocks */
 .db-weather-header h4 {
@@ -1545,7 +1629,11 @@ button { -webkit-tap-highlight-color: transparent; }
     font-size: 1rem;
     font-weight: 700;
 }
-.db-weather-header p { margin: .2rem 0 0; color: #64748b; }
+
+.db-weather-header p {
+    margin: .2rem 0 0;
+    color: #64748b;
+}
 
 /* Lists inherit the clean caregiver vertical rhythm */
 .db-list-stack {
@@ -1553,13 +1641,26 @@ button { -webkit-tap-highlight-color: transparent; }
     flex-direction: column;
     gap: .75rem;
 }
+
 .db-row-item {
     transition: background .2s ease;
 }
-.db-row-item:hover { background: #f8fafc; }
-.db-row-item.completed:hover { background: #fafbfc; }
-.db-row-title-bar { flex-wrap: wrap; }
-.db-row-status-text { white-space: nowrap; }
+
+.db-row-item:hover {
+    background: #f8fafc;
+}
+
+.db-row-item.completed:hover {
+    background: #fafbfc;
+}
+
+.db-row-title-bar {
+    flex-wrap: wrap;
+}
+
+.db-row-status-text {
+    white-space: nowrap;
+}
 
 /* Status and tags */
 .db-status-pill {
@@ -1567,37 +1668,58 @@ button { -webkit-tap-highlight-color: transparent; }
     line-height: 1.25;
     white-space: nowrap;
 }
+
 .db-status-pill.active {
     background: #ecfdf5;
     color: #2F8B61;
     border-color: #c6f6d5;
 }
+
 .db-status-pill.upcoming {
     background: #f1f5f9;
     color: #64748b;
     border-color: #e2e8f0;
 }
+
 .db-type-tag {
     text-transform: capitalize;
     white-space: nowrap;
 }
 
 /* Exercise section consistency */
-.db-category-heading { align-items: center; }
-.db-category-heading > div { min-width: 0; }
+.db-category-heading {
+    align-items: center;
+}
+
+.db-category-heading>div {
+    min-width: 0;
+}
+
 .db-category-emoji {
     background: #f1f5f9;
     border-color: #e2e8f0;
 }
+
 .db-exercise-row {
     transition: background .2s ease, border-color .2s ease;
 }
+
 .db-exercise-row:hover {
     border-color: #cbd5e1;
 }
-.db-exercise-info { min-width: 0; }
-.db-exercise-info > div { min-width: 0; }
-.db-exercise-title-line { flex-wrap: wrap; }
+
+.db-exercise-info {
+    min-width: 0;
+}
+
+.db-exercise-info>div {
+    min-width: 0;
+}
+
+.db-exercise-title-line {
+    flex-wrap: wrap;
+}
+
 .db-exercise-icon {
     width: 38px;
     height: 38px;
@@ -1613,9 +1735,11 @@ button { -webkit-tap-highlight-color: transparent; }
     min-height: 92px;
     border-color: #eef2f7;
 }
+
 .db-shortcut-card:hover {
     background: #fff;
 }
+
 .db-shortcut-icon {
     width: 42px;
     height: 42px;
@@ -1624,8 +1748,15 @@ button { -webkit-tap-highlight-color: transparent; }
     justify-content: center;
     flex-shrink: 0;
 }
-.db-arrow { font-size: 1.1rem; transition: transform .2s ease; }
-.db-shortcut-card:hover .db-arrow { transform: translateX(3px); }
+
+.db-arrow {
+    font-size: 1.1rem;
+    transition: transform .2s ease;
+}
+
+.db-shortcut-card:hover .db-arrow {
+    transform: translateX(3px);
+}
 
 /* Alerts */
 .db-alert {
@@ -1634,14 +1765,21 @@ button { -webkit-tap-highlight-color: transparent; }
     font-size: .875rem;
     line-height: 1.5;
 }
+
 .db-alert-warning {
     box-shadow: none;
 }
 
 /* Checkbox visual correction */
-.db-checkbox-label { flex-shrink: 0; }
-.db-custom-check { flex-shrink: 0; }
-.db-checkbox-label input:checked + .db-custom-check {
+.db-checkbox-label {
+    flex-shrink: 0;
+}
+
+.db-custom-check {
+    flex-shrink: 0;
+}
+
+.db-checkbox-label input:checked+.db-custom-check {
     background: #2F8B61;
     border-color: #2F8B61;
     box-shadow: 0 2px 5px rgba(47, 139, 97, .18);
@@ -1656,39 +1794,79 @@ button { -webkit-tap-highlight-color: transparent; }
 
 /* Scrollbar refinement */
 .db-main-content::-webkit-scrollbar,
-.db-sidebar::-webkit-scrollbar { width: 7px; }
+.db-sidebar::-webkit-scrollbar {
+    width: 7px;
+}
+
 .db-main-content::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 20px;
 }
+
 .db-sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,.18);
+    background: rgba(255, 255, 255, .18);
     border-radius: 20px;
 }
 
 /* Responsive corrections matching caregiver proportions */
 @media (max-width: 1024px) {
-    .db-main-content { max-width: none; }
+    .db-main-content {
+        max-width: none;
+    }
+
     .db-companion-grid,
-    .db-exercises-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .db-exercises-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
 }
 
 @media (max-width: 760px) {
-    .db-welcome-banner { min-height: auto; }
-    .db-companion-actions { justify-content: stretch; }
-    .db-companion-actions .db-btn { flex: 1; }
-    .db-row-item { align-items: flex-start; }
-    .db-row-status-text { padding-top: .15rem; }
-    .db-footer { flex-direction: column; gap: .5rem; padding: 1.25rem 1rem; }
+    .db-welcome-banner {
+        min-height: auto;
+    }
+
+    .db-companion-actions {
+        justify-content: stretch;
+    }
+
+    .db-companion-actions .db-btn {
+        flex: 1;
+    }
+
+    .db-row-item {
+        align-items: flex-start;
+    }
+
+    .db-row-status-text {
+        padding-top: .15rem;
+    }
+
+    .db-footer {
+        flex-direction: column;
+        gap: .5rem;
+        padding: 1.25rem 1rem;
+    }
 }
 
 @media (max-width: 480px) {
+
     .db-companion-grid,
     .db-exercises-grid,
-    .db-quick-links-grid { grid-template-columns: 1fr; }
-    .db-exercise-row { padding: .8rem; }
-    .db-welcome-text h2 { font-size: 1.3rem; }
-    .db-section-header h3 { font-size: 1.2rem; }
+    .db-quick-links-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .db-exercise-row {
+        padding: .8rem;
+    }
+
+    .db-welcome-text h2 {
+        font-size: 1.3rem;
+    }
+
+    .db-section-header h3 {
+        font-size: 1.2rem;
+    }
 }
 
 /* --- PATIENT-ADDED REMINDERS (schedule tab) --- */

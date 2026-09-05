@@ -922,6 +922,10 @@
             "attention": {
                 "title": "Focus & Attention",
                 "description": "Targeted focus and attention training."
+            },
+            "engagement": {
+                "title": "Emotional Wellbeing",
+                "description": "Gentle, warm activities for connection and reflection."
             }
         },
         "games": {
@@ -948,6 +952,10 @@
             "attention": {
                 "title": "Attention Challenge",
                 "description": "Advanced focus module coming soon."
+            },
+            "memory-lane": {
+                "title": "Memory Lane",
+                "description": "A gentle stroll through familiar memories — no right answers."
             }
         },
         "settings": {
