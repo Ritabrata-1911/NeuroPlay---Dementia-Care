@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from './SupabaseClient';
 import './CaregiverAuth.css'; // Reusing your existing form/shell styles
 import './AddPatientForm.css'; // A few extra styles specific to this screen
-
-const MONTH_NAMES = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-];
 
 const today = new Date();
 const CURRENT_YEAR = today.getFullYear();
@@ -34,14 +30,15 @@ const maxDayForYearMonth = (year, month) => {
 };
 
 export default function AddPatientForm({ onBack, user }) {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [successData, setSuccessData] = useState(null);
     const [errors, setErrors] = useState({});
 
     const [formData, setFormData] = useState({
-        full_name: '', date_of_birth: '', gender: '', phone: '', address: '', 
-        city: '', state: '', pin_code: '', emergency_contact_name: '', 
-        emergency_contact_phone: '', emergency_contact_relationship: '', 
+        full_name: '', date_of_birth: '', gender: '', phone: '', address: '',
+        city: '', state: '', pin_code: '', emergency_contact_name: '',
+        emergency_contact_phone: '', emergency_contact_relationship: '',
         medication_info: '', medical_notes: '', important_notes: ''
     });
 
@@ -108,25 +105,25 @@ export default function AddPatientForm({ onBack, user }) {
     const validate = () => {
         const newErrors = {};
 
-        if (!formData.full_name.trim()) newErrors.full_name = "Full name is required.";
-        if (!formData.date_of_birth) newErrors.date_of_birth = "Date of birth is required.";
+        if (!formData.full_name.trim()) newErrors.full_name = t('addPatient.errors.fullNameRequired');
+        if (!formData.date_of_birth) newErrors.date_of_birth = t('addPatient.errors.dobRequired');
 
         if (formData.phone && !PHONE_REGEX.test(formData.phone)) {
-            newErrors.phone = "Enter a valid 10-digit phone number.";
+            newErrors.phone = t('addPatient.errors.phoneInvalid');
         }
 
         if (formData.pin_code && !PIN_REGEX.test(formData.pin_code)) {
-            newErrors.pin_code = "Enter a valid 6-digit PIN code.";
+            newErrors.pin_code = t('addPatient.errors.pinInvalid');
         }
 
         if (!formData.emergency_contact_name.trim()) {
-            newErrors.emergency_contact_name = "Emergency contact name is required.";
+            newErrors.emergency_contact_name = t('addPatient.errors.emergencyNameRequired');
         }
 
         if (!formData.emergency_contact_phone) {
-            newErrors.emergency_contact_phone = "Emergency contact phone is required.";
+            newErrors.emergency_contact_phone = t('addPatient.errors.emergencyPhoneRequired');
         } else if (!PHONE_REGEX.test(formData.emergency_contact_phone)) {
-            newErrors.emergency_contact_phone = "Enter a valid 10-digit phone number.";
+            newErrors.emergency_contact_phone = t('addPatient.errors.phoneInvalid');
         }
 
         setErrors(newErrors);
@@ -152,7 +149,7 @@ export default function AddPatientForm({ onBack, user }) {
             .single();
 
         if (error) {
-            alert("Error creating patient: " + error.message);
+            alert(t('addPatient.errors.createFailed') + " " + error.message);
             setLoading(false);
             return;
         }
@@ -168,21 +165,21 @@ export default function AddPatientForm({ onBack, user }) {
                 <div className="auth-card patient-success-card">
                     <div className="patient-success-body">
                         <div className="success-icon">🎉</div>
-                        <h2 className="form-title">Patient added successfully</h2>
-                        <p className="form-subtitle">{successData.full_name} can now sign in to NeuroPlay.</p>
+                        <h2 className="form-title">{t('addPatient.success.title')}</h2>
+                        <p className="form-subtitle">{t('addPatient.success.subtitle', { name: successData.full_name })}</p>
 
                         <div className="credential-reveal">
                             <div className="credential-reveal-row">
-                                <span className="credential-reveal-label">Patient ID (permanent)</span>
+                                <span className="credential-reveal-label">{t('addPatient.success.patientIdLabel')}</span>
                                 <span className="credential-reveal-id">{successData.patient_id}</span>
                             </div>
 
-                            <span className="credential-reveal-label">Patient login code</span>
+                            <span className="credential-reveal-label">{t('addPatient.success.loginCodeLabel')}</span>
                             <div className="credential-reveal-code">{successData.login_code}</div>
                         </div>
 
                         <p className="credential-warning">
-                            ⚠️ Give this 6-character code to the patient — it's how they'll log in to NeuroPlay.
+                            ⚠️ {t('addPatient.success.warning')}
                         </p>
 
                         <div className="btn-group">
@@ -191,10 +188,10 @@ export default function AddPatientForm({ onBack, user }) {
                                 className="btn-secondary"
                                 onClick={() => navigator.clipboard.writeText(successData.login_code)}
                             >
-                                📋 Copy Code
+                                📋 {t('addPatient.success.copyCode')}
                             </button>
                             <button type="button" className="btn-primary" onClick={onBack}>
-                                ✓ Done
+                                ✓ {t('addPatient.success.done')}
                             </button>
                         </div>
                     </div>
@@ -206,7 +203,7 @@ export default function AddPatientForm({ onBack, user }) {
     return (
         <div className="auth-shell">
             <button className="auth-back-btn" onClick={onBack}>
-                ← Back to Dashboard
+                ← {t('addPatient.backToDashboard')}
             </button>
 
             <div className="auth-card">
@@ -214,31 +211,31 @@ export default function AddPatientForm({ onBack, user }) {
                 <aside className="auth-brand-panel">
                     <div className="auth-brand-mark">
                         <span role="img" aria-label="brain">🧠</span>
-                        <span>NeuroPlay</span>
+                        <span>{t('brand')}</span>
                     </div>
 
-                    <h1 className="auth-brand-heading">Add a new patient</h1>
+                    <h1 className="auth-brand-heading">{t('addPatient.brandHeading')}</h1>
                     <p className="auth-brand-copy">
-                        Register a patient's details once — NeuroPlay generates a secure Patient ID and login code automatically.
+                        {t('addPatient.brandCopy')}
                     </p>
 
                     <ul className="auth-brand-list">
-                        <li>A permanent Patient ID is created for your records</li>
-                        <li>A one-time login code is generated for the patient</li>
-                        <li>You can regenerate their code anytime from the dashboard</li>
+                        <li>{t('addPatient.brandList.0')}</li>
+                        <li>{t('addPatient.brandList.1')}</li>
+                        <li>{t('addPatient.brandList.2')}</li>
                     </ul>
                 </aside>
 
                 {/* Form panel */}
                 <div className="auth-form-panel">
                     <form onSubmit={handleSubmit}>
-                        <h2 className="form-title">Patient details</h2>
-                        <p className="form-subtitle">Tell us about the patient you're registering.</p>
+                        <h2 className="form-title">{t('addPatient.formTitle')}</h2>
+                        <p className="form-subtitle">{t('addPatient.formSubtitle')}</p>
 
-                        <h3 className="section-title"><span className="section-badge section-badge-blue">1</span>Basic details</h3>
+                        <h3 className="section-title"><span className="section-badge section-badge-blue">1</span>{t('addPatient.section1')}</h3>
                         <div className="form-grid">
                             <div className="form-group full-width">
-                                <label>Full name <span className="required">*</span></label>
+                                <label>{t('addPatient.fullName')} <span className="required">*</span></label>
                                 <input
                                     type="text"
                                     name="full_name"
@@ -249,34 +246,37 @@ export default function AddPatientForm({ onBack, user }) {
                                 {errors.full_name && <span className="error-message">{errors.full_name}</span>}
                             </div>
 
-                            <div className="form-group">
-                                <label>Date of birth <span className="required">*</span></label>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div className="form-group full-width">
+                                <label>{t('addPatient.dob')} <span className="required">*</span></label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                                     <select
                                         className="form-select"
+                                        style={{ flex: '1 1 110px', minWidth: '110px' }}
                                         value={dobParts.day}
                                         onChange={(e) => handleDobPartChange('day', e.target.value)}
                                         aria-label="Day of birth"
                                     >
-                                        <option value="">Day</option>
+                                        <option value="">{t('addPatient.day')}</option>
                                         {dayOptions.map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
                                     <select
                                         className="form-select"
+                                        style={{ flex: '1 1 140px', minWidth: '140px' }}
                                         value={dobParts.month}
                                         onChange={(e) => handleDobPartChange('month', e.target.value)}
                                         aria-label="Month of birth"
                                     >
-                                        <option value="">Month</option>
-                                        {monthOptions.map(m => <option key={m} value={m}>{MONTH_NAMES[m - 1]}</option>)}
+                                        <option value="">{t('addPatient.month')}</option>
+                                        {monthOptions.map(m => <option key={m} value={m}>{t('auth.months', { returnObjects: true })[m - 1]}</option>)}
                                     </select>
                                     <select
                                         className="form-select"
+                                        style={{ flex: '1 1 110px', minWidth: '110px' }}
                                         value={dobParts.year}
                                         onChange={(e) => handleDobPartChange('year', e.target.value)}
                                         aria-label="Year of birth"
                                     >
-                                        <option value="">Year</option>
+                                        <option value="">{t('addPatient.year')}</option>
                                         {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
                                     </select>
                                 </div>
@@ -284,18 +284,18 @@ export default function AddPatientForm({ onBack, user }) {
                             </div>
 
                             <div className="form-group">
-                                <label>Gender</label>
+                                <label>{t('addPatient.gender')}</label>
                                 <select name="gender" className="form-select" value={formData.gender} onChange={handleChange}>
-                                    <option value="">Select...</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                    <option value="Prefer not to say">Prefer not to say</option>
+                                    <option value="">{t('addPatient.selectOption')}</option>
+                                    <option value="Male">{t('addPatient.male')}</option>
+                                    <option value="Female">{t('addPatient.female')}</option>
+                                    <option value="Other">{t('addPatient.other')}</option>
+                                    <option value="Prefer not to say">{t('addPatient.preferNotToSay')}</option>
                                 </select>
                             </div>
 
                             <div className="form-group">
-                                <label>Phone number</label>
+                                <label>{t('addPatient.phone')}</label>
                                 <input
                                     type="tel"
                                     name="phone"
@@ -304,28 +304,28 @@ export default function AddPatientForm({ onBack, user }) {
                                     onChange={handleChange}
                                     maxLength={10}
                                     inputMode="numeric"
-                                    placeholder="10-digit number"
+                                    placeholder={t('addPatient.tenDigitPlaceholder')}
                                 />
                                 {errors.phone && <span className="error-message">{errors.phone}</span>}
                             </div>
 
                             <div className="form-group full-width">
-                                <label>Address</label>
+                                <label>{t('addPatient.address')}</label>
                                 <input type="text" name="address" className="form-input" value={formData.address} onChange={handleChange} />
                             </div>
 
                             <div className="form-group">
-                                <label>City</label>
+                                <label>{t('addPatient.city')}</label>
                                 <input type="text" name="city" className="form-input" value={formData.city} onChange={handleChange} />
                             </div>
 
                             <div className="form-group">
-                                <label>State</label>
+                                <label>{t('addPatient.state')}</label>
                                 <input type="text" name="state" className="form-input" value={formData.state} onChange={handleChange} />
                             </div>
 
                             <div className="form-group">
-                                <label>PIN code</label>
+                                <label>{t('addPatient.pin')}</label>
                                 <input
                                     type="text"
                                     name="pin_code"
@@ -334,16 +334,16 @@ export default function AddPatientForm({ onBack, user }) {
                                     onChange={handleChange}
                                     maxLength={6}
                                     inputMode="numeric"
-                                    placeholder="6-digit PIN"
+                                    placeholder={t('addPatient.sixDigitPlaceholder')}
                                 />
                                 {errors.pin_code && <span className="error-message">{errors.pin_code}</span>}
                             </div>
                         </div>
 
-                        <h3 className="section-title"><span className="section-badge section-badge-green">2</span>Care & emergency details</h3>
+                        <h3 className="section-title"><span className="section-badge section-badge-green">2</span>{t('addPatient.section2')}</h3>
                         <div className="form-grid">
                             <div className="form-group">
-                                <label>Emergency contact name <span className="required">*</span></label>
+                                <label>{t('addPatient.emergencyName')} <span className="required">*</span></label>
                                 <input
                                     type="text"
                                     name="emergency_contact_name"
@@ -355,7 +355,7 @@ export default function AddPatientForm({ onBack, user }) {
                             </div>
 
                             <div className="form-group">
-                                <label>Emergency contact phone <span className="required">*</span></label>
+                                <label>{t('addPatient.emergencyPhone')} <span className="required">*</span></label>
                                 <input
                                     type="tel"
                                     name="emergency_contact_phone"
@@ -364,13 +364,13 @@ export default function AddPatientForm({ onBack, user }) {
                                     onChange={handleChange}
                                     maxLength={10}
                                     inputMode="numeric"
-                                    placeholder="10-digit number"
+                                    placeholder={t('addPatient.tenDigitPlaceholder')}
                                 />
                                 {errors.emergency_contact_phone && <span className="error-message">{errors.emergency_contact_phone}</span>}
                             </div>
 
                             <div className="form-group full-width">
-                                <label>Relationship with emergency contact</label>
+                                <label>{t('addPatient.emergencyRelationship')}</label>
                                 <input
                                     type="text"
                                     name="emergency_contact_relationship"
@@ -381,7 +381,7 @@ export default function AddPatientForm({ onBack, user }) {
                             </div>
 
                             <div className="form-group full-width">
-                                <label>Current medication information</label>
+                                <label>{t('addPatient.medicationInfo')}</label>
                                 <textarea
                                     name="medication_info"
                                     className="form-textarea"
@@ -392,7 +392,7 @@ export default function AddPatientForm({ onBack, user }) {
                             </div>
 
                             <div className="form-group full-width">
-                                <label>Important medical notes</label>
+                                <label>{t('addPatient.medicalNotes')}</label>
                                 <textarea
                                     name="medical_notes"
                                     className="form-textarea"
@@ -403,7 +403,7 @@ export default function AddPatientForm({ onBack, user }) {
                             </div>
 
                             <div className="form-group full-width">
-                                <label>Other important notes</label>
+                                <label>{t('addPatient.importantNotes')}</label>
                                 <textarea
                                     name="important_notes"
                                     className="form-textarea"
@@ -416,10 +416,10 @@ export default function AddPatientForm({ onBack, user }) {
 
                         <div className="btn-group" style={{ marginTop: '2.5rem' }}>
                             <button type="button" className="btn-secondary" onClick={onBack} disabled={loading}>
-                                Cancel
+                                {t('addPatient.cancel')}
                             </button>
                             <button type="submit" className="btn-primary" disabled={loading}>
-                                {loading ? 'Creating…' : 'Create patient'}
+                                {loading ? t('addPatient.creating') : t('addPatient.createPatient')}
                             </button>
                         </div>
                     </form>

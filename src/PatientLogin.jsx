@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from './SupabaseClient';
 import './App.css';
 import './CaregiverAuth.css';
 
 export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
+    const { t } = useTranslation();
     const [loginCode, setLoginCode] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [loading, setLoading] = useState(false);
@@ -14,9 +16,9 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
             .replace(/[^a-zA-Z0-9]/g, '')
             .toUpperCase()
             .slice(0, 6);
-        
+
         setLoginCode(normalizedCode);
-        setErrorMsg(''); 
+        setErrorMsg('');
     };
 
     const handleLogin = async (e) => {
@@ -25,7 +27,7 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
         setErrorMsg('');
 
         if (loginCode.length !== 6) {
-            setErrorMsg("Please enter your complete 6-character Login Code.");
+            setErrorMsg(t('patientLogin.errors.incomplete'));
             setLoading(false);
             return;
         }
@@ -42,7 +44,7 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
 
         // The RPC returns an array of rows. We expect exactly 1 if successful.
         if (error || !data || data.length === 0) {
-            setErrorMsg("Login Code is incorrect or expired. Please ask your caregiver for a new code.");
+            setErrorMsg(t('patientLogin.errors.invalidOrExpired'));
             setLoading(false);
             return;
         }
@@ -58,18 +60,18 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
             caregiver_id: patientData.caregiver_id,
             timestamp: new Date().getTime()
         };
-        
+
         sessionStorage.setItem('neuroplay_patient_session', JSON.stringify(patientSession));
-        
+
         setLoading(false);
-        onLoginSuccess(patientData); 
+        onLoginSuccess(patientData);
     };
 
     return (
         <div className="auth-page-container">
             <div className="auth-shell">
                 <button className="auth-back-btn" onClick={onBackToHome}>
-                    ← Back to Home
+                    ← {t('patientLogin.backToHome')}
                 </button>
 
                 <div className="auth-card">
@@ -77,18 +79,18 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
                     <aside className="auth-brand-panel">
                         <div className="auth-brand-mark">
                             <span role="img" aria-label="brain">🧠</span>
-                            <span>NeuroPlay</span>
+                            <span>{t('brand')}</span>
                         </div>
 
-                        <h1 className="auth-brand-heading">Hello there 👋</h1>
+                        <h1 className="auth-brand-heading">{t('patientLogin.brandHeading')}</h1>
                         <p className="auth-brand-copy">
-                            Enter your Login Code to continue to your NeuroPlay activities.
+                            {t('patientLogin.brandCopy')}
                         </p>
 
                         <ul className="auth-brand-list">
-                            <li>Fun, simple cognitive games</li>
-                            <li>Friendly daily reminders</li>
-                            <li>One code — no password to remember</li>
+                            <li>{t('patientLogin.brandList.0')}</li>
+                            <li>{t('patientLogin.brandList.1')}</li>
+                            <li>{t('patientLogin.brandList.2')}</li>
                         </ul>
                     </aside>
 
@@ -101,18 +103,18 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
                         )}
 
                         <form onSubmit={handleLogin}>
-                            <h2 className="form-title">Patient login</h2>
-                            <p className="form-subtitle">Ask your caregiver for your Login Code if you don't have it handy.</p>
+                            <h2 className="form-title">{t('patientLogin.formTitle')}</h2>
+                            <p className="form-subtitle">{t('patientLogin.formSubtitle')}</p>
 
                             <div className="form-group">
-                                <label htmlFor="loginCode">Login Code</label>
+                                <label htmlFor="loginCode">{t('patientLogin.loginCodeLabel')}</label>
                                 <input
                                     id="loginCode"
                                     type="text"
                                     name="loginCode"
                                     value={loginCode}
                                     onChange={handleCodeChange}
-                                    placeholder="e.g. A7K92P"
+                                    placeholder={t('patientLogin.loginCodePlaceholder')}
                                     className="form-input"
                                     autoComplete="off"
                                     style={{
@@ -132,7 +134,7 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
                                 style={{ marginTop: '0.5rem' }}
                                 disabled={loading}
                             >
-                                {loading ? 'Logging in…' : 'Log in'}
+                                {loading ? t('patientLogin.submitting') : t('patientLogin.submit')}
                             </button>
                         </form>
                     </div>

@@ -732,5 +732,321 @@
             "justNow": "Just now",
             "unreadNotes": "{{count}} unread notes from patients"
         }
+    },
+    "addPatient": {
+        "backToDashboard": "Back to Dashboard",
+        "brandHeading": "Add a new patient",
+        "brandCopy": "Register a patient's details once — NeuroPlay generates a secure Patient ID and login code automatically.",
+        "brandList": [
+            "A permanent Patient ID is created for your records",
+            "A one-time login code is generated for the patient",
+            "You can regenerate their code anytime from the dashboard"
+        ],
+        "formTitle": "Patient details",
+        "formSubtitle": "Tell us about the patient you're registering.",
+        "section1": "Basic details",
+        "section2": "Care & emergency details",
+        "fullName": "Full name",
+        "dob": "Date of birth",
+        "day": "Day",
+        "month": "Month",
+        "year": "Year",
+        "gender": "Gender",
+        "selectOption": "Select...",
+        "male": "Male",
+        "female": "Female",
+        "other": "Other",
+        "preferNotToSay": "Prefer not to say",
+        "phone": "Phone number",
+        "address": "Address",
+        "city": "City",
+        "state": "State",
+        "pin": "PIN code",
+        "tenDigitPlaceholder": "10-digit number",
+        "sixDigitPlaceholder": "6-digit PIN",
+        "emergencyName": "Emergency contact name",
+        "emergencyPhone": "Emergency contact phone",
+        "emergencyRelationship": "Relationship with emergency contact",
+        "medicationInfo": "Current medication information",
+        "medicalNotes": "Important medical notes",
+        "importantNotes": "Other important notes",
+        "cancel": "Cancel",
+        "creating": "Creating…",
+        "createPatient": "Create patient",
+        "success": {
+            "title": "Patient added successfully",
+            "subtitle": "{{name}} can now sign in to NeuroPlay.",
+            "patientIdLabel": "Patient ID (permanent)",
+            "loginCodeLabel": "Patient login code",
+            "warning": "Give this 6-character code to the patient — it's how they'll log in to NeuroPlay.",
+            "copyCode": "Copy Code",
+            "done": "Done"
+        },
+        "errors": {
+            "fullNameRequired": "Full name is required.",
+            "dobRequired": "Date of birth is required.",
+            "phoneInvalid": "Enter a valid 10-digit phone number.",
+            "pinInvalid": "Enter a valid 6-digit PIN code.",
+            "emergencyNameRequired": "Emergency contact name is required.",
+            "emergencyPhoneRequired": "Emergency contact phone is required.",
+            "createFailed": "Error creating patient:"
+        }
+    },
+    "patientLogin": {
+        "backToHome": "Back to Home",
+        "brandHeading": "Hello there 👋",
+        "brandCopy": "Enter your Login Code to continue to your NeuroPlay activities.",
+        "brandList": [
+            "Fun, simple cognitive games",
+            "Friendly daily reminders",
+            "One code — no password to remember"
+        ],
+        "formTitle": "Patient login",
+        "formSubtitle": "Ask your caregiver for your Login Code if you don't have it handy.",
+        "loginCodeLabel": "Login Code",
+        "loginCodePlaceholder": "e.g. A7K92P",
+        "submit": "Log in",
+        "submitting": "Logging in…",
+        "errors": {
+            "incomplete": "Please enter your complete 6-character Login Code.",
+            "invalidOrExpired": "Login Code is incorrect or expired. Please ask your caregiver for a new code."
+        }
+    },
+    "patientDashboard": {
+        "greeting": {
+            "morning": "Good morning",
+            "afternoon": "Good afternoon",
+            "evening": "Good evening"
+        },
+        "fallback": {
+            "there": "there",
+            "primaryContact": "Primary Contact"
+        },
+        "sidebar": {
+            "subtitle": "Patient Portal",
+            "dashboard": "Dashboard",
+            "schedule": "Schedule & Tasks",
+            "exercises": "Brain Exercises",
+            "settings": "Settings",
+            "supportPrompt": "Need a hand with your routine?",
+            "support": "Support",
+            "contactSupport": "Contact Support"
+        },
+        "topbar": {
+            "overview": "Overview",
+            "schedule": "Schedule & Reminders",
+            "exercises": "Cognitive Exercises",
+            "settings": "Account Settings",
+            "activeSession": "Active Session",
+            "signOut": "Sign Out"
+        },
+        "welcome": {
+            "heading": "Welcome back, {{name}}",
+            "subtitle": "Review your daily care overview, check weather updates, or access your tools from the navigation menu."
+        },
+        "companion": {
+            "assignedCaregiver": "Assigned Caregiver",
+            "quote": "\"Have a wonderful and structured day ahead. Reach out if you need any help with your daily activities!\"",
+            "sendNote": "Send Note to Caregiver",
+            "sending": "Sending…"
+        },
+        "weather": {
+            "heading": "Today's Outlook",
+            "condition": "Pleasant & Sunny"
+        },
+        "mood": {
+            "label": "How are you feeling right now?",
+            "great": "Great",
+            "calm": "Calm",
+            "tired": "Tired",
+            "unsure": "Unsure",
+            "saved": "Mood recorded for today. Thank you!"
+        },
+        "schedule": {
+            "overviewTitle": "Daily Care Overview",
+            "overviewSubtitle": "Set by your caregiver. Tap a card to see today's details.",
+            "medicineLog": "Medicine Log",
+            "takenToday": "{{done}} of {{total}} taken today",
+            "reviewPrescriptions": "Review scheduled prescriptions.",
+            "noMedicines": "No medicines have been set by your caregiver yet.",
+            "hydrationTracker": "Hydration Tracker",
+            "glassesToday": "{{progress}} of {{target}} glasses today",
+            "monitorWater": "Monitor daily water intake.",
+            "noHydrationGoal": "Your caregiver hasn't set a hydration goal yet.",
+            "addGlass": "Add a glass",
+            "goalReached": "Goal reached for today",
+            "routineCalendar": "Routine Calendar",
+            "doneToday": "{{done}} of {{total}} done today",
+            "checkActivities": "Check today's daily activities.",
+            "noActivities": "No daily activities have been set by your caregiver yet.",
+            "appointments": "Appointments",
+            "onFile": "{{count}} on file",
+            "viewVisits": "View scheduled clinical visits.",
+            "noAppointments": "No appointments have been added by your caregiver yet."
+        },
+        "custom": {
+            "title": "Custom Reminders",
+            "subtitle": "One-off reminders you've added yourself.",
+            "addReminder": "Add reminder",
+            "formTitleLabel": "Title",
+            "titlePlaceholder": "e.g. Call my sister",
+            "timeLabel": "Time (optional)",
+            "noteLabel": "Note (optional)",
+            "notePlaceholder": "Any extra detail",
+            "cancel": "Cancel",
+            "saving": "Saving…",
+            "createReminder": "Create reminder",
+            "loadingSchedule": "Loading schedule..."
+        },
+        "exercises": {
+            "title": "All Brain Training Modules",
+            "subtitle": "Browse through available memory and focus sessions.",
+            "ready": "Ready",
+            "comingSoon": "Coming Soon",
+            "play": "Play",
+            "locked": "Locked"
+        },
+        "gameCategories": {
+            "memory": {
+                "title": "Memory Exercises",
+                "description": "Practise remembering sequences and patterns."
+            },
+            "numbers": {
+                "title": "Numbers & Recall",
+                "description": "Engage with numeric memory activities."
+            },
+            "visual": {
+                "title": "Visual & Spatial",
+                "description": "Observe scenes, maps, and objects."
+            },
+            "attention": {
+                "title": "Focus & Attention",
+                "description": "Targeted focus and attention training."
+            }
+        },
+        "games": {
+            "mind-snap": {
+                "title": "Mind Snap",
+                "description": "Test visual short-term memory, attention, and concentration."
+            },
+            "memory-match": {
+                "title": "Memory Match",
+                "description": "Match pairs of cards to exercise visual memory."
+            },
+            "memory-map": {
+                "title": "Memory Map",
+                "description": "Exercise spatial memory by remembering locations on a map."
+            },
+            "number-memory": {
+                "title": "Number Memory",
+                "description": "Remember numbers and recall them accurately."
+            },
+            "picture-recall": {
+                "title": "Object Recognition",
+                "description": "Observe details and answer questions about what you saw."
+            },
+            "attention": {
+                "title": "Attention Challenge",
+                "description": "Advanced focus module coming soon."
+            }
+        },
+        "settings": {
+            "title": "Account Preferences",
+            "subtitle": "Manage your patient session and configurations.",
+            "fullName": "Full Name",
+            "patientId": "Patient ID",
+            "signOut": "Sign Out of Session"
+        },
+        "footer": {
+            "platform": "NeuroPlay Platform",
+            "tagline": "Take your time. Consistency is key."
+        },
+        "reminderRow": {
+            "custom": "Custom",
+            "standard": "Standard",
+            "done": "Done",
+            "pending": "Pending",
+            "delete": "Delete"
+        },
+        "errors": {
+            "remindersLoadFailed": "Reminders could not be loaded."
+        },
+        "confirm": {
+            "deleteReminder": "Delete the reminder \"{{title}}\"?"
+        },
+        "prompts": {
+            "writeNote": "Write a note for your caregiver:"
+        },
+        "alerts": {
+            "noteSessionInvalid": "Your note could not be sent — your session looks invalid. Please log in again.",
+            "noteFailed": "Your note could not be sent. Please try again.",
+            "noteSent": "Your note has been sent to your caregiver.",
+            "comingSoon": "{{feature}} module is coming soon."
+        }
+    },
+    "settingsPanel": {
+        "notifications": {
+            "title": "Notifications",
+            "loginCodeExpiryAlerts": "Login code expiry alerts",
+            "loginCodeExpiryHint": "Get notified when a patient's login code is about to expire.",
+            "medicineActivityReminders": "Medicine & activity reminders",
+            "medicineActivityHint": "Alerts for scheduled patient reminders.",
+            "notifyMeVia": "Notify me via",
+            "notifyMeViaHint": "Choose how you'd like to receive alerts.",
+            "inAppOnly": "In-app only",
+            "emailOnly": "Email only",
+            "both": "Both",
+            "savedLocally": "Saved locally for this session (not yet connected to your account)."
+        },
+        "appearance": {
+            "title": "Appearance",
+            "largerText": "Larger text",
+            "largerTextHint": "Increase text size across the dashboard for easier reading."
+        },
+        "privacyData": {
+            "title": "Privacy & Data",
+            "exportMyData": "Export my data",
+            "exportHint": "Download a PDF copy of your patient list and account info.",
+            "export": "Export",
+            "deleteAccount": "Delete account",
+            "deleteHint": "Permanently remove your caregiver account and data.",
+            "deleteAccountButton": "Delete Account"
+        },
+        "support": {
+            "title": "Support",
+            "needHelp": "Need help?",
+            "needHelpHint": "Reach out and we'll get back to you.",
+            "supportComingSoon": "Support chat is coming soon. For now, use the Emergency Help Line on the main site.",
+            "contactSupport": "Contact Support",
+            "appVersion": "App version",
+            "dashboardName": "NeuroPlay Caregiver Dashboard"
+        },
+        "export": {
+            "title": "NeuroPlay — My Data Export",
+            "generated": "Generated",
+            "caregiver": "Caregiver",
+            "name": "Name",
+            "email": "Email",
+            "notAvailable": "N/A",
+            "patients": "Patients",
+            "noPatients": "No patients on file.",
+            "unnamed": "Unnamed",
+            "patientId": "Patient ID",
+            "added": "Added",
+            "exportFailed": "Something went wrong generating the PDF export."
+        },
+        "deleteRequest": {
+            "received": "Delete request received. (Not yet connected to a backend — no data was actually deleted.)"
+        },
+        "deleteConfirmation": {
+            "title": "Delete your account?",
+            "message": "This will permanently remove your caregiver account and all associated data. This action cannot be undone."
+        },
+        "actions": {
+            "saveChanges": "Save Changes",
+            "cancel": "Cancel",
+            "deleting": "Deleting…",
+            "yesDelete": "Yes, Delete"
+        }
     }
 }

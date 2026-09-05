@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from './SupabaseClient';
 import './PatientDashboard.css';
 import {
@@ -9,6 +10,7 @@ import {
     subscribeToReminderChanges,
     incrementHydration,
     decrementHydration,
+    togglePatientRoutineCompletion,
 } from './ReminderService';
 import {
     useReminderAlarms,
@@ -24,81 +26,19 @@ import MemoryMapGame from './MemoryMapGame';
 import MindSnap from './MindSnap'; // NEW GAME IMPORTED HERE
 
 const GAME_CATEGORIES = [
-    {
-        id: 'memory',
-        title: 'Memory Exercises',
-        description: 'Practise remembering sequences and patterns.',
-        icon: '🧠',
-    },
-    {
-        id: 'numbers',
-        title: 'Numbers & Recall',
-        description: 'Engage with numeric memory activities.',
-        icon: '🔢',
-    },
-    {
-        id: 'visual',
-        title: 'Visual & Spatial',
-        description: 'Observe scenes, maps, and objects.',
-        icon: '🖼️',
-    },
-    {
-        id: 'attention',
-        title: 'Focus & Attention',
-        description: 'Targeted focus and attention training.',
-        icon: '🎯',
-    },
+    { id: 'memory', icon: '🧠' },
+    { id: 'numbers', icon: '🔢' },
+    { id: 'visual', icon: '🖼️' },
+    { id: 'attention', icon: '🎯' },
 ];
 
 const GAMES = [
-    {
-        id: 'mind-snap',
-        title: 'Mind Snap',
-        description: 'Test visual short-term memory, attention, and concentration.',
-        icon: '🧠',
-        category: 'memory',
-        playable: true,
-    },
-    {
-        id: 'memory-match',
-        title: 'Memory Match',
-        description: 'Match pairs of cards to exercise visual memory.',
-        icon: '🧠',
-        category: 'memory',
-        playable: true,
-    },
-    {
-        id: 'memory-map',
-        title: 'Memory Map',
-        description: 'Exercise spatial memory by remembering locations on a map.',
-        icon: '🗺️',
-        category: 'visual',
-        playable: true,
-    },
-    {
-        id: 'number-memory',
-        title: 'Number Memory',
-        description: 'Remember numbers and recall them accurately.',
-        icon: '🔢',
-        category: 'numbers',
-        playable: true,
-    },
-    {
-        id: 'picture-recall',
-        title: 'Object Recognition',
-        description: 'Observe details and answer questions about what you saw.',
-        icon: '🖼️',
-        category: 'visual',
-        playable: true,
-    },
-    {
-        id: 'attention',
-        title: 'Attention Challenge',
-        description: 'Advanced focus module coming soon.',
-        icon: '🎯',
-        category: 'attention',
-        playable: false,
-    },
+    { id: 'mind-snap', icon: '🧠', category: 'memory', playable: true },
+    { id: 'memory-match', icon: '🧠', category: 'memory', playable: true },
+    { id: 'memory-map', icon: '🗺️', category: 'visual', playable: true },
+    { id: 'number-memory', icon: '🔢', category: 'numbers', playable: true },
+    { id: 'picture-recall', icon: '🖼️', category: 'visual', playable: true },
+    { id: 'attention', icon: '🎯', category: 'attention', playable: false },
 ];
 
 function formatReminderTime(reminder) {
@@ -121,12 +61,12 @@ function formatReminderTime(reminder) {
     }
 }
 
-function getGreeting() {
+function getGreetingKey() {
     const hour = new Date().getHours();
 
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
 }
 
 function normalizeReminder(reminder) {
@@ -139,6 +79,7 @@ function normalizeReminder(reminder) {
 }
 
 export default function PatientDashboard({ onLogout }) {
+    const { t, i18n } = useTranslation();
     const [patient, setPatient] = useState(null);
     const [activeGame, setActiveGame] = useState(null);
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -207,7 +148,7 @@ export default function PatientDashboard({ onLogout }) {
         }).catch((error) => {
             console.error('Unable to load reminders:', error);
             if (!active) return;
-            setReminderError('Reminders could not be loaded.');
+            setReminderError(t('patientDashboard.errors.remindersLoadFailed'));
             setRemindersLoading(false);
         });
 
@@ -221,8 +162,15 @@ export default function PatientDashboard({ onLogout }) {
         };
     }, [patient]);
 
+    // Routine items (medicine/activity/appointment) are caregiver-owned
+    // and the patient device runs under the anon key, so completion is
+    // toggled via the toggle_patient_reminder RPC rather than a direct
+    // table update. True custom reminders (patient's own one-off items)
+    // still go through the existing direct-update path.
     const handleReminderToggle = async (reminder) => {
-        const updated = await toggleReminderCompletion(reminder);
+        const updated = reminder?.routine_type
+            ? await togglePatientRoutineCompletion(reminder)
+            : await toggleReminderCompletion(reminder);
         if (updated) {
             setReminders((prev) => prev.map((item) => item.id === updated.id ? normalizeReminder(updated) : item));
         }
@@ -256,7 +204,7 @@ export default function PatientDashboard({ onLogout }) {
     };
 
     const handleReminderDelete = async (reminder) => {
-        if (!window.confirm(`Delete the reminder "${reminder.title}"?`)) return;
+        if (!window.confirm(t('patientDashboard.confirm.deleteReminder', { title: reminder.title }))) return;
         const removed = await deleteReminder(reminder);
         if (removed) setReminders((prev) => prev.filter((item) => item.id !== reminder.id));
     };
@@ -267,7 +215,7 @@ export default function PatientDashboard({ onLogout }) {
     }
 
     async function handleSendNoteToCaregiver() {
-        const message = window.prompt('Write a note for your caregiver:');
+        const message = window.prompt(t('patientDashboard.prompts.writeNote'));
         const trimmedMessage = message?.trim();
 
         if (!trimmedMessage) return;
@@ -276,7 +224,7 @@ export default function PatientDashboard({ onLogout }) {
 
         if (!patientId) {
             window.alert(
-                'Your note could not be sent — your session looks invalid. Please log in again.'
+                t('patientDashboard.alerts.noteSessionInvalid')
             );
             return;
         }
@@ -292,15 +240,15 @@ export default function PatientDashboard({ onLogout }) {
 
         if (error) {
             console.error('Unable to send note to caregiver:', error);
-            window.alert('Your note could not be sent. Please try again.');
+            window.alert(t('patientDashboard.alerts.noteFailed'));
             return;
         }
 
-        window.alert('Your note has been sent to your caregiver.');
+        window.alert(t('patientDashboard.alerts.noteSent'));
     }
 
     function handleFeatureClick(featureName) {
-        window.alert(`${featureName} module is coming soon.`);
+        window.alert(t('patientDashboard.alerts.comingSoon', { feature: featureName }));
     }
 
     function toggleRoutineCard(type) {
@@ -360,7 +308,7 @@ export default function PatientDashboard({ onLogout }) {
     const patientName =
         patient.full_name ||
         patient.name ||
-        'there';
+        t('patientDashboard.fallback.there');
 
     // FRONTEND-ONLY FALLBACK: Change the strings below to whatever caregiver name/contact you want to display
     const caregiverName =
@@ -374,9 +322,9 @@ export default function PatientDashboard({ onLogout }) {
         patient.caregiver_phone ||
         patient.caregiver_contact ||
         patient.caregiverContact ||
-        'Primary Contact'; // <- Frontend fallback contact
+        t('patientDashboard.fallback.primaryContact'); // <- Frontend fallback contact
 
-    const currentDateString = new Date().toLocaleDateString('en-US', {
+    const currentDateString = new Date().toLocaleDateString(i18n.language, {
         weekday: 'long',
         month: 'short',
         day: 'numeric',
@@ -389,8 +337,8 @@ export default function PatientDashboard({ onLogout }) {
                 <div className="db-brand-box">
                     <div className="db-brand-icon">🧠</div>
                     <div className="db-brand-title">
-                        <h1>NeuroPlay</h1>
-                        <span className="db-brand-subtitle">Patient Portal</span>
+                        <h1>{t('brand')}</h1>
+                        <span className="db-brand-subtitle">{t('patientDashboard.sidebar.subtitle')}</span>
                     </div>
                 </div>
 
@@ -400,39 +348,39 @@ export default function PatientDashboard({ onLogout }) {
                         onClick={() => setActiveTab('dashboard')}
                     >
                         <span className="db-nav-icon">📊</span>
-                        <span>Dashboard</span>
+                        <span>{t('patientDashboard.sidebar.dashboard')}</span>
                     </button>
                     <button
                         className={`db-nav-item ${activeTab === 'schedule' ? 'active' : ''}`}
                         onClick={() => setActiveTab('schedule')}
                     >
                         <span className="db-nav-icon">📅</span>
-                        <span>Schedule & Tasks</span>
+                        <span>{t('patientDashboard.sidebar.schedule')}</span>
                     </button>
                     <button
                         className={`db-nav-item ${activeTab === 'exercises' ? 'active' : ''}`}
                         onClick={() => setActiveTab('exercises')}
                     >
                         <span className="db-nav-icon">🎮</span>
-                        <span>Brain Exercises</span>
+                        <span>{t('patientDashboard.sidebar.exercises')}</span>
                     </button>
                     <button
                         className={`db-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
                         onClick={() => setActiveTab('settings')}
                     >
                         <span className="db-nav-icon">⚙️</span>
-                        <span>Settings</span>
+                        <span>{t('patientDashboard.sidebar.settings')}</span>
                     </button>
                 </nav>
 
                 <div className="db-sidebar-footer">
                     <div className="db-sidebar-support-card">
-                        <p>Need a hand with your routine?</p>
+                        <p>{t('patientDashboard.sidebar.supportPrompt')}</p>
                         <button
                             className="db-btn db-btn-secondary db-full-width"
-                            onClick={() => handleFeatureClick('Support')}
+                            onClick={() => handleFeatureClick(t('patientDashboard.sidebar.support'))}
                         >
-                            Contact Support
+                            {t('patientDashboard.sidebar.contactSupport')}
                         </button>
                     </div>
                 </div>
@@ -448,10 +396,10 @@ export default function PatientDashboard({ onLogout }) {
                 <header className="db-topbar">
                     <div className="db-topbar-title">
                         <h2>
-                            {activeTab === 'dashboard' && 'Overview'}
-                            {activeTab === 'schedule' && 'Schedule & Reminders'}
-                            {activeTab === 'exercises' && 'Cognitive Exercises'}
-                            {activeTab === 'settings' && 'Account Settings'}
+                            {activeTab === 'dashboard' && t('patientDashboard.topbar.overview')}
+                            {activeTab === 'schedule' && t('patientDashboard.topbar.schedule')}
+                            {activeTab === 'exercises' && t('patientDashboard.topbar.exercises')}
+                            {activeTab === 'settings' && t('patientDashboard.topbar.settings')}
                         </h2>
                     </div>
 
@@ -462,7 +410,7 @@ export default function PatientDashboard({ onLogout }) {
                             </div>
                             <div className="db-user-info">
                                 <span className="db-user-name">{patientName}</span>
-                                <span className="db-user-role">Active Session</span>
+                                <span className="db-user-role">{t('patientDashboard.topbar.activeSession')}</span>
                             </div>
                         </div>
 
@@ -470,7 +418,7 @@ export default function PatientDashboard({ onLogout }) {
                             className="db-btn db-btn-secondary"
                             onClick={handleSignOut}
                         >
-                            Sign Out
+                            {t('patientDashboard.topbar.signOut')}
                         </button>
                     </div>
                 </header>
@@ -480,10 +428,10 @@ export default function PatientDashboard({ onLogout }) {
                         <>
                             <section className="db-welcome-banner">
                                 <div className="db-welcome-text">
-                                    <span className="db-badge-pill">{getGreeting()}</span>
-                                    <h2>Welcome back, {patientName}</h2>
+                                    <span className="db-badge-pill">{t(`patientDashboard.greeting.${getGreetingKey()}`)}</span>
+                                    <h2>{t('patientDashboard.welcome.heading', { name: patientName })}</h2>
                                     <p>
-                                        Review your daily care overview, check weather updates, or access your tools from the navigation menu.
+                                        {t('patientDashboard.welcome.subtitle')}
                                     </p>
                                 </div>
                                 <div className="db-welcome-graphic">🧠</div>
@@ -494,20 +442,20 @@ export default function PatientDashboard({ onLogout }) {
                                     <div className="db-companion-header">
                                         <div className="db-companion-avatar">👩‍⚕️</div>
                                         <div>
-                                            <h4>Assigned Caregiver</h4>
+                                            <h4>{t('patientDashboard.companion.assignedCaregiver')}</h4>
                                             <p>{caregiverName} • {caregiverContact}</p>
                                         </div>
                                     </div>
                                     <div className="db-companion-body">
-                                        <span>"Have a wonderful and structured day ahead. Reach out if you need any help with your daily activities!"</span>
+                                        <span>{t('patientDashboard.companion.quote')}</span>
                                     </div>
                                     <div className="db-companion-actions">
-                                        <button 
+                                        <button
                                             className="db-btn db-btn-secondary db-sm"
                                             onClick={handleSendNoteToCaregiver}
                                             disabled={sendingNote}
                                         >
-                                            {sendingNote ? 'Sending…' : 'Send Note to Caregiver'}
+                                            {sendingNote ? t('patientDashboard.companion.sending') : t('patientDashboard.companion.sendNote')}
                                         </button>
                                     </div>
                                 </div>
@@ -516,25 +464,25 @@ export default function PatientDashboard({ onLogout }) {
                                     <div className="db-weather-header">
                                         <div>
                                             <span className="db-date-tag">📅 {currentDateString}</span>
-                                            <h4>Today's Outlook</h4>
+                                            <h4>{t('patientDashboard.weather.heading')}</h4>
                                         </div>
                                         <div className="db-weather-badge">
                                             <span>⛅</span>
                                             <div>
                                                 <strong>22°C</strong>
-                                                <small>Pleasant & Sunny</small>
+                                                <small>{t('patientDashboard.weather.condition')}</small>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="db-mood-check">
-                                        <span className="db-mood-label">How are you feeling right now?</span>
+                                        <span className="db-mood-label">{t('patientDashboard.mood.label')}</span>
                                         <div className="db-mood-options">
                                             {[
-                                                { emoji: '😊', label: 'Great', id: 'great' },
-                                                { emoji: '😌', label: 'Calm', id: 'calm' },
-                                                { emoji: '🥱', label: 'Tired', id: 'tired' },
-                                                { emoji: '🤔', label: 'Unsure', id: 'unsure' },
+                                                { emoji: '😊', label: t('patientDashboard.mood.great'), id: 'great' },
+                                                { emoji: '😌', label: t('patientDashboard.mood.calm'), id: 'calm' },
+                                                { emoji: '🥱', label: t('patientDashboard.mood.tired'), id: 'tired' },
+                                                { emoji: '🤔', label: t('patientDashboard.mood.unsure'), id: 'unsure' },
                                             ].map((m) => (
                                                 <button
                                                     key={m.id}
@@ -552,7 +500,7 @@ export default function PatientDashboard({ onLogout }) {
                                             ))}
                                         </div>
                                         {noteSaved && (
-                                            <div className="db-saved-toast">✓ Mood recorded for today. Thank you!</div>
+                                            <div className="db-saved-toast">✓ {t('patientDashboard.mood.saved')}</div>
                                         )}
                                     </div>
                                 </div>
@@ -569,271 +517,271 @@ export default function PatientDashboard({ onLogout }) {
                         const hydrationTarget = hydration?.target_count || 8;
 
                         return (
-                        <>
-                        <section className="db-section">
-                            <div className="db-section-header">
-                                <div>
-                                    <h3>Daily Care Overview</h3>
-                                    <p>Set by your caregiver. Tap a card to see today's details.</p>
-                                </div>
-                            </div>
-
-                            <div className="db-routine-accordion">
-                                <div className="db-routine-accordion-item">
-                                    <button
-                                        className={`db-shortcut-card ${expandedRoutine.includes('medicine') ? 'db-shortcut-card-active' : ''}`}
-                                        onClick={() => toggleRoutineCard('medicine')}
-                                    >
-                                        <span className="db-shortcut-icon">💊</span>
+                            <>
+                                <section className="db-section">
+                                    <div className="db-section-header">
                                         <div>
-                                            <strong>Medicine Log</strong>
-                                            <small>{medicines.length > 0 ? `${medicines.filter((m) => m.completed).length} of ${medicines.length} taken today` : 'Review scheduled prescriptions.'}</small>
+                                            <h3>{t('patientDashboard.schedule.overviewTitle')}</h3>
+                                            <p>{t('patientDashboard.schedule.overviewSubtitle')}</p>
                                         </div>
-                                        <span className="db-arrow">{expandedRoutine.includes('medicine') ? '▾' : '→'}</span>
-                                    </button>
+                                    </div>
 
-                                    {expandedRoutine.includes('medicine') && (
-                                        <div className="db-routine-detail">
-                                            {medicines.length === 0 ? (
-                                                <p className="db-routine-empty">No medicines have been set by your caregiver yet.</p>
-                                            ) : (
-                                                medicines.map((item) => (
-                                                    <div key={item.id} className={`db-routine-row ${item.completed ? 'completed' : ''} ${getReminderRowClassName(item)}`}>
-                                                        <button
-                                                            type="button"
-                                                            className={`pt-reminder-checkbox ${item.completed ? 'checked' : ''}`}
-                                                            onClick={() => handleReminderToggle(item)}
-                                                            aria-label={`Mark ${item.title} ${item.completed ? 'not taken' : 'taken'}`}
-                                                        >
-                                                            {item.completed ? '✓' : ''}
-                                                        </button>
-                                                        <div className="db-routine-row-main">
-                                                            <strong>{item.title}</strong>
-                                                            {item.time && <span>🕐 {item.time}</span>}
-                                                            <ReminderStatusBadge reminder={item} />
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                                    <div className="db-routine-accordion">
+                                        <div className="db-routine-accordion-item">
+                                            <button
+                                                className={`db-shortcut-card ${expandedRoutine.includes('medicine') ? 'db-shortcut-card-active' : ''}`}
+                                                onClick={() => toggleRoutineCard('medicine')}
+                                            >
+                                                <span className="db-shortcut-icon">💊</span>
+                                                <div>
+                                                    <strong>{t('patientDashboard.schedule.medicineLog')}</strong>
+                                                    <small>{medicines.length > 0 ? t('patientDashboard.schedule.takenToday', { done: medicines.filter((m) => m.completed).length, total: medicines.length }) : t('patientDashboard.schedule.reviewPrescriptions')}</small>
+                                                </div>
+                                                <span className="db-arrow">{expandedRoutine.includes('medicine') ? '▾' : '→'}</span>
+                                            </button>
 
-                                <div className="db-routine-accordion-item">
-                                    <button
-                                        className={`db-shortcut-card ${expandedRoutine.includes('hydration') ? 'db-shortcut-card-active' : ''}`}
-                                        onClick={() => toggleRoutineCard('hydration')}
-                                    >
-                                        <span className="db-shortcut-icon">💧</span>
-                                        <div>
-                                            <strong>Hydration Tracker</strong>
-                                            <small>{hydration ? `${hydrationProgress} of ${hydrationTarget} glasses today` : 'Monitor daily water intake.'}</small>
-                                        </div>
-                                        <span className="db-arrow">{expandedRoutine.includes('hydration') ? '▾' : '→'}</span>
-                                    </button>
-
-                                    {expandedRoutine.includes('hydration') && (
-                                        <div className="db-routine-detail">
-                                            {!hydration ? (
-                                                <p className="db-routine-empty">Your caregiver hasn't set a hydration goal yet.</p>
-                                            ) : (
-                                                <div className="db-hydration-panel">
-                                                    <div className="db-hydration-bar-track">
-                                                        <div
-                                                            className="db-hydration-bar-fill"
-                                                            style={{ width: `${Math.min(100, (hydrationProgress / hydrationTarget) * 100)}%` }}
-                                                        />
-                                                    </div>
-                                                    <p className="db-hydration-count">{hydrationProgress} of {hydrationTarget} glasses today</p>
-                                                    <div className="db-hydration-actions">
-                                                        <button
-                                                            type="button"
-                                                            className="db-hydration-btn"
-                                                            onClick={() => handleHydrationChange(hydration, -1)}
-                                                            disabled={hydrationBusy || hydrationProgress <= 0}
-                                                            aria-label="Remove one glass"
-                                                        >
-                                                            −
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="db-hydration-btn db-hydration-btn-primary"
-                                                            onClick={() => handleHydrationChange(hydration, 1)}
-                                                            disabled={hydrationBusy}
-                                                        >
-                                                            + Add a glass
-                                                        </button>
-                                                    </div>
-                                                    {hydration.completed && <p className="db-hydration-done">Goal reached for today ✓</p>}
+                                            {expandedRoutine.includes('medicine') && (
+                                                <div className="db-routine-detail">
+                                                    {medicines.length === 0 ? (
+                                                        <p className="db-routine-empty">{t('patientDashboard.schedule.noMedicines')}</p>
+                                                    ) : (
+                                                        medicines.map((item) => (
+                                                            <div key={item.id} className={`db-routine-row ${item.completed ? 'completed' : ''} ${getReminderRowClassName(item)}`}>
+                                                                <button
+                                                                    type="button"
+                                                                    className={`pt-reminder-checkbox ${item.completed ? 'checked' : ''}`}
+                                                                    onClick={() => handleReminderToggle(item)}
+                                                                    aria-label={`Mark ${item.title} ${item.completed ? 'not taken' : 'taken'}`}
+                                                                >
+                                                                    {item.completed ? '✓' : ''}
+                                                                </button>
+                                                                <div className="db-routine-row-main">
+                                                                    <strong>{item.title}</strong>
+                                                                    {item.time && <span>🕐 {item.time}</span>}
+                                                                    <ReminderStatusBadge reminder={item} />
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
-                                    )}
-                                </div>
 
-                                <div className="db-routine-accordion-item">
-                                    <button
-                                        className={`db-shortcut-card ${expandedRoutine.includes('activity') ? 'db-shortcut-card-active' : ''}`}
-                                        onClick={() => toggleRoutineCard('activity')}
-                                    >
-                                        <span className="db-shortcut-icon">📅</span>
-                                        <div>
-                                            <strong>Routine Calendar</strong>
-                                            <small>{activities.length > 0 ? `${activities.filter((a) => a.completed).length} of ${activities.length} done today` : 'Check today\'s daily activities.'}</small>
-                                        </div>
-                                        <span className="db-arrow">{expandedRoutine.includes('activity') ? '▾' : '→'}</span>
-                                    </button>
+                                        <div className="db-routine-accordion-item">
+                                            <button
+                                                className={`db-shortcut-card ${expandedRoutine.includes('hydration') ? 'db-shortcut-card-active' : ''}`}
+                                                onClick={() => toggleRoutineCard('hydration')}
+                                            >
+                                                <span className="db-shortcut-icon">💧</span>
+                                                <div>
+                                                    <strong>{t('patientDashboard.schedule.hydrationTracker')}</strong>
+                                                    <small>{hydration ? t('patientDashboard.schedule.glassesToday', { progress: hydrationProgress, target: hydrationTarget }) : t('patientDashboard.schedule.monitorWater')}</small>
+                                                </div>
+                                                <span className="db-arrow">{expandedRoutine.includes('hydration') ? '▾' : '→'}</span>
+                                            </button>
 
-                                    {expandedRoutine.includes('activity') && (
-                                        <div className="db-routine-detail">
-                                            {activities.length === 0 ? (
-                                                <p className="db-routine-empty">No daily activities have been set by your caregiver yet.</p>
-                                            ) : (
-                                                activities.map((item) => (
-                                                    <div key={item.id} className={`db-routine-row ${item.completed ? 'completed' : ''} ${getReminderRowClassName(item)}`}>
-                                                        <button
-                                                            type="button"
-                                                            className={`pt-reminder-checkbox ${item.completed ? 'checked' : ''}`}
-                                                            onClick={() => handleReminderToggle(item)}
-                                                            aria-label={`Mark ${item.title} ${item.completed ? 'not done' : 'done'}`}
-                                                        >
-                                                            {item.completed ? '✓' : ''}
-                                                        </button>
-                                                        <div className="db-routine-row-main">
-                                                            <strong>{item.title}</strong>
-                                                            {item.time && <span>🕐 {item.time}</span>}
-                                                            <ReminderStatusBadge reminder={item} />
+                                            {expandedRoutine.includes('hydration') && (
+                                                <div className="db-routine-detail">
+                                                    {!hydration ? (
+                                                        <p className="db-routine-empty">{t('patientDashboard.schedule.noHydrationGoal')}</p>
+                                                    ) : (
+                                                        <div className="db-hydration-panel">
+                                                            <div className="db-hydration-bar-track">
+                                                                <div
+                                                                    className="db-hydration-bar-fill"
+                                                                    style={{ width: `${Math.min(100, (hydrationProgress / hydrationTarget) * 100)}%` }}
+                                                                />
+                                                            </div>
+                                                            <p className="db-hydration-count">{t('patientDashboard.schedule.glassesToday', { progress: hydrationProgress, target: hydrationTarget })}</p>
+                                                            <div className="db-hydration-actions">
+                                                                <button
+                                                                    type="button"
+                                                                    className="db-hydration-btn"
+                                                                    onClick={() => handleHydrationChange(hydration, -1)}
+                                                                    disabled={hydrationBusy || hydrationProgress <= 0}
+                                                                    aria-label="Remove one glass"
+                                                                >
+                                                                    −
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="db-hydration-btn db-hydration-btn-primary"
+                                                                    onClick={() => handleHydrationChange(hydration, 1)}
+                                                                    disabled={hydrationBusy}
+                                                                >
+                                                                    + {t('patientDashboard.schedule.addGlass')}
+                                                                </button>
+                                                            </div>
+                                                            {hydration.completed && <p className="db-hydration-done">{t('patientDashboard.schedule.goalReached')} ✓</p>}
                                                         </div>
-                                                    </div>
-                                                ))
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
-                                    )}
-                                </div>
 
-                                <div className="db-routine-accordion-item">
-                                    <button
-                                        className={`db-shortcut-card ${expandedRoutine.includes('appointment') ? 'db-shortcut-card-active' : ''}`}
-                                        onClick={() => toggleRoutineCard('appointment')}
-                                    >
-                                        <span className="db-shortcut-icon">🏥</span>
-                                        <div>
-                                            <strong>Appointments</strong>
-                                            <small>{appointments.length > 0 ? `${appointments.length} on file` : 'View scheduled clinical visits.'}</small>
-                                        </div>
-                                        <span className="db-arrow">{expandedRoutine.includes('appointment') ? '▾' : '→'}</span>
-                                    </button>
+                                        <div className="db-routine-accordion-item">
+                                            <button
+                                                className={`db-shortcut-card ${expandedRoutine.includes('activity') ? 'db-shortcut-card-active' : ''}`}
+                                                onClick={() => toggleRoutineCard('activity')}
+                                            >
+                                                <span className="db-shortcut-icon">📅</span>
+                                                <div>
+                                                    <strong>{t('patientDashboard.schedule.routineCalendar')}</strong>
+                                                    <small>{activities.length > 0 ? t('patientDashboard.schedule.doneToday', { done: activities.filter((a) => a.completed).length, total: activities.length }) : t('patientDashboard.schedule.checkActivities')}</small>
+                                                </div>
+                                                <span className="db-arrow">{expandedRoutine.includes('activity') ? '▾' : '→'}</span>
+                                            </button>
 
-                                    {expandedRoutine.includes('appointment') && (
-                                        <div className="db-routine-detail">
-                                            {appointments.length === 0 ? (
-                                                <p className="db-routine-empty">No appointments have been added by your caregiver yet.</p>
-                                            ) : (
-                                                appointments.map((item) => (
-                                                    <div key={item.id} className={`db-routine-row ${item.completed ? 'completed' : ''} ${getReminderRowClassName(item)}`}>
-                                                        <button
-                                                            type="button"
-                                                            className={`pt-reminder-checkbox ${item.completed ? 'checked' : ''}`}
-                                                            onClick={() => handleReminderToggle(item)}
-                                                            aria-label={`Mark ${item.title} ${item.completed ? 'not checked' : 'checked'}`}
-                                                        >
-                                                            {item.completed ? '✓' : ''}
-                                                        </button>
-                                                        <div className="db-routine-row-main">
-                                                            <strong>{item.title}</strong>
-                                                            {item.event_date && <span>📅 {item.event_date}</span>}
-                                                        </div>
-                                                    </div>
-                                                ))
+                                            {expandedRoutine.includes('activity') && (
+                                                <div className="db-routine-detail">
+                                                    {activities.length === 0 ? (
+                                                        <p className="db-routine-empty">{t('patientDashboard.schedule.noActivities')}</p>
+                                                    ) : (
+                                                        activities.map((item) => (
+                                                            <div key={item.id} className={`db-routine-row ${item.completed ? 'completed' : ''} ${getReminderRowClassName(item)}`}>
+                                                                <button
+                                                                    type="button"
+                                                                    className={`pt-reminder-checkbox ${item.completed ? 'checked' : ''}`}
+                                                                    onClick={() => handleReminderToggle(item)}
+                                                                    aria-label={`Mark ${item.title} ${item.completed ? 'not done' : 'done'}`}
+                                                                >
+                                                                    {item.completed ? '✓' : ''}
+                                                                </button>
+                                                                <div className="db-routine-row-main">
+                                                                    <strong>{item.title}</strong>
+                                                                    {item.time && <span>🕐 {item.time}</span>}
+                                                                    <ReminderStatusBadge reminder={item} />
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-                        </section>
 
-                        <section className="db-section">
-                            <div className="db-section-header pt-schedule-header">
-                               <div>
-                                    <h3>Custom Reminders</h3>
-                                    <p>One-off reminders you've added yourself.</p>
-                               </div>
+                                        <div className="db-routine-accordion-item">
+                                            <button
+                                                className={`db-shortcut-card ${expandedRoutine.includes('appointment') ? 'db-shortcut-card-active' : ''}`}
+                                                onClick={() => toggleRoutineCard('appointment')}
+                                            >
+                                                <span className="db-shortcut-icon">🏥</span>
+                                                <div>
+                                                    <strong>{t('patientDashboard.schedule.appointments')}</strong>
+                                                    <small>{appointments.length > 0 ? t('patientDashboard.schedule.onFile', { count: appointments.length }) : t('patientDashboard.schedule.viewVisits')}</small>
+                                                </div>
+                                                <span className="db-arrow">{expandedRoutine.includes('appointment') ? '▾' : '→'}</span>
+                                            </button>
 
-                               <button
-                                    type="button"
-                                    className="pt-reminder-add-btn"
-                                    onClick={() => setShowReminderForm((prev) => !prev)}
-                               >
-                                    + Add reminder
-                               </button>
-                            </div>
-
-                            {reminderError && (
-                                <div className="db-alert db-alert-warning">{reminderError}</div>
-                            )}
-
-                            {showReminderForm && (
-                                <form className="pt-reminder-form" onSubmit={handleReminderSubmit}>
-                                    <div className="pt-reminder-form-grid">
-                                        <label>
-                                            Title
-                                            <input
-                                                value={reminderForm.title}
-                                                onChange={(e) => setReminderForm((prev) => ({ ...prev, title: e.target.value }))}
-                                                placeholder="e.g. Call my sister"
-                                                maxLength={80}
-                                                required
-                                            />
-                                        </label>
-
-                                        <label>
-                                            Time (optional)
-                                            <input
-                                                type="time"
-                                                value={reminderForm.time}
-                                                onChange={(e) => setReminderForm((prev) => ({ ...prev, time: e.target.value }))}
-                                            />
-                                        </label>
-
-                                        <label className="pt-reminder-form-wide">
-                                            Note (optional)
-                                            <textarea
-                                                value={reminderForm.description}
-                                                onChange={(e) => setReminderForm((prev) => ({ ...prev, description: e.target.value }))}
-                                                placeholder="Any extra detail"
-                                                maxLength={180}
-                                                rows={2}
-                                            />
-                                        </label>
+                                            {expandedRoutine.includes('appointment') && (
+                                                <div className="db-routine-detail">
+                                                    {appointments.length === 0 ? (
+                                                        <p className="db-routine-empty">{t('patientDashboard.schedule.noAppointments')}</p>
+                                                    ) : (
+                                                        appointments.map((item) => (
+                                                            <div key={item.id} className={`db-routine-row ${item.completed ? 'completed' : ''} ${getReminderRowClassName(item)}`}>
+                                                                <button
+                                                                    type="button"
+                                                                    className={`pt-reminder-checkbox ${item.completed ? 'checked' : ''}`}
+                                                                    onClick={() => handleReminderToggle(item)}
+                                                                    aria-label={`Mark ${item.title} ${item.completed ? 'not checked' : 'checked'}`}
+                                                                >
+                                                                    {item.completed ? '✓' : ''}
+                                                                </button>
+                                                                <div className="db-routine-row-main">
+                                                                    <strong>{item.title}</strong>
+                                                                    {item.event_date && <span>📅 {item.event_date}</span>}
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
+                                </section>
 
-                                    <div className="pt-reminder-form-actions">
-                                        <button type="button" className="pt-reminder-cancel-btn" onClick={() => setShowReminderForm(false)}>Cancel</button>
-                                        <button type="submit" className="pt-reminder-save-btn" disabled={reminderSaving}>
-                                            {reminderSaving ? 'Saving…' : 'Create reminder'}
+                                <section className="db-section">
+                                    <div className="db-section-header pt-schedule-header">
+                                        <div>
+                                            <h3>{t('patientDashboard.custom.title')}</h3>
+                                            <p>{t('patientDashboard.custom.subtitle')}</p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            className="pt-reminder-add-btn"
+                                            onClick={() => setShowReminderForm((prev) => !prev)}
+                                        >
+                                            + {t('patientDashboard.custom.addReminder')}
                                         </button>
                                     </div>
-                                </form>
-                            )}
 
-                            {remindersLoading ? (
-                                <div className="db-loading-state">Loading schedule...</div>
-                            ) : (
-                                <div className="db-card-container">
-                                    <div className="db-list-stack">
-                                        {reminders.filter((r) => r.enabled !== false && !r.routine_type).map((reminder) => (
-                                            <ReminderRow
-                                                key={reminder.id}
-                                                reminder={reminder}
-                                                onToggle={handleReminderToggle}
-                                                onDelete={handleReminderDelete}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </section>
-                        </>
+                                    {reminderError && (
+                                        <div className="db-alert db-alert-warning">{reminderError}</div>
+                                    )}
+
+                                    {showReminderForm && (
+                                        <form className="pt-reminder-form" onSubmit={handleReminderSubmit}>
+                                            <div className="pt-reminder-form-grid">
+                                                <label>
+                                                    {t('patientDashboard.custom.formTitleLabel')}
+                                                    <input
+                                                        value={reminderForm.title}
+                                                        onChange={(e) => setReminderForm((prev) => ({ ...prev, title: e.target.value }))}
+                                                        placeholder={t('patientDashboard.custom.titlePlaceholder')}
+                                                        maxLength={80}
+                                                        required
+                                                    />
+                                                </label>
+
+                                                <label>
+                                                    {t('patientDashboard.custom.timeLabel')}
+                                                    <input
+                                                        type="time"
+                                                        value={reminderForm.time}
+                                                        onChange={(e) => setReminderForm((prev) => ({ ...prev, time: e.target.value }))}
+                                                    />
+                                                </label>
+
+                                                <label className="pt-reminder-form-wide">
+                                                    {t('patientDashboard.custom.noteLabel')}
+                                                    <textarea
+                                                        value={reminderForm.description}
+                                                        onChange={(e) => setReminderForm((prev) => ({ ...prev, description: e.target.value }))}
+                                                        placeholder={t('patientDashboard.custom.notePlaceholder')}
+                                                        maxLength={180}
+                                                        rows={2}
+                                                    />
+                                                </label>
+                                            </div>
+
+                                            <div className="pt-reminder-form-actions">
+                                                <button type="button" className="pt-reminder-cancel-btn" onClick={() => setShowReminderForm(false)}>{t('patientDashboard.custom.cancel')}</button>
+                                                <button type="submit" className="pt-reminder-save-btn" disabled={reminderSaving}>
+                                                    {reminderSaving ? t('patientDashboard.custom.saving') : t('patientDashboard.custom.createReminder')}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    )}
+
+                                    {remindersLoading ? (
+                                        <div className="db-loading-state">{t('patientDashboard.custom.loadingSchedule')}</div>
+                                    ) : (
+                                        <div className="db-card-container">
+                                            <div className="db-list-stack">
+                                                {reminders.filter((r) => r.enabled !== false && !r.routine_type).map((reminder) => (
+                                                    <ReminderRow
+                                                        key={reminder.id}
+                                                        reminder={reminder}
+                                                        onToggle={handleReminderToggle}
+                                                        onDelete={handleReminderDelete}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </section>
+                            </>
                         );
                     })()}
 
@@ -841,8 +789,8 @@ export default function PatientDashboard({ onLogout }) {
                         <section className="db-section">
                             <div className="db-section-header">
                                 <div>
-                                    <h3>All Brain Training Modules</h3>
-                                    <p>Browse through available memory and focus sessions.</p>
+                                    <h3>{t('patientDashboard.exercises.title')}</h3>
+                                    <p>{t('patientDashboard.exercises.subtitle')}</p>
                                 </div>
                             </div>
 
@@ -852,8 +800,8 @@ export default function PatientDashboard({ onLogout }) {
                                         <div className="db-category-heading">
                                             <span className="db-category-emoji">{category.icon}</span>
                                             <div>
-                                                <h4>{category.title}</h4>
-                                                <p>{category.description}</p>
+                                                <h4>{t(`patientDashboard.gameCategories.${category.id}.title`)}</h4>
+                                                <p>{t(`patientDashboard.gameCategories.${category.id}.description`)}</p>
                                             </div>
                                         </div>
 
@@ -867,12 +815,12 @@ export default function PatientDashboard({ onLogout }) {
                                                         <span className="db-exercise-icon">{game.icon}</span>
                                                         <div>
                                                             <div className="db-exercise-title-line">
-                                                                <strong>{game.title}</strong>
+                                                                <strong>{t(`patientDashboard.games.${game.id}.title`)}</strong>
                                                                 <span className={`db-status-pill ${game.playable ? 'active' : 'upcoming'}`}>
-                                                                    {game.playable ? 'Ready' : 'Coming Soon'}
+                                                                    {game.playable ? t('patientDashboard.exercises.ready') : t('patientDashboard.exercises.comingSoon')}
                                                                 </span>
                                                             </div>
-                                                            <p>{game.description}</p>
+                                                            <p>{t(`patientDashboard.games.${game.id}.description`)}</p>
                                                         </div>
                                                     </div>
 
@@ -885,7 +833,7 @@ export default function PatientDashboard({ onLogout }) {
                                                             }
                                                         }}
                                                     >
-                                                        {game.playable ? 'Play' : 'Locked'}
+                                                        {game.playable ? t('patientDashboard.exercises.play') : t('patientDashboard.exercises.locked')}
                                                     </button>
                                                 </div>
                                             ))}
@@ -900,24 +848,24 @@ export default function PatientDashboard({ onLogout }) {
                         <section className="db-section">
                             <div className="db-section-header">
                                 <div>
-                                    <h3>Account Preferences</h3>
-                                    <p>Manage your patient session and configurations.</p>
+                                    <h3>{t('patientDashboard.settings.title')}</h3>
+                                    <p>{t('patientDashboard.settings.subtitle')}</p>
                                 </div>
                             </div>
 
                             <div className="db-card-container" style={{ padding: '2rem' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: '400px' }}>
                                     <div>
-                                        <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--db-navy-text)' }}>Full Name</strong>
+                                        <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--db-navy-text)' }}>{t('patientDashboard.settings.fullName')}</strong>
                                         <span style={{ fontSize: '0.95rem', color: 'var(--db-slate-text)' }}>{patientName}</span>
                                     </div>
                                     <div>
-                                        <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--db-navy-text)' }}>Patient ID</strong>
+                                        <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--db-navy-text)' }}>{t('patientDashboard.settings.patientId')}</strong>
                                         <span style={{ fontSize: '0.95rem', color: 'var(--db-slate-text)' }}>{patient.id || patient.patient_id}</span>
                                     </div>
                                     <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--db-border-color)' }}>
                                         <button className="db-btn db-btn-secondary" onClick={handleSignOut}>
-                                            Sign Out of Session
+                                            {t('patientDashboard.settings.signOut')}
                                         </button>
                                     </div>
                                 </div>
@@ -927,8 +875,8 @@ export default function PatientDashboard({ onLogout }) {
                 </main>
 
                 <footer className="db-footer">
-                    <span>NeuroPlay Platform</span>
-                    <span>Take your time. Consistency is key.</span>
+                    <span>{t('patientDashboard.footer.platform')}</span>
+                    <span>{t('patientDashboard.footer.tagline')}</span>
                 </footer>
             </div>
         </div>
@@ -936,6 +884,7 @@ export default function PatientDashboard({ onLogout }) {
 }
 
 function ReminderRow({ reminder, onToggle, onDelete }) {
+    const { t } = useTranslation();
     const time = formatReminderTime(reminder);
 
     return (
@@ -956,7 +905,7 @@ function ReminderRow({ reminder, onToggle, onDelete }) {
                 <div className="db-row-title-bar">
                     <strong>{reminder.title}</strong>
                     <span className={`db-type-tag ${reminder.type === 'custom' ? 'custom' : 'basic'}`}>
-                        {reminder.type === 'custom' ? 'Custom' : 'Standard'}
+                        {reminder.type === 'custom' ? t('patientDashboard.reminderRow.custom') : t('patientDashboard.reminderRow.standard')}
                     </span>
                 </div>
 
@@ -978,7 +927,7 @@ function ReminderRow({ reminder, onToggle, onDelete }) {
 
             <div className="pt-reminder-row-end">
                 <div className="db-row-status-text">
-                    {reminder.completed ? 'Done' : 'Pending'}
+                    {reminder.completed ? t('patientDashboard.reminderRow.done') : t('patientDashboard.reminderRow.pending')}
                 </div>
 
                 {reminder.type === 'custom' && onDelete && (
@@ -988,7 +937,7 @@ function ReminderRow({ reminder, onToggle, onDelete }) {
                         onClick={() => onDelete(reminder)}
                         aria-label={`Delete ${reminder.title}`}
                     >
-                        Delete
+                        {t('patientDashboard.reminderRow.delete')}
                     </button>
                 )}
             </div>
