@@ -1,1803 +1,657 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './PictureRecallGame.css';
+import { selectObjects } from './neObjects';
+import { checkAnswer } from './answerMatch';
+import { computeSessionMetrics, saveGameSession } from './sessionStore';
 
 /*
 |--------------------------------------------------------------------------
-| Picture Recall Game
+| Object Recognition Game — North-East India
 |--------------------------------------------------------------------------
-| The patient first observes a visual scene.
-| The scene is then hidden and the patient answers questions about:
+| The user is shown ONE culturally relevant object from the North-Eastern
+| states and identifies it by typing OR speaking. Up to 3 attempts per
+| object, with a progressive hint after each wrong try. A session is 5-10
+| objects; performance metrics are saved to the backend at the end.
 |
-| 1. Objects
-| 2. Colors
-| 3. Quantities
-| 4. Positions
-| 5. Presence / absence
-|
-| Each scene is represented by individual objects with meaningful positions.
+| Props:
+|   patient             { id, full_name, ... }  used to tag saved sessions
+|   onHome              () => void              back to the app home screen
+|   questionsPerSession optional 5-10 override for the number of objects
 |--------------------------------------------------------------------------
 */
+
+const MAX_ATTEMPTS = 3;
+const AUTO_ADVANCE_MS = 3200;
+// Real photos live at /public/images/ne-objects/<id>.jpg. Change this if your
+// app serves static assets from a different path. Missing images fall back to
+// a labelled emoji card, so the game runs before any photos are added.
+const IMAGE_BASE = '/images/ne-objects/';
 
 const DIFFICULTY_CONFIG = {
-    easy: {
-        label: 'Easy',
-        observationTime: 15,
-        questionCount: 5,
-    },
-    medium: {
-        label: 'Medium',
-        observationTime: 12,
-        questionCount: 7,
-    },
-    hard: {
-        label: 'Hard',
-        observationTime: 10,
-        questionCount: 9,
-    },
+    easy: { label: 'Easy', questionCount: 5, blurb: '5 familiar objects' },
+    medium: { label: 'Medium', questionCount: 7, blurb: '7 objects' },
+    hard: { label: 'Hard', questionCount: 9, blurb: '9 tricky objects' },
 };
 
-/*
-|--------------------------------------------------------------------------
-| Scene Data
-|--------------------------------------------------------------------------
-| Every object has:
-| - name
-| - emoji
-| - color
-| - position
-| - area
-|
-| Multiple copies are represented as separate objects.
-|--------------------------------------------------------------------------
-*/
+const PRAISE = ['Well done!', 'Correct!', 'Excellent!', 'Very good!'];
+const TRY_AGAIN = ['Not quite — try again.', 'Good try. Have another go.', 'Almost! One more try.'];
 
-const SCENES = {
-    easy: [
-        {
-            id: 'living-room',
-            title: 'Living Room',
-            description: 'A simple living room with a sofa, table and a few objects.',
-            objects: [
-                {
-                    id: 'sofa',
-                    name: 'Sofa',
-                    emoji: '🛋️',
-                    color: 'Blue',
-                    position: 'center',
-                    area: 'middle',
-                },
-                {
-                    id: 'clock',
-                    name: 'Clock',
-                    emoji: '🕐',
-                    color: 'Brown',
-                    position: 'top',
-                    area: 'wall',
-                },
-                {
-                    id: 'table',
-                    name: 'Table',
-                    emoji: '🟫',
-                    color: 'Brown',
-                    position: 'bottom-center',
-                    area: 'floor',
-                },
-                {
-                    id: 'book',
-                    name: 'Book',
-                    emoji: '📖',
-                    color: 'Blue',
-                    position: 'left',
-                    area: 'table',
-                },
-                {
-                    id: 'vase',
-                    name: 'Flower Vase',
-                    emoji: '🌷',
-                    color: 'Pink',
-                    position: 'right',
-                    area: 'table',
-                },
-            ],
-        },
-
-        {
-            id: 'garden',
-            title: 'Garden',
-            description: 'A small garden with flowers, a tree and a bench.',
-            objects: [
-                {
-                    id: 'tree',
-                    name: 'Tree',
-                    emoji: '🌳',
-                    color: 'Green',
-                    position: 'left',
-                    area: 'garden',
-                },
-                {
-                    id: 'flower-red',
-                    name: 'Flower',
-                    emoji: '🌹',
-                    color: 'Red',
-                    position: 'center-left',
-                    area: 'garden',
-                },
-                {
-                    id: 'flower-yellow',
-                    name: 'Flower',
-                    emoji: '🌻',
-                    color: 'Yellow',
-                    position: 'center-right',
-                    area: 'garden',
-                },
-                {
-                    id: 'bench',
-                    name: 'Bench',
-                    emoji: '🪑',
-                    color: 'Brown',
-                    position: 'bottom',
-                    area: 'garden',
-                },
-                {
-                    id: 'ball',
-                    name: 'Ball',
-                    emoji: '⚽',
-                    color: 'White',
-                    position: 'right',
-                    area: 'garden',
-                },
-            ],
-        },
-    ],
-
-    medium: [
-        {
-            id: 'kitchen',
-            title: 'Kitchen',
-            description: 'A kitchen with a table, cups, fruit and cooking items.',
-            objects: [
-                {
-                    id: 'table',
-                    name: 'Table',
-                    emoji: '🟫',
-                    color: 'Brown',
-                    position: 'center',
-                    area: 'middle',
-                },
-                {
-                    id: 'cup-1',
-                    name: 'Cup',
-                    emoji: '☕',
-                    color: 'Blue',
-                    position: 'left',
-                    area: 'table',
-                },
-                {
-                    id: 'cup-2',
-                    name: 'Cup',
-                    emoji: '☕',
-                    color: 'Blue',
-                    position: 'right',
-                    area: 'table',
-                },
-                {
-                    id: 'plate',
-                    name: 'Plate',
-                    emoji: '🍽️',
-                    color: 'White',
-                    position: 'center',
-                    area: 'table',
-                },
-                {
-                    id: 'spoon',
-                    name: 'Spoon',
-                    emoji: '🥄',
-                    color: 'Silver',
-                    position: 'bottom-right',
-                    area: 'table',
-                },
-                {
-                    id: 'kettle',
-                    name: 'Kettle',
-                    emoji: '🫖',
-                    color: 'Red',
-                    position: 'top-right',
-                    area: 'stove',
-                },
-                {
-                    id: 'apple-1',
-                    name: 'Apple',
-                    emoji: '🍎',
-                    color: 'Red',
-                    position: 'top-left',
-                    area: 'fruit bowl',
-                },
-                {
-                    id: 'apple-2',
-                    name: 'Apple',
-                    emoji: '🍎',
-                    color: 'Red',
-                    position: 'top-center',
-                    area: 'fruit bowl',
-                },
-                {
-                    id: 'pan',
-                    name: 'Pan',
-                    emoji: '🍳',
-                    color: 'Black',
-                    position: 'left',
-                    area: 'stove',
-                },
-            ],
-        },
-
-        {
-            id: 'bedroom',
-            title: 'Bedroom',
-            description: 'A bedroom with a bed, lamp, book and other familiar objects.',
-            objects: [
-                {
-                    id: 'bed',
-                    name: 'Bed',
-                    emoji: '🛏️',
-                    color: 'White',
-                    position: 'center',
-                    area: 'middle',
-                },
-                {
-                    id: 'lamp',
-                    name: 'Lamp',
-                    emoji: '💡',
-                    color: 'Yellow',
-                    position: 'left',
-                    area: 'bedside',
-                },
-                {
-                    id: 'book',
-                    name: 'Book',
-                    emoji: '📕',
-                    color: 'Red',
-                    position: 'right',
-                    area: 'bedside',
-                },
-                {
-                    id: 'clock',
-                    name: 'Clock',
-                    emoji: '⏰',
-                    color: 'Black',
-                    position: 'top-right',
-                    area: 'wall',
-                },
-                {
-                    id: 'plant',
-                    name: 'Plant',
-                    emoji: '🪴',
-                    color: 'Green',
-                    position: 'bottom-left',
-                    area: 'floor',
-                },
-                {
-                    id: 'pillow-1',
-                    name: 'Pillow',
-                    emoji: '🛏️',
-                    color: 'Blue',
-                    position: 'center-left',
-                    area: 'bed',
-                },
-                {
-                    id: 'pillow-2',
-                    name: 'Pillow',
-                    emoji: '🛏️',
-                    color: 'Blue',
-                    position: 'center-right',
-                    area: 'bed',
-                },
-            ],
-        },
-    ],
-
-    hard: [
-        {
-            id: 'dining-room',
-            title: 'Dining Room',
-            description: 'A dining room containing several objects in different positions.',
-            objects: [
-                {
-                    id: 'table',
-                    name: 'Table',
-                    emoji: '🟫',
-                    color: 'Brown',
-                    position: 'center',
-                    area: 'middle',
-                },
-                {
-                    id: 'plate-1',
-                    name: 'Plate',
-                    emoji: '🍽️',
-                    color: 'White',
-                    position: 'top-left',
-                    area: 'table',
-                },
-                {
-                    id: 'plate-2',
-                    name: 'Plate',
-                    emoji: '🍽️',
-                    color: 'White',
-                    position: 'top-right',
-                    area: 'table',
-                },
-                {
-                    id: 'plate-3',
-                    name: 'Plate',
-                    emoji: '🍽️',
-                    color: 'White',
-                    position: 'bottom-left',
-                    area: 'table',
-                },
-                {
-                    id: 'plate-4',
-                    name: 'Plate',
-                    emoji: '🍽️',
-                    color: 'White',
-                    position: 'bottom-right',
-                    area: 'table',
-                },
-                {
-                    id: 'cup-1',
-                    name: 'Cup',
-                    emoji: '☕',
-                    color: 'Blue',
-                    position: 'left',
-                    area: 'table',
-                },
-                {
-                    id: 'cup-2',
-                    name: 'Cup',
-                    emoji: '☕',
-                    color: 'Blue',
-                    position: 'right',
-                    area: 'table',
-                },
-                {
-                    id: 'cake',
-                    name: 'Cake',
-                    emoji: '🎂',
-                    color: 'Brown',
-                    position: 'center',
-                    area: 'table',
-                },
-                {
-                    id: 'vase',
-                    name: 'Flower Vase',
-                    emoji: '🌻',
-                    color: 'Yellow',
-                    position: 'top-center',
-                    area: 'table',
-                },
-                {
-                    id: 'candle',
-                    name: 'Candle',
-                    emoji: '🕯️',
-                    color: 'White',
-                    position: 'center-right',
-                    area: 'table',
-                },
-                {
-                    id: 'bread',
-                    name: 'Bread',
-                    emoji: '🍞',
-                    color: 'Brown',
-                    position: 'bottom-center',
-                    area: 'table',
-                },
-                {
-                    id: 'clock',
-                    name: 'Clock',
-                    emoji: '🕐',
-                    color: 'Brown',
-                    position: 'top-left',
-                    area: 'wall',
-                },
-                {
-                    id: 'window',
-                    name: 'Window',
-                    emoji: '🪟',
-                    color: 'Blue',
-                    position: 'top-right',
-                    area: 'wall',
-                },
-                {
-                    id: 'chair-1',
-                    name: 'Chair',
-                    emoji: '🪑',
-                    color: 'Brown',
-                    position: 'left',
-                    area: 'floor',
-                },
-                {
-                    id: 'chair-2',
-                    name: 'Chair',
-                    emoji: '🪑',
-                    color: 'Brown',
-                    position: 'right',
-                    area: 'floor',
-                },
-            ],
-        },
-
-        {
-            id: 'market',
-            title: 'Market',
-            description: 'A small market with fruits, vegetables and familiar objects.',
-            objects: [
-                {
-                    id: 'basket',
-                    name: 'Basket',
-                    emoji: '🧺',
-                    color: 'Brown',
-                    position: 'center',
-                    area: 'middle',
-                },
-                {
-                    id: 'apple-1',
-                    name: 'Apple',
-                    emoji: '🍎',
-                    color: 'Red',
-                    position: 'left',
-                    area: 'basket',
-                },
-                {
-                    id: 'apple-2',
-                    name: 'Apple',
-                    emoji: '🍎',
-                    color: 'Red',
-                    position: 'center-left',
-                    area: 'basket',
-                },
-                {
-                    id: 'banana-1',
-                    name: 'Banana',
-                    emoji: '🍌',
-                    color: 'Yellow',
-                    position: 'center-right',
-                    area: 'basket',
-                },
-                {
-                    id: 'banana-2',
-                    name: 'Banana',
-                    emoji: '🍌',
-                    color: 'Yellow',
-                    position: 'right',
-                    area: 'basket',
-                },
-                {
-                    id: 'tomato',
-                    name: 'Tomato',
-                    emoji: '🍅',
-                    color: 'Red',
-                    position: 'bottom-left',
-                    area: 'basket',
-                },
-                {
-                    id: 'bread',
-                    name: 'Bread',
-                    emoji: '🍞',
-                    color: 'Brown',
-                    position: 'bottom-right',
-                    area: 'shelf',
-                },
-                {
-                    id: 'bottle',
-                    name: 'Bottle',
-                    emoji: '🧴',
-                    color: 'Green',
-                    position: 'top-right',
-                    area: 'shelf',
-                },
-                {
-                    id: 'clock',
-                    name: 'Clock',
-                    emoji: '🕐',
-                    color: 'Black',
-                    position: 'top',
-                    area: 'wall',
-                },
-                {
-                    id: 'bag',
-                    name: 'Bag',
-                    emoji: '👜',
-                    color: 'Brown',
-                    position: 'bottom-center',
-                    area: 'floor',
-                },
-            ],
-        },
-    ],
-};
-
-/* ------------------------------------------------------------------------- */
-
-const CORRECT_MESSAGES = [
-    'Excellent!',
-    'Great memory!',
-    'That is correct!',
-    'Wonderful!',
-];
-
-const INCORRECT_MESSAGES = [
-    'Good try!',
-    'That is okay. Keep going!',
-    'Nice effort!',
-    "Let's try the next one.",
-];
-
-function randomItem(array) {
-    return array[Math.floor(Math.random() * array.length)];
+function randomItem(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
 }
-
-function shuffle(array) {
-    const copy = [...array];
-
-    for (let i = copy.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-
-    return copy;
+function clamp(n, lo, hi) {
+    return Math.max(lo, Math.min(hi, n));
 }
-
-function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-
-    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+function formatTime(totalSeconds) {
+    const s = Math.max(0, Math.round(totalSeconds || 0));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
-
-function getObjectCount(objects, name) {
-    return objects.filter((object) => object.name === name).length;
+function getSpeechRecognition() {
+    if (typeof window === 'undefined') return null;
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
-
-function getUniqueObjects(objects) {
-    const seen = new Set();
-
-    return objects.filter((object) => {
-        if (seen.has(object.name)) return false;
-
-        seen.add(object.name);
-        return true;
-    });
-}
-
-function getPositionLabel(position) {
-    const labels = {
-        top: 'at the top',
-        'top-left': 'at the top left',
-        'top-center': 'at the top center',
-        'top-right': 'at the top right',
-        left: 'on the left',
-        'center-left': 'on the center-left',
-        center: 'in the center',
-        'center-right': 'on the center-right',
-        right: 'on the right',
-        'bottom-left': 'at the bottom left',
-        'bottom-center': 'at the bottom center',
-        'bottom-right': 'at the bottom right',
-        bottom: 'at the bottom',
-    };
-
-    return labels[position] || position;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Question Generator
-|--------------------------------------------------------------------------
-| Questions are generated from the actual objects in the scene.
-|--------------------------------------------------------------------------
-*/
-
-function generateQuestions(scene, difficulty) {
-    const objects = scene.objects;
-    const uniqueObjects = getUniqueObjects(objects);
-    const questions = [];
-
-    const objectNames = uniqueObjects.map((object) => object.name);
-    const colors = [...new Set(objects.map((object) => object.color))];
-
-    /* Object question */
-    const objectTarget = randomItem(uniqueObjects);
-
-    const objectWrongOptions = shuffle(
-        objectNames.filter((name) => name !== objectTarget.name)
-    ).slice(0, 3);
-
-    questions.push({
-        id: 'object-question',
-        type: 'object',
-        question: 'Which of these objects was in the picture?',
-        options: shuffle([
-            objectTarget.name,
-            ...objectWrongOptions,
-        ]),
-        correctAnswer: objectTarget.name,
-        hint: 'Think about the main objects you saw.',
-    });
-
-    /* Color question */
-    const colorTarget = randomItem(
-        uniqueObjects.filter((object) => object.color)
-    );
-
-    const wrongColors = shuffle(
-        colors.filter((color) => color !== colorTarget.color)
-    ).slice(0, 3);
-
-    while (wrongColors.length < 3) {
-        const fallbackColors = ['Blue', 'Red', 'Green', 'Yellow', 'White', 'Brown'];
-
-        const fallback = fallbackColors.find(
-            (color) =>
-                color !== colorTarget.color &&
-                !wrongColors.includes(color)
-        );
-
-        if (!fallback) break;
-
-        wrongColors.push(fallback);
-    }
-
-    questions.push({
-        id: 'color-question',
-        type: 'color',
-        question: `What color was the ${colorTarget.name.toLowerCase()}?`,
-        options: shuffle([
-            colorTarget.color,
-            ...wrongColors.slice(0, 3),
-        ]),
-        correctAnswer: colorTarget.color,
-        hint: `Think about the ${colorTarget.name.toLowerCase()}.`,
-    });
-
-    /* Count question */
-    const objectsWithDuplicates = uniqueObjects.filter(
-        (object) => getObjectCount(objects, object.name) >= 2
-    );
-
-    if (objectsWithDuplicates.length > 0) {
-        const countTarget = randomItem(objectsWithDuplicates);
-        const correctCount = getObjectCount(objects, countTarget.name);
-
-        const countOptions = new Set([String(correctCount)]);
-
-        [1, 2, 3, 4, 5, 6].forEach((number) => {
-            if (countOptions.size < 4) {
-                countOptions.add(String(number));
-            }
-        });
-
-        questions.push({
-            id: 'count-question',
-            type: 'counting',
-            question: `How many ${countTarget.name.toLowerCase()}${correctCount > 1 ? 's' : ''} were in the picture?`,
-            options: shuffle([...countOptions]),
-            correctAnswer: String(correctCount),
-            hint: `Try to picture each ${countTarget.name.toLowerCase()} separately.`,
-        });
-    }
-
-    /* Position question */
-    const positionTarget = randomItem(uniqueObjects);
-
-    const positionOptions = shuffle([
-        'At the top',
-        'On the left',
-        'In the center',
-        'On the right',
-        'At the bottom',
-    ]);
-
-    const correctPosition = (() => {
-        if (positionTarget.position.includes('top')) return 'At the top';
-        if (positionTarget.position.includes('bottom')) return 'At the bottom';
-        if (positionTarget.position.includes('left')) return 'On the left';
-        if (positionTarget.position.includes('right')) return 'On the right';
-        return 'In the center';
-    })();
-
-    const filteredPositionOptions = [
-        correctPosition,
-        ...positionOptions.filter(
-            (option) => option !== correctPosition
-        ),
-    ].slice(0, 4);
-
-    questions.push({
-        id: 'position-question',
-        type: 'position',
-        question: `Where was the ${positionTarget.name.toLowerCase()}?`,
-        options: shuffle(filteredPositionOptions),
-        correctAnswer: correctPosition,
-        hint: 'Think about where you saw this object in the picture.',
-    });
-
-    /* Area / relative location question */
-    const areaTarget = randomItem(
-        objects.filter((object) => object.area)
-    );
-
-    if (areaTarget.area !== 'middle') {
-        const areaLabels = {
-            table: 'on the table',
-            wall: 'on the wall',
-            floor: 'on the floor',
-            stove: 'near the stove',
-            garden: 'in the garden',
-            bed: 'on the bed',
-            bedside: 'beside the bed',
-            basket: 'in the basket',
-            shelf: 'on the shelf',
-        };
-
-        const correctArea =
-            areaLabels[areaTarget.area] || `in the ${areaTarget.area}`;
-
-        const allAreas = Object.values(areaLabels);
-
-        questions.push({
-            id: 'area-question',
-            type: 'location',
-            question: `Where was the ${areaTarget.name.toLowerCase()} placed?`,
-            options: shuffle([
-                correctArea,
-                ...shuffle(
-                    allAreas.filter((area) => area !== correctArea)
-                ).slice(0, 3),
-            ]),
-            correctAnswer: correctArea,
-            hint: 'Remember what was around the object.',
-        });
-    }
-
-    /* Presence question */
-    const absentNames = [
-        'Telephone',
-        'Hat',
-        'Shoe',
-        'Football',
-        'Umbrella',
-        'Key',
-    ].filter((name) => !objectNames.includes(name));
-
-    const absentObject = randomItem(absentNames);
-
-    questions.push({
-        id: 'presence-question',
-        type: 'presence',
-        question: `Was there a ${absentObject.toLowerCase()} in the picture?`,
-        options: ['Yes', 'No'],
-        correctAnswer: 'No',
-        hint: 'Think carefully about all the objects you saw.',
-    });
-
-    /* Relative object question */
-    if (objects.length >= 2) {
-        const firstObject = randomItem(objects);
-        const nearbyObjects = objects.filter(
-            (object) =>
-                object.id !== firstObject.id &&
-                object.area === firstObject.area
-        );
-
-        if (nearbyObjects.length > 0) {
-            const secondObject = randomItem(nearbyObjects);
-
-            questions.push({
-                id: 'relative-question',
-                type: 'relative',
-                question: `Which object was also near the ${firstObject.name.toLowerCase()}?`,
-                options: shuffle([
-                    secondObject.name,
-                    ...shuffle(
-                        objectNames.filter(
-                            (name) =>
-                                name !== secondObject.name &&
-                                name !== firstObject.name
-                        )
-                    ).slice(0, 3),
-                ]),
-                correctAnswer: secondObject.name,
-                hint: 'Think about the objects that were close together.',
-            });
-        }
-    }
-
-    /*
-     * Easy should be simpler.
-     * Medium has more questions.
-     * Hard uses almost everything.
-     */
-    const targetCount = DIFFICULTY_CONFIG[difficulty].questionCount;
-
-    return shuffle(questions).slice(0, targetCount);
-}
-
-/* ------------------------------------------------------------------------- */
 
 export function suggestNextDifficulty(accuracy) {
     if (accuracy >= 90) return 'harder';
     if (accuracy < 50) return 'easier';
-
     return 'same';
 }
 
-/* ------------------------------------------------------------------------- */
-
-export default function PictureRecallGame({ patient, onHome }) {
-    const [currentScreen, setCurrentScreen] = useState('intro');
+export default function PictureRecallGame({ patient, onHome, questionsPerSession }) {
+    const [screen, setScreen] = useState('intro'); // 'intro' | 'play' | 'results'
     const [difficulty, setDifficulty] = useState('easy');
-    const [selectedScene, setSelectedScene] = useState(null);
-
-    const [remainingTime, setRemainingTime] = useState(
-        DIFFICULTY_CONFIG.easy.observationTime
-    );
 
     const [questions, setQuestions] = useState([]);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [index, setIndex] = useState(0);
 
-    const [selectedAnswer, setSelectedAnswer] = useState(null);
-    const [isAnswered, setIsAnswered] = useState(false);
+    const [input, setInput] = useState('');
+    const [attemptsUsed, setAttemptsUsed] = useState(0);
+    const [hintsShown, setHintsShown] = useState(0);
+    const [status, setStatus] = useState('idle'); // 'idle' | 'correct' | 'revealed'
+    const [feedback, setFeedback] = useState('');
+    const [lastCorrect, setLastCorrect] = useState(null);
 
-    const [correctAnswers, setCorrectAnswers] = useState(0);
-    const [hintsUsed, setHintsUsed] = useState(0);
-
-    const [showHint, setShowHint] = useState(false);
+    const [listening, setListening] = useState(false);
+    const [voiceError, setVoiceError] = useState('');
     const [isMuted, setIsMuted] = useState(false);
+    const [imgFailed, setImgFailed] = useState(false);
 
-    const [startTimestamp, setStartTimestamp] = useState(null);
-    const [completionTime, setCompletionTime] = useState(0);
+    const [metrics, setMetrics] = useState(null);
+    const [saveState, setSaveState] = useState('idle'); // 'idle'|'saving'|'saved'|'error'
+    const [storedIn, setStoredIn] = useState(null);
 
-    const timerRef = useRef(null);
+    const recordsRef = useRef([]);
+    const finishedRef = useRef(false);
+    const sessionStartRef = useRef(0);
+    const questionStartRef = useRef(0);
+    const recognitionRef = useRef(null);
+    const advanceTimerRef = useRef(null);
+    const inputRef = useRef(null);
 
+    const current = questions[index] || null;
     const config = DIFFICULTY_CONFIG[difficulty];
-
-    const currentQuestion =
-        questions[currentQuestionIndex] || null;
-
-    const accuracy = useMemo(() => {
-        if (!questions.length) return 0;
-
-        return Math.round(
-            (correctAnswers / questions.length) * 100
-        );
-    }, [correctAnswers, questions.length]);
-
-    useEffect(() => {
-        return () => {
-            clearInterval(timerRef.current);
-
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-        };
-    }, []);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Observation Timer
-    |--------------------------------------------------------------------------
-    */
-
-    useEffect(() => {
-        if (currentScreen !== 'observation') {
-            clearInterval(timerRef.current);
-            return undefined;
-        }
-
-        clearInterval(timerRef.current);
-
-        timerRef.current = setInterval(() => {
-            setRemainingTime((previousTime) => {
-                if (previousTime <= 1) {
-                    clearInterval(timerRef.current);
-                    goToQuestions();
-
-                    return 0;
-                }
-
-                return previousTime - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timerRef.current);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentScreen]);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Speech
-    |--------------------------------------------------------------------------
-    */
+    const voiceSupported = useMemo(() => Boolean(getSpeechRecognition()), []);
 
     function speak(text) {
-        if (
-            isMuted ||
-            typeof window === 'undefined' ||
-            !('speechSynthesis' in window)
-        ) {
+        if (isMuted || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = 0.9;
+        u.pitch = 1;
+        u.lang = 'en-IN';
+        window.speechSynthesis.speak(u);
+    }
+
+    // Clean up timers, voice recognition and speech on unmount.
+    useEffect(
+        () => () => {
+            clearTimeout(advanceTimerRef.current);
+            try {
+                recognitionRef.current && recognitionRef.current.stop();
+            } catch (e) {
+                /* ignore */
+            }
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        },
+        []
+    );
+
+    // Keep focus on the answer box while a question is open.
+    useEffect(() => {
+        if (screen === 'play' && status === 'idle' && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [screen, index, status]);
+
+    function stopListening() {
+        try {
+            recognitionRef.current && recognitionRef.current.stop();
+        } catch (e) {
+            /* ignore */
+        }
+        setListening(false);
+    }
+
+    function startListening() {
+        const SR = getSpeechRecognition();
+        if (!SR) {
+            setVoiceError('Voice input is not supported in this browser. Please type your answer.');
             return;
         }
-
-        window.speechSynthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(text);
-
-        utterance.rate = 0.85;
-        utterance.pitch = 1;
-
-        window.speechSynthesis.speak(utterance);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Difficulty
-    |--------------------------------------------------------------------------
-    */
-
-    function handleDifficultyChange(nextDifficulty) {
-        setDifficulty(nextDifficulty);
-
-        const scene = randomItem(SCENES[nextDifficulty]);
-
-        setSelectedScene(scene);
-        setRemainingTime(
-            DIFFICULTY_CONFIG[nextDifficulty].observationTime
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Start Game
-    |--------------------------------------------------------------------------
-    */
-
-    function startGame() {
-        clearInterval(timerRef.current);
-
-        const scene = randomItem(SCENES[difficulty]);
-
-        const generatedQuestions = generateQuestions(
-            scene,
-            difficulty
-        );
-
-        setSelectedScene(scene);
-        setQuestions(generatedQuestions);
-
-        setRemainingTime(config.observationTime);
-
-        setCurrentQuestionIndex(0);
-        setSelectedAnswer(null);
-        setIsAnswered(false);
-
-        setCorrectAnswers(0);
-        setHintsUsed(0);
-
-        setShowHint(false);
-
-        setCompletionTime(0);
-        setStartTimestamp(Date.now());
-
-        setCurrentScreen('observation');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Go to Questions
-    |--------------------------------------------------------------------------
-    */
-
-    function goToQuestions() {
-        clearInterval(timerRef.current);
-
-        setCurrentScreen('question');
-
-        setCurrentQuestionIndex(0);
-        setSelectedAnswer(null);
-        setIsAnswered(false);
-        setShowHint(false);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Answer
-    |--------------------------------------------------------------------------
-    */
-
-    function handleAnswerSelect(option) {
-        if (isAnswered || !currentQuestion) return;
-
-        const correct =
-            option === currentQuestion.correctAnswer;
-
-        setSelectedAnswer(option);
-        setIsAnswered(true);
-
-        if (correct) {
-            setCorrectAnswers((previous) => previous + 1);
-
-            setFeedbackMessage(
-                randomItem(CORRECT_MESSAGES)
-            );
-        } else {
-            setFeedbackMessage(
-                randomItem(INCORRECT_MESSAGES)
-            );
+        if (status !== 'idle') return;
+        try {
+            stopListening();
+            const rec = new SR();
+            rec.lang = 'en-IN';
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+            rec.continuous = false;
+            rec.onresult = (ev) => {
+                const transcript = (ev.results && ev.results[0] && ev.results[0][0] && ev.results[0][0].transcript) || '';
+                setInput(transcript);
+                setVoiceError('');
+            };
+            rec.onerror = (ev) => {
+                setListening(false);
+                if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+                    setVoiceError('Microphone access is blocked. You can type your answer instead.');
+                } else if (ev.error === 'no-speech') {
+                    setVoiceError('I did not catch that. Tap the mic and speak, or type your answer.');
+                }
+            };
+            rec.onend = () => setListening(false);
+            recognitionRef.current = rec;
+            setListening(true);
+            setVoiceError('');
+            rec.start();
+        } catch (e) {
+            setListening(false);
+            setVoiceError('Could not start voice input. Please type your answer.');
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Feedback
-    |--------------------------------------------------------------------------
-    */
+    function resetQuestionState() {
+        setInput('');
+        setAttemptsUsed(0);
+        setHintsShown(0);
+        setStatus('idle');
+        setFeedback('');
+        setLastCorrect(null);
+        setImgFailed(false);
+        setVoiceError('');
+    }
 
-    const [feedbackMessage, setFeedbackMessage] = useState('');
+    function startGame() {
+        clearTimeout(advanceTimerRef.current);
+        stopListening();
+        const count = clamp(questionsPerSession || config.questionCount, 5, 10);
+        const chosen = selectObjects(difficulty, count);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Next Question
-    |--------------------------------------------------------------------------
-    */
+        recordsRef.current = [];
+        finishedRef.current = false;
+        setQuestions(chosen);
+        setIndex(0);
+        resetQuestionState();
+        setMetrics(null);
+        setSaveState('idle');
+        setStoredIn(null);
 
-    function handleNextQuestion() {
-        if (!isAnswered) return;
+        const now = Date.now();
+        sessionStartRef.current = now;
+        questionStartRef.current = now;
+        setScreen('play');
+    }
 
-        const nextIndex = currentQuestionIndex + 1;
+    function recordResult(correct, attempts, hintsForQuestion, responseTimeMs, obj) {
+        recordsRef.current = [
+            ...recordsRef.current,
+            {
+                objectId: obj.id,
+                name: obj.name,
+                region: obj.region,
+                category: obj.category,
+                difficulty: obj.difficulty,
+                attempts,
+                hintsShown: hintsForQuestion,
+                correct,
+                responseTimeMs,
+            },
+        ];
+    }
 
-        if (nextIndex < questions.length) {
-            setCurrentQuestionIndex(nextIndex);
-
-            setSelectedAnswer(null);
-            setIsAnswered(false);
-            setShowHint(false);
-            setFeedbackMessage('');
+    function goNext() {
+        clearTimeout(advanceTimerRef.current);
+        stopListening();
+        const next = index + 1;
+        if (next < questions.length) {
+            setIndex(next);
+            resetQuestionState();
+            questionStartRef.current = Date.now();
         } else {
             finishGame();
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Finish
-    |--------------------------------------------------------------------------
-    */
+    function submitAnswer(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (status !== 'idle' || !current) return;
 
-    function finishGame() {
-        clearInterval(timerRef.current);
+        const guess = input.trim();
+        if (!guess) {
+            setFeedback('Please type or say your answer, then press Check.');
+            return;
+        }
+        stopListening();
 
-        const endTime = startTimestamp
-            ? Math.round(
-                  (Date.now() - startTimestamp) / 1000
-              )
-            : 0;
+        const { correct } = checkAnswer(guess, current.accepted);
+        const attemptNo = attemptsUsed + 1;
+        setAttemptsUsed(attemptNo);
 
-        setCompletionTime(endTime);
-        setCurrentScreen('results');
+        if (correct) {
+            const responseTimeMs = Date.now() - questionStartRef.current;
+            recordResult(true, attemptNo, hintsShown, responseTimeMs, current);
+            setStatus('correct');
+            setLastCorrect(true);
+            const msg = randomItem(PRAISE);
+            setFeedback(msg);
+            speak(`${msg} It is a ${current.name}.`);
+            return;
+        }
 
-        const finalAccuracy =
-            questions.length > 0
-                ? Math.round(
-                      (correctAnswers / questions.length) * 100
-                  )
-                : 0;
+        setLastCorrect(false);
 
-        const analytics = {
-            userId:
-                patient?.id ||
-                patient?.full_name ||
-                'unknown',
+        if (attemptNo < MAX_ATTEMPTS) {
+            const newHints = attemptNo; // 1st wrong -> hint 1, 2nd wrong -> hint 2
+            setHintsShown(newHints);
+            const msg = randomItem(TRY_AGAIN);
+            const hintText = newHints === 1 ? current.hint1 : current.hint2;
+            setFeedback(msg);
+            speak(`${msg} Here is a hint. ${hintText}`);
+            if (inputRef.current) {
+                inputRef.current.focus();
+                inputRef.current.select();
+            }
+        } else {
+            const responseTimeMs = Date.now() - questionStartRef.current;
+            recordResult(false, attemptNo, hintsShown, responseTimeMs, current);
+            setStatus('revealed');
+            setFeedback(`The answer was ${current.name}.`);
+            speak(`The answer was ${current.name}.`);
+            advanceTimerRef.current = setTimeout(goNext, AUTO_ADVANCE_MS);
+        }
+    }
 
-            gameName: 'Picture Recall',
+    async function finishGame() {
+        if (finishedRef.current) return;
+        finishedRef.current = true;
+        clearTimeout(advanceTimerRef.current);
+        stopListening();
 
+        const sessionDurationMs = Date.now() - sessionStartRef.current;
+        const row = computeSessionMetrics(recordsRef.current, {
             difficulty,
+            sessionDurationMs,
+            // patient_id must be the Supabase patient UUID (the shared table requires
+            // it and RLS is enforced on it). We send patient.id ONLY — a name is not a
+            // valid UUID and would be rejected.
+            patientId: (patient && patient.id) || null,
+            patientName: (patient && (patient.full_name || patient.name)) || null,
+            gameName: 'object_recognition',
+            gameTitle: 'Object Recognition (North-East India)',
+        });
 
-            sceneId: selectedScene?.id || 'unknown',
-
-            totalQuestions: questions.length,
-
-            correctAnswers,
-
-            accuracy: finalAccuracy,
-
-            hintsUsed,
-
-            observationTime: config.observationTime,
-
-            completionTime: endTime,
-
-            completed: true,
-
-            timestamp: new Date().toISOString(),
-        };
-
-        console.log(
-            'Picture Recall analytics:',
-            analytics
-        );
+        setMetrics(row);
+        setScreen('results');
+        setSaveState('saving');
+        try {
+            const res = await saveGameSession(row);
+            setStoredIn(res.storedIn);
+            setSaveState('saved');
+        } catch (err) {
+            setSaveState('error');
+        }
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Hint
-    |--------------------------------------------------------------------------
-    */
-
-    function useHint() {
-        if (isAnswered || showHint) return;
-
-        setShowHint(true);
-        setHintsUsed((previous) => previous + 1);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Navigation
-    |--------------------------------------------------------------------------
-    */
 
     function playAgain() {
         startGame();
     }
 
     function backToIntro() {
-        clearInterval(timerRef.current);
-
-        setCurrentScreen('intro');
-
-        setSelectedAnswer(null);
-        setIsAnswered(false);
-        setShowHint(false);
+        clearTimeout(advanceTimerRef.current);
+        stopListening();
+        finishedRef.current = false;
+        setScreen('intro');
+        resetQuestionState();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Performance Message
-    |--------------------------------------------------------------------------
-    */
+    const imageSrc = current ? `${IMAGE_BASE}${current.id}.jpg` : '';
+    const progressPct = questions.length ? Math.round(((index + 1) / questions.length) * 100) : 0;
+    const resolved = status === 'correct' || status === 'revealed';
 
-    let performanceMessage =
-        'Good effort! Keep practicing your memory.';
-
-    if (accuracy >= 90) {
-        performanceMessage =
-            'Excellent memory! Wonderful work.';
-    } else if (accuracy >= 70) {
-        performanceMessage =
-            'Great job! You remembered many details.';
-    } else if (accuracy >= 50) {
-        performanceMessage =
-            'Good effort! Keep practicing.';
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | INTRO SCREEN
-    |--------------------------------------------------------------------------
-    */
-
-    if (currentScreen === 'intro') {
+    /* ------------------------------------------------------------------ INTRO */
+    if (screen === 'intro') {
         return (
             <div className="picture-recall-container">
                 <header className="picture-recall-header">
-                    <div className="pr-brain-icon">
-                        🧠
-                    </div>
-
+                    <div className="pr-brain-icon">🧠</div>
                     <h1>NeuroPlay</h1>
-
-                    <h2>Picture Recall</h2>
-
+                    <h2>Object Recognition</h2>
                     <p>
-                        Look carefully at a picture and
-                        remember the objects, colors,
-                        quantities and positions.
+                        Look at each picture and tell us what the object is. Every object
+                        comes from the culture and daily life of North-East India.
                     </p>
                 </header>
 
                 <section className="pr-instructions-card">
                     <div className="pr-instruction-item">
-                        <span>👀</span>
+                        <span>🖼️</span>
                         <div>
                             <strong>1. Look</strong>
-                            <p>
-                                Study the picture carefully.
-                            </p>
+                            <p>A picture of one object is shown.</p>
                         </div>
                     </div>
-
                     <div className="pr-instruction-item">
-                        <span>🧠</span>
+                        <span>🗣️</span>
                         <div>
-                            <strong>2. Remember</strong>
-                            <p>
-                                Remember where the objects
-                                were placed.
-                            </p>
+                            <strong>2. Answer</strong>
+                            <p>Type the name, or tap the mic and say it.</p>
                         </div>
                     </div>
-
                     <div className="pr-instruction-item">
-                        <span>❓</span>
+                        <span>💡</span>
                         <div>
-                            <strong>3. Answer</strong>
-                            <p>
-                                Answer questions about the
-                                picture.
-                            </p>
+                            <strong>3. Hints</strong>
+                            <p>3 tries per object, with a hint after each miss.</p>
                         </div>
                     </div>
                 </section>
 
-                <div className="pr-section-title">
-                    Choose Difficulty
-                </div>
-
+                <div className="pr-section-title">Choose Difficulty</div>
                 <div className="pr-difficulty-selector">
-                    {Object.keys(DIFFICULTY_CONFIG).map(
-                        (key) => (
-                            <button
-                                key={key}
-                                className={`pr-diff-btn ${
-                                    difficulty === key
-                                        ? 'active-diff'
-                                        : ''
-                                }`}
-                                onClick={() =>
-                                    handleDifficultyChange(
-                                        key
-                                    )
-                                }
-                            >
-                                <span>
-                                    {
-                                        DIFFICULTY_CONFIG[
-                                            key
-                                        ].label
-                                    }
-                                </span>
-
-                                <small>
-                                    {
-                                        DIFFICULTY_CONFIG[
-                                            key
-                                        ].observationTime
-                                    }{' '}
-                                    sec
-                                </small>
-                            </button>
-                        )
-                    )}
+                    {Object.keys(DIFFICULTY_CONFIG).map((key) => (
+                        <button
+                            key={key}
+                            className={`pr-diff-btn ${difficulty === key ? 'active-diff' : ''}`}
+                            onClick={() => setDifficulty(key)}
+                        >
+                            <span>{DIFFICULTY_CONFIG[key].label}</span>
+                            <small>{DIFFICULTY_CONFIG[key].blurb}</small>
+                        </button>
+                    ))}
                 </div>
 
                 <p className="pr-current-difficulty">
-                    Current difficulty:{' '}
-                    <strong>
-                        {config.label}
-                    </strong>
+                    Current difficulty: <strong>{config.label}</strong>
                 </p>
 
                 <div className="pr-intro-actions">
-                    <button
-                        className="pr-primary-btn"
-                        onClick={startGame}
-                    >
+                    <button className="pr-primary-btn" onClick={startGame}>
                         ▶️ Start Game
                     </button>
-
                     <button
                         className="pr-secondary-btn"
                         onClick={() =>
                             speak(
-                                'Look carefully at the picture. Remember the objects, their colors, quantities and positions. When the picture disappears, answer the questions.'
+                                'Look at each picture and tell us what the object is. You can type the name, or tap the microphone and say it. You get three tries, with a hint after each miss.'
                             )
                         }
                     >
                         🔊 Read Instructions
                     </button>
-
-                    <button
-                        className="pr-secondary-btn"
-                        onClick={onHome}
-                    >
+                    <button className="pr-secondary-btn" onClick={onHome}>
                         🏠 Home
                     </button>
                 </div>
 
-                <button
-                    className="pr-mute-toggle"
-                    onClick={() =>
-                        setIsMuted(
-                            (previous) => !previous
-                        )
-                    }
-                >
-                    {isMuted
-                        ? '🔇 Sound Off'
-                        : '🔊 Sound On'}
+                {!voiceSupported && (
+                    <p className="pr-voice-note">
+                        Voice input is not available in this browser — typing works everywhere.
+                    </p>
+                )}
+
+                <button className="pr-mute-toggle" onClick={() => setIsMuted((p) => !p)}>
+                    {isMuted ? '🔇 Sound Off' : '🔊 Sound On'}
                 </button>
             </div>
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | OBSERVATION SCREEN
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        currentScreen === 'observation' &&
-        selectedScene
-    ) {
+    /* ------------------------------------------------------------------- PLAY */
+    if (screen === 'play' && current) {
         return (
-            <div className="picture-recall-container observation-screen">
-                <header className="picture-recall-header observation-header">
-                    <div className="pr-observation-badge">
-                        👀 Remember This Picture
+            <div className="picture-recall-container pr-play">
+                <div className="pr-play-topbar">
+                    <button className="pr-icon-btn" onClick={backToIntro} aria-label="Back to start">
+                        ← Back
+                    </button>
+                    <div className="pr-progress-wrap">
+                        <div className="pr-progress-text">
+                            Object {index + 1} of {questions.length}
+                        </div>
+                        <div className="pr-progress-track">
+                            <div className="pr-progress-fill" style={{ width: `${progressPct}%` }} />
+                        </div>
                     </div>
-
-                    <h2>
-                        {selectedScene.title}
-                    </h2>
-
-                    <p>
-                        Remember the objects,
-                        colors, quantities and positions.
-                    </p>
-                </header>
-
-                <div className="pr-timer-area">
-                    <div className="pr-timer-label">
-                        Time remaining
-                    </div>
-
-                    <div
-                        className={`pr-large-timer ${
-                            remainingTime <= 3
-                                ? 'timer-warning'
-                                : ''
-                        }`}
+                    <button
+                        className="pr-icon-btn"
+                        onClick={() => setIsMuted((p) => !p)}
+                        aria-label="Toggle sound"
                     >
-                        {remainingTime}
-                    </div>
-
-                    <div className="pr-progress-track">
-                        <div
-                            className="pr-progress-fill"
-                            style={{
-                                width: `${
-                                    (remainingTime /
-                                        config.observationTime) *
-                                    100
-                                }%`,
-                            }}
-                        />
-                    </div>
+                        {isMuted ? '🔇' : '🔊'}
+                    </button>
                 </div>
 
                 <div
-                    className={`pr-picture-scene pr-scene-${selectedScene.id}`}
-                    role="img"
-                    aria-label={`${selectedScene.title} scene`}
+                    className="pr-attempts"
+                    aria-label={`${attemptsUsed} of ${MAX_ATTEMPTS} attempts used`}
                 >
-                    <div className="pr-scene-wall">
-                        <div className="pr-scene-window">
-                            🪟
+                    {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
+                        <span
+                            key={i}
+                            className={`pr-attempt-dot ${i < attemptsUsed ? 'used' : ''} ${status === 'correct' && i === attemptsUsed - 1 ? 'good' : ''
+                                }`}
+                        />
+                    ))}
+                </div>
+                <div className="pr-object-stage">
+                    {!imgFailed ? (
+                        <img
+                            className="pr-object-image"
+                            src={imageSrc}
+                            alt="Identify this object"
+                            onError={() => setImgFailed(true)}
+                        />
+                    ) : (
+                        <div className="pr-object-fallback" role="img" aria-label="Object to identify">
+                            <span className="pr-fallback-emoji">{current.emoji}</span>
+                            <span className="pr-fallback-note">Picture coming soon</span>
                         </div>
-
-                        <div className="pr-scene-clock">
-                            🕐
-                        </div>
-                    </div>
-
-                    <div className="pr-scene-floor" />
-
-                    {selectedScene.objects.map(
-                        (object, index) => (
-                            <div
-                                key={object.id}
-                                className={`pr-visual-object pr-position-${object.position}`}
-                                style={{
-                                    '--object-index':
-                                        index,
-                                }}
-                            >
-                                <span className="pr-object-emoji">
-                                    {object.emoji}
-                                </span>
-
-                                <span className="pr-object-label">
-                                    {object.name}
-                                </span>
-                            </div>
-                        )
                     )}
                 </div>
 
-                <div className="pr-memory-reminder">
-                    💡 Remember <strong>what</strong> you
-                    saw, <strong>how many</strong>,{' '}
-                    <strong>what color</strong>, and{' '}
-                    <strong>where</strong>.
+                <div className="pr-question-row">
+                    <h2 className="pr-question">What is this object?</h2>
+                    <button
+                        className="pr-hear-btn"
+                        onClick={() => speak('What is this object?')}
+                        aria-label="Hear the question"
+                    >
+                        🔊
+                    </button>
                 </div>
+                {!resolved && (
+                    <form className="pr-answer-form" onSubmit={submitAnswer}>
+                        <div className="pr-input-row">
+                            <input
+                                ref={inputRef}
+                                className="pr-answer-input"
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="Type the name here…"
+                                autoComplete="off"
+                                autoCorrect="off"
+                                spellCheck={false}
+                            />
+                            {voiceSupported && (
+                                <button
+                                    type="button"
+                                    className={`pr-voice-btn ${listening ? 'listening' : ''}`}
+                                    onClick={listening ? stopListening : startListening}
+                                    aria-label={listening ? 'Stop listening' : 'Speak your answer'}
+                                >
+                                    {listening ? '⏹️' : '🎤'}
+                                </button>
+                            )}
+                        </div>
+                        <button type="submit" className="pr-check-btn">
+                            ✓ Check Answer
+                        </button>
+                    </form>
+                )}
+                {hintsShown > 0 && (
+                    <div className="pr-hint-stack">
+                        {hintsShown >= 1 && (
+                            <p className="pr-hint-line">
+                                <span className="pr-hint-icon">💡</span> {current.hint1}
+                            </p>
+                        )}
+                        {hintsShown >= 2 && (
+                            <p className="pr-hint-line">
+                                <span className="pr-hint-icon">💡</span> {current.hint2}
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                {feedback && (
+                    <div
+                        className={`pr-feedback ${lastCorrect === true ? 'good' : lastCorrect === false ? 'bad' : ''
+                            }`}
+                        role="status"
+                    >
+                        {feedback}
+                    </div>
+                )}
+
+                {voiceError && <div className="pr-voice-error">{voiceError}</div>}
+                {resolved && (
+                    <div className="pr-reveal">
+                        <div className="pr-reveal-name">
+                            {status === 'correct' ? '✅' : 'ℹ️'} {current.name}
+                        </div>
+                        <div className="pr-reveal-meta">
+                            <span className="pr-tag pr-tag-region">{current.region}</span>
+                            <span className="pr-tag pr-tag-category">{current.category}</span>
+                        </div>
+                        <p className="pr-object-fact">{current.fact}</p>
+                        <button className="pr-primary-btn pr-next-btn" onClick={goNext}>
+                            {index + 1 < questions.length ? 'Next Object →' : 'See Results →'}
+                        </button>
+                    </div>
+                )}
             </div>
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | QUESTION SCREEN
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        currentScreen === 'question' &&
-        currentQuestion
-    ) {
+    /* ---------------------------------------------------------------- RESULTS */
+    if (screen === 'results' && metrics) {
+        const suggestion = suggestNextDifficulty(metrics.accuracy);
         return (
-            <div className="picture-recall-container question-screen">
+            <div className="picture-recall-container pr-results">
                 <header className="picture-recall-header">
-                    <div className="pr-question-badge">
-                        🧠 Memory Question
-                    </div>
-
+                    <div className="pr-brain-icon">🎉</div>
+                    <h1>Session Complete</h1>
                     <h2>
-                        What do you remember?
+                        {config.label} · {metrics.total_questions} objects
                     </h2>
                 </header>
 
-                <div className="pr-question-progress-wrapper">
-                    <div className="pr-question-counter">
-                        Question{' '}
-                        {currentQuestionIndex + 1}{' '}
-                        of {questions.length}
+                <div className="pr-score-hero">
+                    <div className="pr-score-circle">
+                        <span className="pr-score-pct">{metrics.accuracy}%</span>
+                        <span className="pr-score-label">accuracy</span>
                     </div>
-
-                    <div className="pr-question-progress-track">
-                        <div
-                            className="pr-question-progress-fill"
-                            style={{
-                                width: `${
-                                    ((currentQuestionIndex +
-                                        1) /
-                                        questions.length) *
-                                    100
-                                }%`,
-                            }}
-                        />
+                    <p className="pr-score-line">
+                        You correctly named <strong>{metrics.correct_answers}</strong> of{' '}
+                        <strong>{metrics.total_questions}</strong> objects.
+                    </p>
+                </div>
+                <div className="pr-stat-grid">
+                    <div className="pr-stat">
+                        <span className="pr-stat-value">{metrics.correct_answers}</span>
+                        <span className="pr-stat-key">Correct</span>
+                    </div>
+                    <div className="pr-stat">
+                        <span className="pr-stat-value">{metrics.incorrect_answers}</span>
+                        <span className="pr-stat-key">Missed</span>
+                    </div>
+                    <div className="pr-stat">
+                        <span className="pr-stat-value">{metrics.mistake_rate}%</span>
+                        <span className="pr-stat-key">Mistake rate</span>
+                    </div>
+                    <div className="pr-stat">
+                        <span className="pr-stat-value">{metrics.hint_rate}%</span>
+                        <span className="pr-stat-key">Needed a hint</span>
+                    </div>
+                    <div className="pr-stat">
+                        <span className="pr-stat-value">{metrics.hints_used}</span>
+                        <span className="pr-stat-key">Hints used</span>
+                    </div>
+                    <div className="pr-stat">
+                        <span className="pr-stat-value">{formatTime(metrics.completion_time)}</span>
+                        <span className="pr-stat-key">Total time</span>
+                    </div>
+                    <div className="pr-stat">
+                        <span className="pr-stat-value">{metrics.average_response_time}s</span>
+                        <span className="pr-stat-key">Avg / object</span>
+                    </div>
+                    <div className="pr-stat">
+                        <span className="pr-stat-value">{metrics.attempts}</span>
+                        <span className="pr-stat-key">Total tries</span>
                     </div>
                 </div>
+                <div className={`pr-saving-note pr-save-${saveState}`}>
+                    {saveState === 'saving' && '💾 Saving your results…'}
+                    {saveState === 'saved' &&
+                        (storedIn === 'supabase'
+                            ? '✅ Results saved to your history.'
+                            : '✅ Results saved on this device.')}
+                    {saveState === 'error' && '⚠️ Could not save results this time.'}
+                </div>
 
-                <div className="pr-question-card">
-                    <div className="pr-question-type">
-                        {currentQuestion.type ===
-                            'counting' &&
-                            '🔢 Quantity'}
+                {suggestion !== 'same' && (
+                    <p className="pr-suggestion">
+                        {suggestion === 'harder'
+                            ? '👏 That looked easy for you — try a harder level next time.'
+                            : '🌱 Nicely done. An easier level might feel more comfortable next time.'}
+                    </p>
+                )}
 
-                        {currentQuestion.type ===
-                            'color' &&
-                            '🎨 Color'}
-
-                        {currentQuestion.type ===
-                            'position' &&
-                            '📍 Position'}
-
-                        {currentQuestion.type ===
-                            'location' &&
-                            '🏠 Location'}
-
-                        {currentQuestion.type ===
-                            'presence' &&
-                            '👀 Presence'}
-
-                        {currentQuestion.type ===
-                            'relative' &&
-                            '↔️ Nearby Objects'}
-
-                        {currentQuestion.type ===
-                            'object' &&
-                            '🧩 Object'}
-                    </div>
-
-                    <h3 className="pr-question-text">
-                        {currentQuestion.question}
-                    </h3>
-
-                    <button
-                        className="pr-read-question-btn"
-                        onClick={() =>
-                            speak(
-                                `${currentQuestion.question}. Options are: ${currentQuestion.options.join(
-                                    ', '
-                                )}`
-                            )
-                        }
-                    >
-                        🔊 Read Question
+                <div className="pr-intro-actions">
+                    <button className="pr-primary-btn" onClick={playAgain}>
+                        🔁 Play Again
                     </button>
-
-                    <div className="pr-options-grid">
-                        {currentQuestion.options.map(
-                            (option) => {
-                                const isSelected =
-                                    selectedAnswer ===
-                                    option;
-
-                                const isCorrect =
-                                    option ===
-                                    currentQuestion.correctAnswer;
-
-                                let optionClass =
-                                    'pr-option-btn';
-
-                                if (
-                                    isAnswered &&
-                                    isSelected &&
-                                    isCorrect
-                                ) {
-                                    optionClass +=
-                                        ' correct-option';
-                                } else if (
-                                    isAnswered &&
-                                    isSelected &&
-                                    !isCorrect
-                                ) {
-                                    optionClass +=
-                                        ' incorrect-option';
-                                } else if (
-                                    isAnswered &&
-                                    isCorrect
-                                ) {
-                                    optionClass +=
-                                        ' reveal-correct';
-                                } else if (
-                                    isSelected
-                                ) {
-                                    optionClass +=
-                                        ' selected-option';
-                                }
-
-                                return (
-                                    <button
-                                        key={option}
-                                        type="button"
-                                        className={
-                                            optionClass
-                                        }
-                                        onClick={() =>
-                                            handleAnswerSelect(
-                                                option
-                                            )
-                                        }
-                                        disabled={
-                                            isAnswered
-                                        }
-                                    >
-                                        <span className="pr-option-letter">
-                                            {String.fromCharCode(
-                                                65 +
-                                                    currentQuestion.options.indexOf(
-                                                        option
-                                                    )
-                                            )}
-                                        </span>
-
-                                        <span>
-                                            {option}
-                                        </span>
-
-                                        {isAnswered &&
-                                            isCorrect && (
-                                                <span>
-                                                    ✓
-                                                </span>
-                                            )}
-
-                                        {isAnswered &&
-                                            isSelected &&
-                                            !isCorrect && (
-                                                <span>
-                                                    ✕
-                                                </span>
-                                            )}
-                                    </button>
-                                );
-                            }
-                        )}
-                    </div>
-
-                    {!isAnswered && (
-                        <button
-                            className="pr-hint-btn"
-                            onClick={useHint}
-                            disabled={showHint}
-                        >
-                            💡 {showHint
-                                ? 'Hint Shown'
-                                : 'Need a Hint?'}
-                        </button>
-                    )}
-
-                    {showHint && !isAnswered && (
-                        <div className="pr-hint-text">
-                            💡 {currentQuestion.hint}
-                        </div>
-                    )}
-
-                    {isAnswered && (
-                        <div
-                            className={`pr-feedback ${
-                                selectedAnswer ===
-                                currentQuestion.correctAnswer
-                                    ? 'feedback-correct'
-                                    : 'feedback-incorrect'
-                            }`}
-                            aria-live="polite"
-                        >
-                            <span>
-                                {selectedAnswer ===
-                                currentQuestion.correctAnswer
-                                    ? '✓'
-                                    : '💭'}
-                            </span>
-
-                            <div>
-                                <strong>
-                                    {feedbackMessage}
-                                </strong>
-
-                                {selectedAnswer !==
-                                    currentQuestion.correctAnswer && (
-                                    <p>
-                                        Correct answer:{' '}
-                                        <strong>
-                                            {
-                                                currentQuestion.correctAnswer
-                                            }
-                                        </strong>
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {isAnswered && (
-                        <button
-                            className="pr-primary-btn pr-next-btn"
-                            onClick={
-                                handleNextQuestion
-                            }
-                        >
-                            {currentQuestionIndex + 1 <
-                            questions.length
-                                ? 'Next Question →'
-                                : 'See Results →'}
-                        </button>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RESULTS SCREEN
-    |--------------------------------------------------------------------------
-    */
-
-    return (
-        <div className="picture-recall-container results-screen">
-            <div className="pr-results-card">
-                <div className="pr-results-icon">
-                    {accuracy >= 70 ? '🌟' : '🧠'}
-                </div>
-
-                <h2>
-                    Picture Recall Completed!
-                </h2>
-
-                <p className="pr-results-scene">
-                    {selectedScene?.title}
-                </p>
-
-                <div className="pr-results-score">
-                    <span className="pr-score-fraction">
-                        {correctAnswers} /{' '}
-                        {questions.length}
-                    </span>
-
-                    <span className="pr-score-accuracy">
-                        {accuracy}% Accuracy
-                    </span>
-                </div>
-
-                <div className="pr-performance-message">
-                    {performanceMessage}
-                </div>
-
-                <div className="pr-results-stats">
-                    <div className="pr-stat">
-                        <span>✓</span>
-                        <div>
-                            <small>
-                                Correct Answers
-                            </small>
-                            <strong>
-                                {correctAnswers}
-                            </strong>
-                        </div>
-                    </div>
-
-                    <div className="pr-stat">
-                        <span>❓</span>
-                        <div>
-                            <small>
-                                Total Questions
-                            </small>
-                            <strong>
-                                {questions.length}
-                            </strong>
-                        </div>
-                    </div>
-
-                    <div className="pr-stat">
-                        <span>💡</span>
-                        <div>
-                            <small>Hints Used</small>
-                            <strong>
-                                {hintsUsed}
-                            </strong>
-                        </div>
-                    </div>
-
-                    <div className="pr-stat">
-                        <span>⏱️</span>
-                        <div>
-                            <small>
-                                Completion Time
-                            </small>
-                            <strong>
-                                {formatTime(
-                                    completionTime
-                                )}
-                            </strong>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="pr-results-actions">
-                    <button
-                        className="pr-primary-btn"
-                        onClick={playAgain}
-                    >
-                        🔄 Play Again
+                    <button className="pr-secondary-btn" onClick={backToIntro}>
+                        🎚️ Change Difficulty
                     </button>
-
-                    <button
-                        className="pr-secondary-btn"
-                        onClick={backToIntro}
-                    >
-                        🎮 Change Difficulty
-                    </button>
-
-                    <button
-                        className="pr-secondary-btn"
-                        onClick={onHome}
-                    >
+                    <button className="pr-secondary-btn" onClick={onHome}>
                         🏠 Home
                     </button>
                 </div>
             </div>
+        );
+    }
+
+    /* Fallback — should rarely show (e.g. between state transitions). */
+    return (
+        <div className="picture-recall-container">
+            <p className="pr-loading">Loading…</p>
+            <button className="pr-secondary-btn" onClick={backToIntro}>
+                🏠 Back to start
+            </button>
         </div>
     );
 }
