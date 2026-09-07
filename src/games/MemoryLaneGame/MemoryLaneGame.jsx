@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import './MemoryLaneGame.css';
-import { fetchMemoryLanePrompts, logMemoryLaneResponse } from './EngagementService';
+import { fetchMemoryLanePrompts, logMemoryLaneResponse } from '../../EngagementService';
 
 // -----------------------------------------------------------------------------
 // REACTION OPTIONS

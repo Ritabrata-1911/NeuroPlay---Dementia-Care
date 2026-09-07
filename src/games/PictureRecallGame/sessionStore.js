@@ -7,7 +7,7 @@
 // mid-session. See schema.sql for the table definition.
 // -----------------------------------------------------------------------------
 
-import { supabase } from './SupabaseClient';
+import { supabase } from '../../SupabaseClient';
 
 const LOCAL_KEY = 'neuroplay_game_sessions';
 

@@ -19,12 +19,12 @@ import {
     getReminderRowClassName,
 } from './useReminderAlarms';
 
-import MemoryMatchGame from './MemoryMatchGame';
-import PictureRecallGame from './PictureRecallGame';
-import NumberMemoryGame from './NumberMemoryGame';
-import MemoryMapGame from './MemoryMapGame';
-import MindSnap from './MindSnap'; // NEW GAME IMPORTED HERE
-import MemoryLaneGame from './MemoryLaneGame';
+import MemoryMatchGame from './games/MemoryMatchGame/MemoryMatchGame';
+import PictureRecallGame from './games/PictureRecallGame/PictureRecallGame';
+import NumberMemoryGame from './games/NumberMemoryGame/NumberMemoryGame';
+import MemoryMapGame from './games/MemoryMapGame/MemoryMapGame';
+import MindSnap from './games/MindSnap/MindSnap'; // NEW GAME IMPORTED HERE
+import MemoryLaneGame from './games/MemoryLaneGame/MemoryLaneGame';
 import EncouragementToast from './EncouragementToast';
 import {
     logPatientMood,
@@ -122,6 +122,7 @@ export default function PatientDashboard({ onLogout }) {
     const [reflectionSaving, setReflectionSaving] = useState(false);
     const dailyReflectivePrompt = useMemo(() => getDailyReflectivePrompt(), []);
     const [sendingNote, setSendingNote] = useState(false);
+    const [assignedCaregiver, setAssignedCaregiver] = useState(null);
 
     // Which Daily Care Overview cards are currently expanded — these 4
     // (medicine / hydration / activity / appointments) are set by the
@@ -161,6 +162,56 @@ export default function PatientDashboard({ onLogout }) {
             onLogout?.();
         }
     }, [onLogout]);
+
+
+    // After login, re-fetch the patient's own row from Supabase so that
+    // avatar_url always reflects the DB state, not the stale session object.
+    useEffect(() => {
+        const patientId = patient?.id || patient?.patient_id;
+        if (!patientId) return;
+
+        let active = true;
+        supabase
+            .from('patients')
+            .select('avatar_url, full_name')
+            .eq('id', patientId)
+            .maybeSingle()
+            .then(({ data, error }) => {
+                if (!active || error || !data) return;
+                persistPatientUpdate({
+                    avatar_url: data.avatar_url ?? null,
+                    full_name: data.full_name ?? patient.full_name,
+                });
+            });
+
+        return () => { active = false; };
+    }, [patient?.id, patient?.patient_id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Fetch the real assigned caregiver from Supabase using the patient's
+    // caregiver_id, so the card always shows the actual assigned caregiver
+    // rather than a hardcoded fallback name.
+    useEffect(() => {
+        const patientId = patient?.id || patient?.patient_id;
+        if (!patientId) return;
+
+        let active = true;
+        supabase
+            .rpc('get_patient_caregiver_info', { p_patient_id: patientId })
+            .then(({ data, error }) => {
+                if (!active) return;
+                if (error) {
+                    console.error('Caregiver fetch error:', error);
+                    return;
+                }
+                if (data && data.length > 0) {
+                    setAssignedCaregiver({
+                        full_name: data[0].caregiver_name,
+                    });
+                }
+            });
+
+        return () => { active = false; };
+    }, [patient]);
 
     useEffect(() => {
         const patientId = patient?.id || patient?.patient_id;
@@ -579,15 +630,16 @@ export default function PatientDashboard({ onLogout }) {
 
     const avatarUrl = patient.avatar_url || null;
 
-    // FRONTEND-ONLY FALLBACK: Change the strings below to whatever caregiver name/contact you want to display
     const caregiverName =
+        assignedCaregiver?.full_name ||
         patient.caregiver_full_name ||
         patient.caregiver_name ||
         patient.caregiverName ||
         patient.assigned_caregiver ||
-        'Ritabrata Roy Chowdhury'; // <- Frontend fallback name
+        'No caregiver assigned';
 
     const caregiverContact =
+        assignedCaregiver?.phone_number ||
         patient.caregiver_phone ||
         patient.caregiver_contact ||
         patient.caregiverContact ||
