@@ -5,6 +5,7 @@ import { supabase } from './SupabaseClient';
 import AddPatientForm from './AddPatientForm';
 import CodeCountdown from './CodeCountdown';
 import SettingsPanel from './SettingsPanel';
+import { MemoryPhotosPanel } from './games/PersonalizedMemoryGame/MemoryPhotosPanel';
 import './CaregiverDashboard.css';
 import {
     fetchRemindersForPatient,
@@ -121,6 +122,7 @@ const GAME_META = {
     memory_match: { labelKey: 'caregiverDashboard.games.memoryMatch', icon: '🧩' },
     number_memory: { labelKey: 'caregiverDashboard.games.numberMemory', icon: '🔢' },
     picture_recall: { labelKey: 'caregiverDashboard.games.pictureRecall', icon: '🖼️' },
+    picture_memory: { labelKey: 'caregiverDashboard.games.pictureMemory', icon: '📸' },
 };
 
 const buildSampleSessions = (seed) => {
@@ -176,6 +178,7 @@ export default function CaregiverDashboard() {
     const avatarInputRef = useRef(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [reportsPatientId, setReportsPatientId] = useState(null);
+    const [memoriesPatientId, setMemoriesPatientId] = useState(null);
     const [activeResourceModal, setActiveResourceModal] = useState(null);
     const [emergencyCardPatientId, setEmergencyCardPatientId] = useState(null);
 
@@ -1728,6 +1731,19 @@ export default function CaregiverDashboard() {
                                                 </button>
 
                                                 <button
+                                                    className="btn-outline"
+                                                    onClick={() =>
+                                                        setMemoriesPatientId(
+                                                            memoriesPatientId === patient.id
+                                                                ? null
+                                                                : patient.id
+                                                        )
+                                                    }
+                                                >
+                                                    📸 Manage Memories
+                                                </button>
+
+                                                <button
                                                     className="btn-outline btn-warning"
                                                     onClick={() =>
                                                         handleRegenerateCode(
@@ -1754,6 +1770,34 @@ export default function CaregiverDashboard() {
                                     );
                                 }
                             )}
+                        </div>
+                    )}
+
+                    {/* ── Memory Photos Panel ─────────────────────────────────
+                        Expands inline when caregiver clicks "Manage Memories"
+                        on a patient card. Collapsed by default (memoriesPatientId === null).
+                    ──────────────────────────────────────────────────────── */}
+                    {memoriesPatientId && (
+                        <div
+                            className="stat-card"
+                            style={{ marginTop: '1.5rem', padding: '1.5rem' }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <span style={{ fontSize: '0.85rem', color: '#666' }}>
+                                    Memory photographs for{' '}
+                                    <strong>
+                                        {patients.find((p) => p.id === memoriesPatientId)?.full_name || 'patient'}
+                                    </strong>
+                                </span>
+                                <button
+                                    className="btn-outline"
+                                    style={{ padding: '4px 14px', fontSize: '0.8rem' }}
+                                    onClick={() => setMemoriesPatientId(null)}
+                                >
+                                    ✕ Close
+                                </button>
+                            </div>
+                            <MemoryPhotosPanel patientId={memoriesPatientId} />
                         </div>
                     )}
 

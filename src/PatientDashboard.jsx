@@ -25,6 +25,7 @@ import NumberMemoryGame from './games/NumberMemoryGame/NumberMemoryGame';
 import MemoryMapGame from './games/MemoryMapGame/MemoryMapGame';
 import MindSnap from './games/MindSnap/MindSnap'; // NEW GAME IMPORTED HERE
 import MemoryLaneGame from './games/MemoryLaneGame/MemoryLaneGame';
+import PersonalizedMemoryGame from './games/PersonalizedMemoryGame/PersonalizedMemoryGame';
 import EncouragementToast from './EncouragementToast';
 import {
     logPatientMood,
@@ -51,6 +52,7 @@ const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const GAMES = [
     { id: 'mind-snap', icon: '🧠', category: 'memory', playable: true },
+    { id: 'picture-memory', icon: '📸', category: 'memory', playable: true },
     { id: 'memory-match', icon: '🧠', category: 'memory', playable: true },
     { id: 'memory-map', icon: '🗺️', category: 'visual', playable: true },
     { id: 'number-memory', icon: '🔢', category: 'numbers', playable: true },
@@ -601,6 +603,10 @@ export default function PatientDashboard({ onLogout }) {
 
     if (activeGame === 'mind-snap') {
         return <MindSnap patient={patient} onHome={handleGameHome} />;
+    }
+
+    if (activeGame === 'picture-memory') {
+        return <PersonalizedMemoryGame patient={patient} onHome={handleGameHome} />;
     }
 
     if (activeGame === 'memory-match') {
