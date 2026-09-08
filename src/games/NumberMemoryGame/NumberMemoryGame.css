@@ -1,1719 +1,634 @@
-/* ==========================================================================
-   NumberMemoryGame.css
-   NeuroPlay - Number Memory Game
-
-   Elder-friendly UI
-   North-East India inspired visual theme
-   ========================================================================== */
-
 .number-memory-container {
-    --nm-green: #52796f;
-    --nm-dark-green: #354f52;
-    --nm-light-green: #84a98c;
-    --nm-sage: #cad2c5;
-
-    --nm-cream: #f7f3e9;
-    --nm-warm: #e8dfcf;
-
-    --nm-brown: #795548;
-
-    --nm-dark: #24343a;
-    --nm-text: #263238;
-    --nm-muted: #5f6f73;
-
-    --nm-border: #d9d2c4;
-    --nm-white: #ffffff;
-
-    --nm-success: #2e7d5b;
-    --nm-warning: #9a6a28;
-
     min-height: 100vh;
-    width: 100%;
-
-    box-sizing: border-box;
-
     background:
-        radial-gradient(circle at 10% 20%,
-            rgba(132, 169, 140, 0.13) 0,
-            transparent 25%),
-        radial-gradient(circle at 90% 80%,
-            rgba(121, 85, 72, 0.09) 0,
-            transparent 25%),
-        var(--nm-cream);
-
-    color: var(--nm-text);
-
-    font-family:
-        "Segoe UI",
-        Tahoma,
-        Geneva,
-        Verdana,
-        sans-serif;
-
+        linear-gradient(rgba(248, 250, 247, 0.96),
+            rgba(238, 245, 239, 0.96)),
+        repeating-linear-gradient(45deg,
+            transparent,
+            transparent 18px,
+            rgba(72, 110, 82, 0.06) 18px,
+            rgba(72, 110, 82, 0.06) 20px);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: #243b2f;
+    padding: 40px 20px;
     display: flex;
-    flex-direction: column;
-
-    overflow-x: hidden;
+    justify-content: center;
+    align-items: center;
 }
 
-/* ==========================================================================
-   Decorative textile-inspired pattern
-   ========================================================================== */
-
-.nm-pattern {
+.number-memory-card {
     width: 100%;
-    height: 24px;
-
-    background-color: var(--nm-dark-green);
-
-    background-image:
-        linear-gradient(135deg,
-            rgba(255, 255, 255, 0.15) 25%,
-            transparent 25%),
-        linear-gradient(225deg,
-            rgba(255, 255, 255, 0.15) 25%,
-            transparent 25%);
-
-    background-size: 28px 28px;
-
-    flex-shrink: 0;
-}
-
-.nm-pattern-top {
-    border-bottom: 4px solid var(--nm-brown);
-}
-
-.nm-pattern-bottom {
-    border-top: 4px solid var(--nm-brown);
-
-    margin-top: auto;
-}
-
-/* ==========================================================================
-   Main layout
-   ========================================================================== */
-
-.nm-main {
-    width: 100%;
-
-    flex: 1;
-
-    padding: 45px 20px;
-
-    box-sizing: border-box;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-}
-
-/* ==========================================================================
-   Cards
-   ========================================================================== */
-
-.nm-card {
-    width: min(900px, 100%);
-
-    box-sizing: border-box;
-
-    background: var(--nm-white);
-
-    border: 1px solid var(--nm-border);
-
-    border-radius: 24px;
-
-    box-shadow:
-        0 12px 35px rgba(53, 79, 82, 0.12),
-        0 3px 8px rgba(53, 79, 82, 0.07);
-}
-
-/* ==========================================================================
-   Intro
-   ========================================================================== */
-
-.nm-intro-card {
-    max-width: 850px;
-
-    padding: 48px 52px;
-
-    text-align: center;
-}
-
-.nm-cultural-symbol {
-    width: 82px;
-    height: 82px;
-
-    margin: 0 auto 18px;
-
-    border-radius: 50%;
-
-    background: #eef3ec;
-
-    border: 2px solid var(--nm-sage);
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    font-size: 42px;
-}
-
-.nm-heritage-label {
-    display: inline-block;
-
-    padding: 8px 16px;
-
-    border-radius: 30px;
-
-    background: #eef3ec;
-
-    border: 1px solid #cbd8ca;
-
-    color: var(--nm-dark-green);
-
-    font-size: 12px;
-
-    font-weight: 700;
-
-    letter-spacing: 0.08em;
-}
-
-.nm-intro-card h1 {
-    margin: 18px 0 12px;
-
-    color: var(--nm-dark-green);
-
-    font-size: clamp(2.2rem, 5vw, 3.5rem);
-
-    line-height: 1.1;
-}
-
-.nm-intro-subtitle {
-    max-width: 680px;
-
-    margin: 0 auto 30px;
-
-    color: var(--nm-muted);
-
-    font-size: 19px;
-
-    line-height: 1.7;
-}
-
-/* ==========================================================================
-   Instructions
-   ========================================================================== */
-
-.nm-instruction-card {
-    max-width: 680px;
-
-    margin: 0 auto 25px;
-
-    padding: 22px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 18px;
-
-    text-align: left;
-
-    background: #faf8f2;
-
-    border: 1px solid var(--nm-border);
-
-    border-left: 6px solid var(--nm-green);
-
-    border-radius: 16px;
-}
-
-.nm-instruction-icon {
-    width: 62px;
-    height: 62px;
-
-    flex-shrink: 0;
-
-    border-radius: 14px;
-
-    background: #e9f0e9;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    font-size: 32px;
-}
-
-.nm-instruction-card h3 {
-    margin: 0 0 7px;
-
-    color: var(--nm-dark-green);
-
-    font-size: 21px;
-}
-
-.nm-instruction-card p {
-    margin: 0;
-
-    color: var(--nm-muted);
-
-    font-size: 16px;
-
-    line-height: 1.6;
-}
-
-/* ==========================================================================
-   Game types
-   ========================================================================== */
-
-.nm-game-types {
-    display: grid;
-
-    grid-template-columns: repeat(5, 1fr);
-
-    gap: 10px;
-
-    margin: 25px 0;
-}
-
-.nm-type-item {
-    min-height: 105px;
-
-    padding: 15px 8px;
-
-    box-sizing: border-box;
-
-    background: #f8f7f1;
-
-    border: 1px solid var(--nm-border);
-
-    border-radius: 14px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    text-align: center;
-}
-
-.nm-type-item span {
-    font-size: 28px;
-
-    margin-bottom: 8px;
-}
-
-.nm-type-item strong {
-    color: var(--nm-dark-green);
-
-    font-size: 13px;
-
-    line-height: 1.3;
-}
-
-/* ==========================================================================
-   Intro note
-   ========================================================================== */
-
-.nm-first-level-note {
-    max-width: 680px;
-
-    margin: 25px auto 30px;
-
-    padding: 17px 20px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    text-align: left;
-
-    background: #f3eee3;
-
-    border: 1px solid #dfd4c2;
-
-    border-radius: 14px;
-}
-
-.nm-first-level-note span {
-    font-size: 26px;
-
-    flex-shrink: 0;
-}
-
-.nm-first-level-note p {
-    margin: 0;
-
-    color: #5c5147;
-
-    font-size: 15px;
-
-    line-height: 1.6;
-}
-
-/* ==========================================================================
-   Buttons
-   ========================================================================== */
-
-.nm-primary-button,
-.nm-secondary-button,
-.nm-dashboard-button,
-.nm-small-restart-button {
-    font-family: inherit;
-
-    cursor: pointer;
-
-    transition:
-        transform 0.15s ease,
-        box-shadow 0.15s ease,
-        background-color 0.15s ease;
-}
-
-.nm-primary-button {
-    min-height: 52px;
-
-    padding: 14px 28px;
-
-    border: none;
-
-    border-radius: 12px;
-
-    background: var(--nm-green);
-
-    color: var(--nm-white);
-
-    font-size: 17px;
-
-    font-weight: 700;
-
-    letter-spacing: 0.02em;
-
-    box-shadow:
-        0 4px 10px rgba(82, 121, 111, 0.22);
-}
-
-.nm-primary-button:hover:not(:disabled) {
-    background: var(--nm-dark-green);
-
-    transform: translateY(-1px);
-
-    box-shadow:
-        0 6px 15px rgba(53, 79, 82, 0.22);
-}
-
-.nm-primary-button:disabled {
-    opacity: 0.55;
-
-    cursor: not-allowed;
-
-    box-shadow: none;
-}
-
-.nm-large-button {
-    width: min(350px, 100%);
-
-    min-height: 58px;
-
-    font-size: 18px;
-}
-
-.nm-secondary-button {
-    min-height: 54px;
-
-    padding: 14px 26px;
-
-    border: 2px solid var(--nm-green);
-
-    border-radius: 12px;
-
-    background: var(--nm-white);
-
-    color: var(--nm-dark-green);
-
-    font-size: 16px;
-
-    font-weight: 700;
-}
-
-.nm-secondary-button:hover {
-    background: #edf3ed;
-
-    transform: translateY(-1px);
-}
-
-.nm-dashboard-button {
-    display: block;
-
-    margin: 20px auto 0;
-
-    padding: 10px 16px;
-
-    border: none;
-
-    background: transparent;
-
-    color: var(--nm-muted);
-
-    font-size: 15px;
-
-    font-weight: 600;
-}
-
-.nm-dashboard-button:hover {
-    color: var(--nm-dark-green);
-
-    text-decoration: underline;
-}
-
-.nm-small-restart-button {
-    margin-top: 20px;
-
-    padding: 8px 12px;
-
-    border: none;
-
-    background: transparent;
-
-    color: var(--nm-muted);
-
-    font-size: 14px;
-}
-
-.nm-small-restart-button:hover {
-    color: var(--nm-dark-green);
-
-    text-decoration: underline;
-}
-
-/* ==========================================================================
-   Game card
-   ========================================================================== */
-
-.nm-game-card {
     max-width: 900px;
-
-    padding: 38px 46px;
-}
-
-.nm-game-header {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 20px;
-
-    margin-bottom: 28px;
-}
-
-.nm-small-label {
-    display: block;
-
-    margin-bottom: 6px;
-
-    color: var(--nm-green);
-
-    font-size: 12px;
-
-    font-weight: 800;
-
-    letter-spacing: 0.1em;
-}
-
-.nm-game-header h1 {
-    margin: 0;
-
-    color: var(--nm-dark-green);
-
-    font-size: 30px;
-}
-
-.nm-round-badge {
-    flex-shrink: 0;
-
-    padding: 10px 17px;
-
-    border-radius: 30px;
-
-    background: #edf3ed;
-
-    border: 1px solid #cbdacb;
-
-    color: var(--nm-dark-green);
-
-    font-size: 15px;
-
-    font-weight: 700;
-}
-
-/* ==========================================================================
-   Progress
-   ========================================================================== */
-
-.nm-progress-area {
-    margin-bottom: 35px;
-}
-
-.nm-progress-labels {
-    display: flex;
-
-    justify-content: space-between;
-
-    margin-bottom: 9px;
-
-    color: var(--nm-muted);
-
-    font-size: 14px;
-
-    font-weight: 600;
-}
-
-.nm-progress-track {
-    height: 10px;
-
-    background: #e7e8e2;
-
-    border-radius: 20px;
-
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 24px;
+    padding: 42px;
+    box-shadow: 0 12px 35px rgba(42, 70, 49, 0.12);
+    border: 1px solid rgba(72, 110, 82, 0.15);
+    position: relative;
     overflow: hidden;
 }
 
-.nm-progress-fill {
-    height: 100%;
-
-    background: var(--nm-green);
-
-    border-radius: 20px;
-
-    transition: width 0.3s ease;
+.number-memory-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 7px;
+    background: #557c5c;
 }
 
-/* ==========================================================================
-   Memory screen
-   ========================================================================== */
-
-.nm-memory-instruction {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 16px;
-
-    margin-bottom: 25px;
-
-    text-align: left;
+.game-pattern {
+    text-align: center;
+    font-size: 26px;
+    letter-spacing: 16px;
+    color: #6f9674;
+    margin-bottom: 12px;
 }
 
-.nm-memory-icon {
-    font-size: 35px;
-}
-
-.nm-memory-instruction h2 {
-    margin: 0 0 4px;
-
-    color: var(--nm-dark-green);
-
-    font-size: 25px;
-}
-
-.nm-memory-instruction p {
-    margin: 0;
-
-    color: var(--nm-muted);
-
-    font-size: 16px;
-}
-
-.nm-countdown {
-    width: 96px;
-    height: 96px;
-
-    margin: 0 auto 30px;
-
+.game-icon-large {
+    width: 86px;
+    height: 86px;
     border-radius: 50%;
-
-    background: #eef3ec;
-
-    border: 5px solid var(--nm-sage);
-
+    background: #edf5ed;
     display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
     justify-content: center;
-
-    box-sizing: border-box;
-}
-
-.nm-countdown-number {
-    color: var(--nm-dark-green);
-
-    font-size: 31px;
-
-    font-weight: 800;
-
-    line-height: 1;
-}
-
-.nm-countdown-text {
-    margin-top: 4px;
-
-    color: var(--nm-muted);
-
-    font-size: 12px;
-
-    font-weight: 600;
-}
-
-/* ==========================================================================
-   Number sequence
-   ========================================================================== */
-
-.nm-number-sequence {
-    display: flex;
-
     align-items: center;
+    font-size: 44px;
+    margin: 0 auto 20px;
+}
 
-    justify-content: center;
+.intro-card {
+    text-align: center;
+}
 
-    flex-wrap: wrap;
+.intro-card h1,
+.result-card h1 {
+    font-size: 38px;
+    margin: 8px 0 15px;
+    color: #294c34;
+}
 
-    gap: 12px;
+.game-description {
+    font-size: 20px;
+    line-height: 1.6;
+    max-width: 680px;
+    margin: 0 auto 30px;
+    color: #52665a;
+}
 
-    max-width: 780px;
-
-    margin: 0 auto 25px;
-
-    padding: 25px;
-
-    background: #faf8f2;
-
-    border: 2px solid var(--nm-border);
-
+.instructions-box {
+    background: #f4f8f4;
     border-radius: 18px;
+    padding: 24px;
+    text-align: left;
+    margin: 25px 0;
+    border-left: 5px solid #6b9070;
 }
 
-.nm-number-box {
+.instructions-box h2 {
+    font-size: 25px;
+    margin-top: 0;
+    color: #345c3e;
+}
+
+.instruction-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin: 18px 0;
+}
+
+.instruction-item span {
+    font-size: 27px;
+    min-width: 36px;
+}
+
+.instruction-item p {
+    margin: 2px 0;
+    font-size: 18px;
+    line-height: 1.5;
+    color: #485b4e;
+}
+
+.level-info {
+    background: #edf5ef;
+    border-radius: 15px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 22px 0;
+}
+
+.level-info strong {
+    font-size: 20px;
+    color: #315c3b;
+}
+
+.level-info span {
+    font-size: 17px;
+    line-height: 1.5;
+    color: #53665a;
+}
+
+.adaptive-text {
+    font-size: 17px;
+    color: #64766a;
+    margin: 20px 0;
+}
+
+.intro-buttons,
+.result-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 25px;
+}
+
+.primary-button,
+.secondary-button,
+.submit-button {
+    border: none;
+    border-radius: 13px;
+    padding: 15px 28px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.primary-button {
+    background: #557c5c;
+    color: white;
+    min-width: 190px;
+}
+
+.primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 7px 18px rgba(66, 101, 72, 0.25);
+}
+
+.primary-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.secondary-button {
+    background: #eef3ef;
+    color: #355a3d;
+    border: 1px solid #c6d7c8;
+    min-width: 190px;
+}
+
+.secondary-button:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 7px 18px rgba(66, 101, 72, 0.12);
+}
+
+.game-card {
+    min-height: 600px;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid #e2eae3;
+    padding-bottom: 20px;
+    margin-bottom: 35px;
+}
+
+.game-header h1 {
+    margin: 9px 0 0;
+    color: #294c34;
+    font-size: 30px;
+}
+
+.level-badge {
+    display: inline-block;
+    padding: 7px 15px;
+    border-radius: 20px;
+    background: #e8f1e9;
+    color: #3e6747;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.question-counter {
+    background: #f2f5f2;
+    border-radius: 12px;
+    padding: 10px 15px;
+    color: #52665a;
+    font-size: 16px;
+    white-space: nowrap;
+}
+
+.recall-instruction {
+    text-align: center;
+    font-size: 21px;
+    color: #52665a;
+}
+
+.sequence-display {
+    min-height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.memory-number {
     width: 76px;
     height: 76px;
-
-    border: 2px solid var(--nm-green);
-
-    border-radius: 14px;
-
-    background: var(--nm-white);
-
     display: flex;
-
     align-items: center;
     justify-content: center;
-
-    color: var(--nm-dark-green);
-
+    background: #edf5ed;
+    border: 2px solid #8eae91;
+    border-radius: 16px;
     font-size: 38px;
-
-    font-weight: 800;
-
-    box-shadow:
-        0 3px 8px rgba(53, 79, 82, 0.09);
-}
-
-.nm-arrow {
-    color: var(--nm-brown);
-
-    font-size: 26px;
-
     font-weight: 700;
+    color: #315d3b;
 }
 
-.nm-memory-tip {
+.sequence-arrow {
+    font-size: 30px;
+    color: #76957b;
+}
+
+.countdown-circle {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    margin: 15px auto;
+    background: #557c5c;
+    color: white;
     display: flex;
-
-    justify-content: center;
-
     align-items: center;
-
-    gap: 8px;
-
-    color: var(--nm-muted);
-
-    font-size: 14px;
-
-    text-align: center;
-}
-
-.nm-level-time-info {
-    margin: 22px auto 0;
-
-    padding: 12px 15px;
-
-    max-width: 500px;
-
-    border-radius: 10px;
-
-    background: #eef3ec;
-
-    color: var(--nm-muted);
-
-    font-size: 14px;
-
-    text-align: center;
-}
-
-.nm-level-time-info strong {
-    color: var(--nm-dark-green);
-}
-
-/* ==========================================================================
-   Recall heading
-   ========================================================================== */
-
-.nm-recall-heading {
-    margin: 15px 0 28px;
-
-    text-align: center;
-}
-
-.nm-recall-icon {
-    font-size: 42px;
-
-    margin-bottom: 10px;
-}
-
-.nm-recall-heading h2 {
-    margin: 0 0 8px;
-
-    color: var(--nm-dark-green);
-
-    font-size: 29px;
-}
-
-.nm-recall-heading p {
-    margin: 0;
-
-    color: var(--nm-muted);
-
-    font-size: 17px;
-}
-
-/* ==========================================================================
-   Arithmetic
-   ========================================================================== */
-
-.nm-arithmetic-area {
-    margin: 10px auto 30px;
-
-    text-align: center;
-}
-
-.nm-arithmetic-icon {
-    font-size: 45px;
-
-    margin-bottom: 5px;
-}
-
-.nm-activity-label {
-    display: inline-block;
-
-    padding: 7px 14px;
-
-    margin-bottom: 15px;
-
-    border-radius: 20px;
-
-    background: #eef3ec;
-
-    color: var(--nm-dark-green);
-
-    font-size: 13px;
-
+    justify-content: center;
+    font-size: 32px;
     font-weight: 700;
+    box-shadow:
+        0 7px 20px rgba(72, 108, 78, 0.25);
 }
 
-.nm-arithmetic-area h2 {
-    margin: 0;
-
-    color: var(--nm-dark-green);
-
-    font-size: clamp(2.3rem, 6vw, 4rem);
-
-    line-height: 1.2;
-
-    letter-spacing: 0.02em;
+.countdown-text {
+    text-align: center;
+    font-size: 18px;
+    color: #64766a;
 }
 
-.nm-arithmetic-area p {
-    margin: 13px 0 0;
+.progress-bar-container {
+    height: 10px;
+    background: #e7eee8;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 30px auto;
+    max-width: 600px;
+}
 
-    color: var(--nm-muted);
+.progress-bar {
+    height: 100%;
+    background: #6d9472;
+    border-radius: 10px;
+    transition: width 1s linear;
+}
 
+.question-area {
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.question-instruction {
+    font-size: 20px;
+    color: #586b5e;
+    margin-bottom: 25px;
+}
+
+.question-symbol {
+    width: 110px;
+    height: 110px;
+    margin: 20px auto 30px;
+    border-radius: 20px;
+    background: #edf5ed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 58px;
+    font-weight: 700;
+    color: #557c5c;
+}
+
+.math-question {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+    font-size: 46px;
+    font-weight: 700;
+    color: #294c34;
+    margin: 35px 0;
+    flex-wrap: wrap;
+}
+
+.math-operator {
+    color: #6c9271;
+}
+
+.answer-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.answer-input {
+    width: min(100%, 500px);
+    padding: 17px 20px;
+    border-radius: 13px;
+    border: 2px solid #bdcfc0;
+    font-size: 24px;
+    text-align: center;
+    outline: none;
+    color: #294c34;
+    background: white;
+    box-sizing: border-box;
+}
+
+.answer-input:focus {
+    border-color: #63866a;
+    box-shadow:
+        0 0 0 4px rgba(91, 132, 98, 0.12);
+}
+
+.answer-input:disabled {
+    background: #f1f4f1;
+}
+
+.submit-button {
+    background: #557c5c;
+    color: white;
+    min-width: 230px;
+}
+
+.submit-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow:
+        0 7px 18px rgba(66, 101, 72, 0.25);
+}
+
+.submit-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.attempts-display {
+    margin-top: 18px;
+    color: #68786c;
     font-size: 16px;
 }
 
-/* ==========================================================================
-   Answer form
-   ========================================================================== */
+/* -------------------------------------------------------
+   HINT BOX
+------------------------------------------------------- */
 
-.nm-answer-form {
-    max-width: 560px;
-
-    margin: 0 auto 22px;
-
+.hint-box {
+    margin: 25px auto 0;
+    max-width: 600px;
+    background: #fff8e8;
+    border: 1px solid #ead8a7;
+    border-left: 5px solid #d3aa50;
+    border-radius: 13px;
+    padding: 17px 20px;
     display: flex;
-
-    flex-direction: column;
-}
-
-.nm-answer-form label {
-    margin-bottom: 9px;
-
-    color: var(--nm-dark-green);
-
-    font-size: 17px;
-
-    font-weight: 700;
-
+    align-items: flex-start;
+    gap: 15px;
     text-align: left;
 }
 
-.nm-answer-form input {
-    width: 100%;
-
-    min-height: 76px;
-
-    box-sizing: border-box;
-
-    padding: 12px 20px;
-
-    margin-bottom: 18px;
-
-    border: 2px solid #c9c7bd;
-
-    border-radius: 14px;
-
-    background: var(--nm-white);
-
-    color: var(--nm-dark);
-
-    font-family: inherit;
-
-    font-size: 34px;
-
-    font-weight: 700;
-
-    text-align: center;
-
-    outline: none;
+.hint-icon {
+    font-size: 27px;
+    min-width: 35px;
 }
 
-.nm-answer-form input:focus {
-    border-color: var(--nm-green);
-
-    box-shadow:
-        0 0 0 4px rgba(82, 121, 111, 0.13);
-}
-
-.nm-answer-form input::placeholder {
-    color: #a2a7a4;
-
+.hint-box strong {
     font-size: 18px;
-
-    font-weight: 500;
+    color: #745d2a;
 }
 
-.nm-submit-button {
-    min-height: 58px;
+.hint-box p {
+    margin: 5px 0 0;
+    font-size: 17px;
+    line-height: 1.5;
+    color: #695a38;
 }
 
-/* ==========================================================================
-   Attempts
-   ========================================================================== */
-
-.nm-attempt-area {
+.correct-answer-box {
+    margin: 25px auto 0;
+    max-width: 600px;
+    background: #edf6ef;
+    border: 1px solid #bcd2bf;
+    border-left: 5px solid #5d8a65;
+    border-radius: 13px;
+    padding: 18px;
     display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex-wrap: wrap;
-
-    gap: 10px;
-
-    margin: 15px auto 22px;
-
-    color: var(--nm-muted);
-
-    font-size: 14px;
-}
-
-.nm-attempt-dots {
-    display: flex;
-
+    flex-direction: column;
     gap: 7px;
 }
 
-.nm-attempt-dot {
-    width: 30px;
-    height: 30px;
+.correct-answer-box strong {
+    color: #365f3d;
+    font-size: 18px;
+}
 
-    border-radius: 50%;
-
-    border: 1px solid #cbd2ce;
-
-    background: #f1f3ef;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    color: var(--nm-muted);
-
-    font-size: 12px;
-
+.correct-answer-box span {
+    color: #294c34;
+    font-size: 26px;
     font-weight: 700;
 }
 
-.nm-attempt-dot.used {
-    background: var(--nm-green);
-
-    border-color: var(--nm-green);
-
-    color: var(--nm-white);
-}
-
-.nm-attempt-area small {
-    color: var(--nm-muted);
-}
-
-/* ==========================================================================
-   Hint
-   ========================================================================== */
-
-.nm-hint-box {
-    max-width: 650px;
-
-    margin: 20px auto;
-
-    padding: 17px 20px;
-
-    display: flex;
-
-    align-items: flex-start;
-
-    gap: 12px;
-
-    background: #fbf4e7;
-
-    border: 1px solid #e4cfaa;
-
-    border-radius: 14px;
-
-    color: #795a2a;
-
-    text-align: left;
-}
-
-.nm-hint-box>span {
-    font-size: 25px;
-
-    flex-shrink: 0;
-}
-
-.nm-hint-box strong {
-    font-size: 17px;
-}
-
-.nm-hint-box p {
-    margin: 4px 0 0;
-
+.correct-answer-box p {
+    margin: 5px 0 0;
+    color: #627166;
     font-size: 15px;
-
-    line-height: 1.5;
 }
 
-/* ==========================================================================
-   Correct answer
-   ========================================================================== */
-
-.nm-correct-answer-box {
-    max-width: 650px;
-
-    margin: 20px auto;
-
-    padding: 17px 20px;
-
-    display: flex;
-
-    align-items: flex-start;
-
-    gap: 12px;
-
-    background: #edf7f0;
-
-    border: 1px solid #b8d9c3;
-
-    border-radius: 14px;
-
-    color: var(--nm-success);
-
-    text-align: left;
-}
-
-.nm-correct-answer-box>span {
-    width: 28px;
-    height: 28px;
-
-    border-radius: 50%;
-
-    background: var(--nm-success);
-
-    color: white;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    font-weight: 700;
-}
-
-.nm-correct-answer-box strong {
-    font-size: 16px;
-}
-
-.nm-correct-answer-box p {
-    margin: 4px 0 0;
-
-    font-size: 22px;
-
-    font-weight: 800;
-}
-
-/* ==========================================================================
-   Error
-   ========================================================================== */
-
-.nm-error-box {
-    max-width: 650px;
-
-    margin: 15px auto;
-
-    padding: 13px 17px;
-
-    border-radius: 10px;
-
-    background: #fbecec;
-
-    border: 1px solid #e1b9b9;
-
-    color: #8a3d3d;
-
-    font-size: 14px;
-
-    text-align: center;
-}
-
-/* ==========================================================================
-   Elderly tip
-   ========================================================================== */
-
-.nm-elderly-tip {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 8px;
-
-    margin-top: 25px;
-
-    color: var(--nm-muted);
-
-    font-size: 14px;
-
-    line-height: 1.5;
-
-    text-align: center;
-}
-
-/* ==========================================================================
-   Result screen
-   ========================================================================== */
-
-.nm-result-card {
-    max-width: 800px;
-
-    padding: 45px 50px;
-
-    text-align: center;
-}
-
-.nm-result-icon {
-    font-size: 55px;
-
-    margin-bottom: 8px;
-}
-
-.nm-result-card h1 {
-    margin: 17px 0 9px;
-
-    color: var(--nm-dark-green);
-
-    font-size: clamp(2rem, 4vw, 2.8rem);
-}
-
-.nm-result-message {
-    max-width: 600px;
-
-    margin: 0 auto 28px;
-
-    color: var(--nm-muted);
-
-    font-size: 17px;
-
-    line-height: 1.6;
-}
-
-/* ==========================================================================
-   Score
-   ========================================================================== */
-
-.nm-score-circle {
-    width: 155px;
-    height: 155px;
-
-    margin: 0 auto 32px;
-
-    border-radius: 50%;
-
-    border: 8px solid #dce8dd;
-
-    background:
-        radial-gradient(circle,
-            var(--nm-white) 58%,
-            transparent 59%),
-        #dce8dd;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    box-sizing: border-box;
-}
-
-.nm-score-circle span {
-    color: var(--nm-dark-green);
-
-    font-size: 37px;
-
-    font-weight: 800;
-
-    line-height: 1;
-}
-
-.nm-score-circle small {
-    margin-top: 8px;
-
-    color: var(--nm-muted);
-
-    font-size: 13px;
-
-    font-weight: 700;
-}
-
-/* ==========================================================================
-   Result stats
-   ========================================================================== */
-
-.nm-result-grid {
-    display: grid;
-
-    grid-template-columns: repeat(3, 1fr);
-
-    gap: 14px;
-
-    margin-bottom: 25px;
-}
-
-.nm-result-stat {
-    padding: 20px 12px;
-
-    background: #faf8f2;
-
-    border: 1px solid var(--nm-border);
-
-    border-radius: 14px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-}
-
-.nm-result-stat span {
-    font-size: 25px;
-
-    margin-bottom: 6px;
-}
-
-.nm-result-stat strong {
-    color: var(--nm-dark-green);
-
-    font-size: 24px;
-
-    margin-bottom: 3px;
-}
-
-.nm-result-stat small {
-    color: var(--nm-muted);
-
-    font-size: 13px;
-}
-
-/* ==========================================================================
-   Level summary
-   ========================================================================== */
-
-.nm-level-summary {
-    display: grid;
-
-    grid-template-columns: repeat(3, 1fr);
-
-    gap: 10px;
-
-    padding: 17px;
-
-    margin-bottom: 22px;
-
-    background: #eef3ec;
-
-    border: 1px solid #cfdbcf;
-
-    border-radius: 14px;
-}
-
-.nm-level-summary div {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 4px;
-}
-
-.nm-level-summary span {
-    color: var(--nm-muted);
-
-    font-size: 12px;
-
-    font-weight: 600;
-}
-
-.nm-level-summary strong {
-    color: var(--nm-dark-green);
-
-    font-size: 17px;
-}
-
-/* ==========================================================================
-   Completion messages
-   ========================================================================== */
-
-.nm-next-level-message,
-.nm-milestone-message {
-    display: flex;
-
-    align-items: center;
-
-    gap: 13px;
-
-    padding: 16px 18px;
-
-    margin: 20px 0 25px;
-
-    border-radius: 14px;
-
-    text-align: left;
-}
-
-.nm-next-level-message {
-    background: #f2f6ef;
-
-    border: 1px solid #d0dccd;
-}
-
-.nm-milestone-message {
-    background: #f5eee1;
-
-    border: 1px solid #dfcfb5;
-}
-
-.nm-next-level-message>span,
-.nm-milestone-message>span {
-    font-size: 27px;
-
-    flex-shrink: 0;
-}
-
-.nm-next-level-message p,
-.nm-milestone-message p {
-    margin: 0;
-
-    color: var(--nm-muted);
-
-    font-size: 14px;
-
-    line-height: 1.5;
-}
-
-.nm-milestone-message strong {
-    color: #725329;
-
-    font-size: 16px;
-}
-
-/* ==========================================================================
-   Result actions
-   ========================================================================== */
-
-.nm-result-actions {
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    gap: 12px;
-
-    margin-top: 25px;
-}
-
-.nm-save-error {
+.error-message {
     margin: 18px auto 0;
-
-    padding: 12px 15px;
-
     max-width: 600px;
+    background: #fff0f0;
+    border: 1px solid #e4b8b8;
+    color: #a24646;
+    border-radius: 11px;
+    padding: 13px 16px;
+    font-size: 16px;
+}
 
-    border-radius: 10px;
+.result-card {
+    text-align: center;
+}
 
-    background: #fff5e5;
+.result-icon {
+    font-size: 65px;
+    margin-bottom: 10px;
+}
 
-    border: 1px solid #e5c995;
-
-    color: #7c5b2b;
-
-    font-size: 13px;
-
+.result-message {
+    font-size: 18px;
+    color: #5a6c60;
     line-height: 1.5;
+    max-width: 650px;
+    margin: 0 auto 30px;
 }
 
-/* ==========================================================================
-   Accessibility
-   ========================================================================== */
-
-button:focus-visible,
-input:focus-visible {
-    outline: 4px solid rgba(82, 121, 111, 0.25);
-
-    outline-offset: 3px;
+.result-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    max-width: 700px;
+    margin: 30px auto;
 }
 
-/* ==========================================================================
-   Tablet
-   ========================================================================== */
-
-@media (max-width: 800px) {
-    .nm-main {
-        padding: 32px 16px;
-    }
-
-    .nm-intro-card,
-    .nm-game-card,
-    .nm-result-card {
-        padding: 34px 28px;
-    }
-
-    .nm-game-types {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .nm-result-grid,
-    .nm-level-summary {
-        grid-template-columns: 1fr;
-    }
-
-    .nm-number-box {
-        width: 68px;
-        height: 68px;
-
-        font-size: 33px;
-    }
+.stat-box {
+    background: #f3f7f3;
+    border-radius: 15px;
+    padding: 20px 12px;
+    border: 1px solid #dce7dd;
 }
 
-/* ==========================================================================
-   Mobile
-   ========================================================================== */
+.stat-value {
+    display: block;
+    font-size: 27px;
+    font-weight: 700;
+    color: #355e3d;
+}
 
-@media (max-width: 550px) {
-    .nm-pattern {
-        height: 18px;
+.stat-label {
+    display: block;
+    margin-top: 5px;
+    color: #69796e;
+    font-size: 15px;
+}
+
+.adaptive-result-box {
+    max-width: 650px;
+    margin: 25px auto;
+    background: #edf5ef;
+    border-radius: 15px;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    text-align: left;
+    gap: 15px;
+}
+
+.adaptive-result-box>span {
+    font-size: 30px;
+}
+
+.adaptive-result-box strong {
+    color: #365f3d;
+    font-size: 17px;
+}
+
+.adaptive-result-box p {
+    margin: 4px 0 0;
+    color: #65756a;
+    font-size: 15px;
+}
+
+/* -------------------------------------------------------
+   RESPONSIVE DESIGN
+------------------------------------------------------- */
+
+@media (max-width: 700px) {
+    .number-memory-container {
+        padding: 20px 12px;
     }
 
-    .nm-main {
-        padding: 22px 12px;
-    }
-
-    .nm-intro-card,
-    .nm-game-card,
-    .nm-result-card {
-        padding: 28px 18px;
-
+    .number-memory-card {
+        padding: 25px 18px;
         border-radius: 18px;
     }
 
-    .nm-cultural-symbol {
-        width: 70px;
-        height: 70px;
-
-        font-size: 34px;
+    .intro-card h1,
+    .result-card h1 {
+        font-size: 30px;
     }
 
-    .nm-heritage-label {
-        font-size: 9px;
-
-        padding: 7px 11px;
+    .game-description {
+        font-size: 17px;
     }
 
-    .nm-intro-card h1 {
-        font-size: 2.15rem;
-    }
-
-    .nm-intro-subtitle {
-        font-size: 16px;
-    }
-
-    .nm-instruction-card {
-        align-items: flex-start;
-
-        padding: 17px;
-
-        gap: 12px;
-    }
-
-    .nm-instruction-icon {
-        width: 48px;
-        height: 48px;
-
-        font-size: 25px;
-    }
-
-    .nm-instruction-card h3 {
-        font-size: 18px;
-    }
-
-    .nm-instruction-card p {
-        font-size: 14px;
-    }
-
-    .nm-game-types {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .nm-type-item {
-        min-height: 90px;
-    }
-
-    .nm-type-item span {
-        font-size: 24px;
-    }
-
-    .nm-type-item strong {
-        font-size: 12px;
-    }
-
-    .nm-first-level-note {
-        align-items: flex-start;
-
-        padding: 14px;
-    }
-
-    .nm-first-level-note p {
-        font-size: 13px;
-    }
-
-    .nm-large-button {
-        width: 100%;
-    }
-
-    .nm-game-header {
+    .game-header {
         flex-direction: column;
-
         align-items: flex-start;
-
-        gap: 12px;
     }
 
-    .nm-game-header h1 {
+    .game-header h1 {
         font-size: 25px;
     }
 
-    .nm-round-badge {
-        font-size: 13px;
-    }
-
-    .nm-memory-instruction {
-        align-items: flex-start;
-    }
-
-    .nm-memory-instruction h2 {
-        font-size: 21px;
-    }
-
-    .nm-memory-instruction p {
+    .question-counter {
         font-size: 14px;
     }
 
-    .nm-number-sequence {
-        padding: 18px 10px;
-
-        gap: 7px;
+    .memory-number {
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
     }
 
-    .nm-number-box {
-        width: 52px;
-        height: 58px;
-
-        border-radius: 10px;
-
-        font-size: 28px;
-    }
-
-    .nm-arrow {
-        font-size: 18px;
-    }
-
-    .nm-countdown {
-        width: 78px;
-        height: 78px;
-    }
-
-    .nm-countdown-number {
-        font-size: 26px;
-    }
-
-    .nm-arithmetic-area h2 {
-        font-size: 2.5rem;
-    }
-
-    .nm-recall-heading h2 {
+    .sequence-arrow {
         font-size: 23px;
     }
 
-    .nm-recall-heading p {
-        font-size: 14px;
+    .math-question {
+        font-size: 35px;
+        gap: 15px;
     }
 
-    .nm-answer-form input {
-        min-height: 68px;
-
-        font-size: 29px;
-    }
-
-    .nm-answer-form input::placeholder {
-        font-size: 15px;
-    }
-
-    .nm-result-card h1 {
-        font-size: 2rem;
-    }
-
-    .nm-score-circle {
-        width: 135px;
-        height: 135px;
-    }
-
-    .nm-score-circle span {
-        font-size: 32px;
-    }
-
-    .nm-result-stat strong {
+    .answer-input {
         font-size: 21px;
+    }
+
+    .result-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .primary-button,
+    .secondary-button,
+    .submit-button {
+        width: 100%;
     }
 }
 
-/* ==========================================================================
-   Very small phones
-   ========================================================================== */
-
-@media (max-width: 370px) {
-
-    .nm-intro-card,
-    .nm-game-card,
-    .nm-result-card {
-        padding: 23px 14px;
-    }
-
-    .nm-game-types {
+@media (max-width: 430px) {
+    .result-stats {
         grid-template-columns: 1fr;
     }
 
-    .nm-number-sequence {
-        gap: 5px;
-    }
-
-    .nm-number-box {
-        width: 44px;
+    .memory-number {
+        width: 52px;
         height: 52px;
-
-        font-size: 25px;
+        font-size: 27px;
     }
 
-    .nm-arrow {
-        font-size: 15px;
+    .sequence-display {
+        gap: 8px;
     }
 
-    .nm-primary-button {
-        font-size: 15px;
-
-        padding: 13px 18px;
-    }
-}
-
-/* ==========================================================================
-   Reduced motion
-   ========================================================================== */
-
-@media (prefers-reduced-motion: reduce) {
-
-    .nm-primary-button,
-    .nm-secondary-button,
-    .nm-dashboard-button,
-    .nm-small-restart-button,
-    .nm-progress-fill {
-        transition: none;
+    .math-question {
+        font-size: 30px;
     }
 }

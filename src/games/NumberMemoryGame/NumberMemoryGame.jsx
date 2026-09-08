@@ -1,351 +1,255 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./NumberMemoryGame.css";
 
-/*
-|--------------------------------------------------------------------------
-| NUMBER MEMORY GAME
-|--------------------------------------------------------------------------
-| Game types:
-|   1. Number Recall
-|   2. Addition
-|   3. Subtraction
-|   4. Multiplication
-|   5. Division
-|
-| First 3 levels are mandatory.
-|
-| After Level 1 -> NEXT LEVEL
-| After Level 2 -> NEXT LEVEL
-| After Level 3 -> NEXT ROUND + BACK TO DASHBOARD
-|
-| After Level 3, the patient can continue with Level 4, 5, 6...
-|
-| Difficulty is automatically calculated from previous performance.
-| The elderly user never selects Easy / Medium / Hard manually.
-|--------------------------------------------------------------------------
-*/
-
-const MANDATORY_LEVELS = 3;
-const ROUNDS_PER_LEVEL = 3;
-const MAX_ATTEMPTS = 3;
-
 const API_BASE_URL = "http://localhost:5000/api";
-const GAME_NAME = "Number Memory Game";
+const GAME_NAME = "Number Memory";
 
-/*
-|--------------------------------------------------------------------------
-| First 3 levels
-|--------------------------------------------------------------------------
-| Viewing time increases with level as requested.
-|
-| Level 1 -> 4 seconds
-| Level 2 -> 5 seconds
-| Level 3 -> 6 seconds
-|
-| After Level 3, time continues increasing gradually.
-|--------------------------------------------------------------------------
-*/
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-const BASE_LEVELS = {
-    1: {
-        recallLength: 3,
-        recallTime: 4,
-        additionMax: 10,
-        subtractionMax: 10,
-        multiplicationMax: 5,
-        divisionMax: 10,
-    },
+const randomInt = (min, max) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
 
-    2: {
-        recallLength: 4,
-        recallTime: 5,
-        additionMax: 20,
-        subtractionMax: 20,
-        multiplicationMax: 7,
-        divisionMax: 20,
-    },
+const shuffle = (array) => {
+    const result = [...array];
 
-    3: {
-        recallLength: 5,
-        recallTime: 6,
-        additionMax: 30,
-        subtractionMax: 30,
-        multiplicationMax: 8,
-        divisionMax: 30,
-    },
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+    }
 
-    4: {
-        recallLength: 6,
-        recallTime: 7,
-        additionMax: 40,
-        subtractionMax: 40,
-        multiplicationMax: 9,
-        divisionMax: 40,
-    },
-
-    5: {
-        recallLength: 7,
-        recallTime: 8,
-        additionMax: 50,
-        subtractionMax: 50,
-        multiplicationMax: 10,
-        divisionMax: 50,
-    },
+    return result;
 };
 
-/*
-|--------------------------------------------------------------------------
-| Helpers
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------
+   LEVEL CONFIGURATION
+------------------------------------------------------- */
 
-function clamp(value, min, max) {
-    return Math.min(Math.max(value, min), max);
-}
+const getLevelConfig = (level) => {
+    const safeLevel = clamp(level, 1, 5);
 
-function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+    const configs = {
+        1: {
+            recallLength: 3,
+            recallTime: 4,
+            additionMax: 10,
+            subtractionMax: 10,
+            multiplicationMax: 5,
+            divisionMax: 10,
+        },
 
-function shuffle(array) {
-    return [...array].sort(() => Math.random() - 0.5);
-}
+        2: {
+            recallLength: 4,
+            recallTime: 5,
+            additionMax: 20,
+            subtractionMax: 20,
+            multiplicationMax: 7,
+            divisionMax: 20,
+        },
 
-function normalizeAnswer(value) {
-    return String(value ?? "")
-        .trim()
-        .replace(/\s+/g, "");
-}
+        3: {
+            recallLength: 5,
+            recallTime: 6,
+            additionMax: 30,
+            subtractionMax: 30,
+            multiplicationMax: 9,
+            divisionMax: 30,
+        },
 
-function getLevelConfig(level) {
-    if (BASE_LEVELS[level]) {
-        return BASE_LEVELS[level];
+        4: {
+            recallLength: 6,
+            recallTime: 7,
+            additionMax: 50,
+            subtractionMax: 50,
+            multiplicationMax: 10,
+            divisionMax: 50,
+        },
+
+        5: {
+            recallLength: 7,
+            recallTime: 8,
+            additionMax: 75,
+            subtractionMax: 75,
+            multiplicationMax: 12,
+            divisionMax: 75,
+        },
+    };
+
+    return configs[safeLevel];
+};
+
+/* -------------------------------------------------------
+   NUMBER RECALL
+------------------------------------------------------- */
+
+const createNumberSequence = (length) => {
+    return Array.from({ length }, () => randomInt(0, 9));
+};
+
+/* -------------------------------------------------------
+   ARITHMETIC QUESTIONS
+------------------------------------------------------- */
+
+const createArithmeticQuestion = (type, difficulty) => {
+    const config = getLevelConfig(difficulty);
+
+    if (type === "addition") {
+        const a = randomInt(1, config.additionMax);
+        const b = randomInt(1, config.additionMax);
+
+        return {
+            type,
+            a,
+            b,
+            answer: a + b,
+        };
     }
 
-    /*
-     * Levels above 5 continue gradually.
-     * Viewing time increases up to 10 seconds.
-     */
-    const extra = level - 5;
+    if (type === "subtraction") {
+        let a = randomInt(1, config.subtractionMax);
+        let b = randomInt(1, config.subtractionMax);
 
-    return {
-        recallLength: Math.min(10, 7 + extra),
-        recallTime: Math.min(10, 8 + extra),
-
-        additionMax: Math.min(100, 50 + extra * 10),
-
-        subtractionMax: Math.min(100, 50 + extra * 10),
-
-        multiplicationMax: Math.min(12, 10 + Math.floor(extra / 2)),
-
-        divisionMax: Math.min(100, 50 + extra * 10),
-    };
-}
-
-function generateNumberSequence(length) {
-    const sequence = [];
-
-    for (let i = 0; i < length; i++) {
-        let number = randomInt(0, 9);
-
-        /*
-         * Avoid immediate duplicate digits.
-         */
-        if (i > 0) {
-            while (number === sequence[i - 1]) {
-                number = randomInt(0, 9);
-            }
+        if (b > a) {
+            [a, b] = [b, a];
         }
 
-        sequence.push(number);
+        return {
+            type,
+            a,
+            b,
+            answer: a - b,
+        };
     }
 
-    return sequence;
-}
+    if (type === "multiplication") {
+        const a = randomInt(2, config.multiplicationMax);
+        const b = randomInt(2, 5);
 
-/*
-|--------------------------------------------------------------------------
-| Generate arithmetic questions
-|--------------------------------------------------------------------------
-*/
-
-function createAddition(config) {
-    const first = randomInt(1, config.additionMax);
-    const second = randomInt(1, config.additionMax);
-
-    return {
-        type: "addition",
-        icon: "➕",
-        title: "Addition",
-        question: `${first} + ${second} = ?`,
-        answer: first + second,
-    };
-}
-
-function createSubtraction(config) {
-    let first = randomInt(1, config.subtractionMax);
-    let second = randomInt(1, config.subtractionMax);
-
-    /*
-     * Make sure answer is never negative.
-     */
-    if (second > first) {
-        [first, second] = [second, first];
+        return {
+            type,
+            a,
+            b,
+            answer: a * b,
+        };
     }
 
-    return {
-        type: "subtraction",
-        icon: "➖",
-        title: "Subtraction",
-        question: `${first} − ${second} = ?`,
-        answer: first - second,
-    };
-}
+    if (type === "division") {
+        const divisor = randomInt(
+            2,
+            Math.min(10, config.divisionMax)
+        );
 
-function createMultiplication(config) {
-    const first = randomInt(2, config.multiplicationMax);
-    const second = randomInt(2, 5);
+        const maxQuotient = Math.max(
+            1,
+            Math.floor(config.divisionMax / divisor)
+        );
 
-    return {
-        type: "multiplication",
-        icon: "✖️",
-        title: "Multiplication",
-        question: `${first} × ${second} = ?`,
-        answer: first * second,
-    };
-}
+        const quotient = randomInt(1, maxQuotient);
 
-function createDivision(config) {
-    const divisor = randomInt(
-        2,
-        Math.min(10, config.divisionMax)
+        return {
+            type,
+            a: divisor * quotient,
+            b: divisor,
+            answer: quotient,
+        };
+    }
+
+    return null;
+};
+
+/* -------------------------------------------------------
+   QUESTION CREATION
+------------------------------------------------------- */
+
+const createQuestion = (type, level, adaptiveDifficulty) => {
+    if (type === "numberRecall") {
+        const config = getLevelConfig(level);
+
+        const sequence = createNumberSequence(
+            config.recallLength
+        );
+
+        return {
+            type,
+            sequence,
+            answer: sequence.join(""),
+            recallTime: config.recallTime,
+        };
+    }
+
+    const effectiveDifficulty = clamp(
+        Math.round((level + adaptiveDifficulty) / 2),
+        1,
+        5
     );
 
-    const maximumQuotient = Math.max(
-        2,
-        Math.floor(config.divisionMax / divisor)
+    return createArithmeticQuestion(
+        type,
+        effectiveDifficulty
     );
+};
 
-    const quotient = randomInt(1, maximumQuotient);
+/* -------------------------------------------------------
+   QUESTION TYPES
+------------------------------------------------------- */
 
-    const dividend = divisor * quotient;
-
-    return {
-        type: "division",
-        icon: "➗",
-        title: "Division",
-        question: `${dividend} ÷ ${divisor} = ?`,
-        answer: quotient,
-    };
-}
-
-function createRecallQuestion(config) {
-    const sequence = generateNumberSequence(config.recallLength);
-
-    return {
-        type: "recall",
-        icon: "🧠",
-        title: "Number Recall",
-        sequence,
-        question: "Remember the numbers",
-        answer: sequence.join(""),
-    };
-}
-
-function createQuestion(config, type) {
-    switch (type) {
-        case "recall":
-            return createRecallQuestion(config);
-
-        case "addition":
-            return createAddition(config);
-
-        case "subtraction":
-            return createSubtraction(config);
-
-        case "multiplication":
-            return createMultiplication(config);
-
-        case "division":
-            return createDivision(config);
-
-        default:
-            return createRecallQuestion(config);
-    }
-}
-
-/*
-|--------------------------------------------------------------------------
-| Create mixed question types
-|--------------------------------------------------------------------------
-| Every level contains all 5 types when possible.
-|--------------------------------------------------------------------------
-*/
-
-function createQuestionSet(config) {
-    const allTypes = [
-        "recall",
+const createMixedQuestionTypes = (count) => {
+    const baseTypes = [
+        "numberRecall",
         "addition",
         "subtraction",
         "multiplication",
         "division",
     ];
 
-    /*
-     * Since each level has 3 rounds, select 3 different types for
-     * each level, while rotating the types so that all five are
-     * regularly represented.
-     */
-    const start = randomInt(0, allTypes.length - 1);
+    const types = [...baseTypes];
 
-    const selectedTypes = [];
-
-    for (let i = 0; i < ROUNDS_PER_LEVEL; i++) {
-        selectedTypes.push(
-            allTypes[(start + i) % allTypes.length]
+    while (types.length < count) {
+        types.push(
+            baseTypes[randomInt(0, baseTypes.length - 1)]
         );
     }
 
-    return shuffle(
-        selectedTypes.map((type) => createQuestion(config, type))
+    return shuffle(types).slice(0, count);
+};
+
+/* -------------------------------------------------------
+   QUESTION COUNT
+------------------------------------------------------- */
+
+const determineQuestionCount = (level) => {
+    return clamp(
+        4 + Math.min(level, 5),
+        5,
+        10
     );
-}
+};
 
-/*
-|--------------------------------------------------------------------------
-| Difficulty calculation
-|--------------------------------------------------------------------------
-| Previous performance controls the next starting level.
-|
-| No difficulty buttons are shown to the patient.
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------
+   ADAPTIVE DIFFICULTY
+------------------------------------------------------- */
 
-function calculateNextDifficulty(previousPerformance) {
+const calculateDifficulty = (
+    previousPerformance,
+    currentDifficulty = 1
+) => {
     if (!previousPerformance) {
         return 1;
     }
 
     const accuracy = Number(
-        previousPerformance.accuracy ?? 0
+        previousPerformance.accuracy || 0
     );
 
     const mistakeRate = Number(
-        previousPerformance.mistake_rate ?? 0
+        previousPerformance.mistake_rate || 0
     );
 
     const hintRate = Number(
-        previousPerformance.hint_rate ?? 0
+        previousPerformance.hint_rate || 0
     );
 
-    const averageResponseTime = Number(
-        previousPerformance.average_response_time ?? 0
-    );
-
-    const previousLevel = clamp(
-        Number(previousPerformance.difficulty_level ?? 1),
-        1,
-        10
+    const responseTime = Number(
+        previousPerformance.average_response_time || 0
     );
 
     let score = 0;
@@ -372,69 +276,162 @@ function calculateNextDifficulty(previousPerformance) {
         score -= 1;
     }
 
-    if (averageResponseTime > 0) {
-        if (averageResponseTime <= 8) {
+    if (responseTime > 0) {
+        if (responseTime <= 8) {
             score += 1;
-        } else if (averageResponseTime >= 18) {
+        } else if (responseTime >= 18) {
             score -= 1;
         }
     }
 
     if (score >= 3) {
-        return clamp(previousLevel + 1, 1, 10);
+        return clamp(
+            currentDifficulty + 1,
+            1,
+            5
+        );
     }
 
     if (score <= -2) {
-        return clamp(previousLevel - 1, 1, 10);
+        return clamp(
+            currentDifficulty - 1,
+            1,
+            5
+        );
     }
 
-    return previousLevel;
-}
+    return clamp(
+        currentDifficulty,
+        1,
+        5
+    );
+};
 
-/*
-|--------------------------------------------------------------------------
-| Hints
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------
+   NORMALIZE ANSWERS
+------------------------------------------------------- */
 
-function getHint(question) {
+const normalizeAnswer = (value, type) => {
+    if (type === "numberRecall") {
+        return String(value || "").replace(/\D/g, "");
+    }
+
+    return String(value || "")
+        .trim()
+        .replace(/\s+/g, "");
+};
+
+/* -------------------------------------------------------
+   THREE DIFFERENT HINTS
+------------------------------------------------------- */
+
+const getHints = (question) => {
+    if (!question) {
+        return [];
+    }
+
     switch (question.type) {
-        case "recall":
-            return "Try remembering the first number, then continue one number at a time.";
-
         case "addition":
-            return "Start with the first number and count forward by the second number.";
+            return [
+                `Try counting ${question.b} more from ${question.a}.`,
+                `Start with ${question.a} and add ${question.b} step by step.`,
+                `Think about combining ${question.a} objects with ${question.b} more objects.`,
+            ];
 
         case "subtraction":
-            return "Start with the first number and count backwards.";
+            return [
+                `Start with ${question.a} and count backwards ${question.b}.`,
+                `Take away ${question.b} from ${question.a} slowly.`,
+                `Think: ${question.a} minus ${question.b} means removing ${question.b}.`,
+            ];
 
         case "multiplication":
-            return "Think of equal groups. For example, 3 × 4 means 3 groups of 4.";
+            return [
+                `Think of ${question.b} groups of ${question.a}.`,
+                `You can add ${question.a} together ${question.b} times.`,
+                `Count ${question.a}, ${question.a}, ${question.a}... ${question.b} times.`,
+            ];
 
         case "division":
-            return "Think about how many equal groups can be made.";
+            return [
+                `How many groups of ${question.b} make ${question.a}?`,
+                `Think about repeatedly subtracting ${question.b} from ${question.a}.`,
+                `Ask yourself: ${question.b} multiplied by what gives ${question.a}?`,
+            ];
+
+        case "numberRecall":
+            return [
+                "Try remembering the first number again.",
+                "Think about the order in which you saw the numbers.",
+                "Picture the number sequence in your mind from left to right.",
+            ];
 
         default:
-            return "Take your time and think carefully.";
+            return [
+                "Take your time and think carefully.",
+                "Try remembering what you saw earlier.",
+                "Look at the question carefully and try again.",
+            ];
     }
-}
+};
 
-/*
-|--------------------------------------------------------------------------
-| Main Component
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------
+   LABELS
+------------------------------------------------------- */
 
-export default function NumberMemoryGame({ patient, onHome }) {
+const getActivityLabel = (type) => {
+    switch (type) {
+        case "numberRecall":
+            return "Number Recall";
+        case "addition":
+            return "Addition";
+        case "subtraction":
+            return "Subtraction";
+        case "multiplication":
+            return "Multiplication";
+        case "division":
+            return "Division";
+        default:
+            return "Memory Question";
+    }
+};
+
+const getActivityIcon = (type) => {
+    switch (type) {
+        case "numberRecall":
+            return "🧠";
+        case "addition":
+            return "➕";
+        case "subtraction":
+            return "➖";
+        case "multiplication":
+            return "✖️";
+        case "division":
+            return "➗";
+        default:
+            return "🧠";
+    }
+};
+
+/* -------------------------------------------------------
+   MAIN COMPONENT
+------------------------------------------------------- */
+
+const NumberMemoryGame = ({
+    patientId,
+    onBackToDashboard,
+}) => {
     const [screen, setScreen] = useState("intro");
 
     const [level, setLevel] = useState(1);
 
-    const [round, setRound] = useState(0);
+    const [adaptiveDifficulty, setAdaptiveDifficulty] =
+        useState(1);
 
     const [questions, setQuestions] = useState([]);
 
-    const [currentQuestion, setCurrentQuestion] = useState(null);
+    const [questionIndex, setQuestionIndex] =
+        useState(0);
 
     const [answer, setAnswer] = useState("");
 
@@ -445,142 +442,123 @@ export default function NumberMemoryGame({ patient, onHome }) {
     const [showCorrectAnswer, setShowCorrectAnswer] =
         useState(false);
 
-    const [recallVisible, setRecallVisible] = useState(false);
+    const [recallRemaining, setRecallRemaining] =
+        useState(0);
 
-    const [remainingTime, setRemainingTime] = useState(0);
+    const [
+        previousPerformance,
+        setPreviousPerformance,
+    ] = useState(null);
 
-    const [questionStartTime, setQuestionStartTime] =
+    const [
+        loadingPreviousPerformance,
+        setLoadingPreviousPerformance,
+    ] = useState(false);
+
+    const [sessionStartedAt, setSessionStartedAt] =
         useState(null);
 
-    const [levelStartTime, setLevelStartTime] =
+    const [questionStartedAt, setQuestionStartedAt] =
         useState(null);
 
-    const [previousPerformance, setPreviousPerformance] =
+    const [questionResults, setQuestionResults] =
+        useState([]);
+
+    const [sessionResult, setSessionResult] =
         useState(null);
 
-    const [loadingPerformance, setLoadingPerformance] =
-        useState(false);
+    const [errorMessage, setErrorMessage] =
+        useState("");
 
-    const [levelResults, setLevelResults] = useState([]);
+    const countdownRef = useRef(null);
 
-    const [resultData, setResultData] = useState(null);
+    const nextQuestionTimeoutRef =
+        useRef(null);
 
-    const [errorMessage, setErrorMessage] = useState("");
+    const currentQuestion =
+        questions[questionIndex];
 
-    const timerRef = useRef(null);
+    /* -------------------------------------------------------
+       FETCH PREVIOUS PERFORMANCE
+    ------------------------------------------------------- */
 
-    const config = useMemo(
-        () => getLevelConfig(level),
-        [level]
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Cleanup
-    |--------------------------------------------------------------------------
-    */
-
-    useEffect(() => {
-        return () => {
-            clearInterval(timerRef.current);
-        };
-    }, []);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Fetch previous performance
-    |--------------------------------------------------------------------------
-    */
-
-    async function fetchPreviousPerformance() {
-        const patientId =
-            patient?.id ||
-            patient?.patient_id ||
-            patient?.patientId;
-
-        if (!patientId) {
-            return null;
-        }
-
-        setLoadingPerformance(true);
-
-        try {
-            const response = await fetch(
-                `${API_BASE_URL}/games/number-memory/performance/${patientId}`
-            );
-
-            if (!response.ok) {
-                throw new Error("Unable to load previous performance.");
+    const fetchPreviousPerformance =
+        async () => {
+            if (!patientId) {
+                return null;
             }
 
-            const data = await response.json();
+            try {
+                setLoadingPreviousPerformance(true);
 
-            const performance =
-                data?.performance || data || null;
+                const response = await fetch(
+                    `${API_BASE_URL}/games/numbers-and-recall/performance/${patientId}`
+                );
 
-            setPreviousPerformance(performance);
+                if (!response.ok) {
+                    throw new Error(
+                        "Unable to load previous performance"
+                    );
+                }
 
-            return performance;
-        } catch (error) {
-            console.warn(
-                "Previous performance could not be loaded:",
-                error
+                const data = await response.json();
+
+                const performance =
+                    data.performance ||
+                    data.data ||
+                    data;
+
+                setPreviousPerformance(
+                    performance
+                );
+
+                return performance;
+            } catch (error) {
+                console.warn(
+                    "Previous performance could not be loaded:",
+                    error
+                );
+
+                return null;
+            } finally {
+                setLoadingPreviousPerformance(
+                    false
+                );
+            }
+        };
+
+    /* -------------------------------------------------------
+       START ROUND
+    ------------------------------------------------------- */
+
+    const beginRound = (
+        roundLevel,
+        difficultyValue = adaptiveDifficulty
+    ) => {
+        const questionCount =
+            determineQuestionCount(
+                roundLevel
             );
 
-            return null;
-        } finally {
-            setLoadingPerformance(false);
-        }
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Start the game
-    |--------------------------------------------------------------------------
-    */
-
-    async function handleStartGame() {
-        setErrorMessage("");
-
-        const previous = await fetchPreviousPerformance();
-
-        /*
-         * If this is the patient's first session, start at Level 1.
-         *
-         * Otherwise the level is automatically calculated from
-         * previous performance.
-         */
-        const calculatedLevel =
-            previous
-                ? calculateNextDifficulty(previous)
-                : 1;
-
-        startLevel(calculatedLevel);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Start level
-    |--------------------------------------------------------------------------
-    */
-
-    function startLevel(levelNumber) {
-        clearInterval(timerRef.current);
-
-        const safeLevel = clamp(levelNumber, 1, 10);
-
-        const levelConfig = getLevelConfig(safeLevel);
+        const types =
+            createMixedQuestionTypes(
+                questionCount
+            );
 
         const generatedQuestions =
-            createQuestionSet(levelConfig);
+            types.map((type) =>
+                createQuestion(
+                    type,
+                    roundLevel,
+                    difficultyValue
+                )
+            );
 
-        setLevel(safeLevel);
-
-        setRound(0);
+        setLevel(roundLevel);
 
         setQuestions(generatedQuestions);
 
-        setCurrentQuestion(generatedQuestions[0]);
+        setQuestionIndex(0);
 
         setAnswer("");
 
@@ -590,92 +568,189 @@ export default function NumberMemoryGame({ patient, onHome }) {
 
         setShowCorrectAnswer(false);
 
-        setRecallVisible(
-            generatedQuestions[0]?.type === "recall"
-        );
+        setQuestionResults([]);
 
-        setRemainingTime(
-            generatedQuestions[0]?.type === "recall"
-                ? levelConfig.recallTime
-                : 0
-        );
+        setErrorMessage("");
 
-        setLevelResults([]);
+        const firstQuestion =
+            generatedQuestions[0];
 
-        setResultData(null);
+        if (
+            firstQuestion.type ===
+            "numberRecall"
+        ) {
+            setRecallRemaining(
+                firstQuestion.recallTime
+            );
 
-        setLevelStartTime(Date.now());
+            setQuestionStartedAt(null);
 
-        setQuestionStartTime(null);
-
-        if (generatedQuestions[0]?.type === "recall") {
-            setScreen("memorizing");
+            setScreen("recall");
         } else {
+            setQuestionStartedAt(
+                Date.now()
+            );
+
             setScreen("question");
-
-            setQuestionStartTime(Date.now());
         }
-    }
+    };
 
-    /*
-    |--------------------------------------------------------------------------
-    | Memorization timer
-    |--------------------------------------------------------------------------
-    */
+    /* -------------------------------------------------------
+       START GAME
+    ------------------------------------------------------- */
+
+    const startGame = async () => {
+        setErrorMessage("");
+
+        const previous =
+            await fetchPreviousPerformance();
+
+        const calculatedDifficulty =
+            calculateDifficulty(
+                previous,
+                1
+            );
+
+        setAdaptiveDifficulty(
+            calculatedDifficulty
+        );
+
+        setSessionStartedAt(
+            Date.now()
+        );
+
+        beginRound(
+            1,
+            calculatedDifficulty
+        );
+    };
+
+    /* -------------------------------------------------------
+       RECALL COUNTDOWN
+    ------------------------------------------------------- */
 
     useEffect(() => {
         if (
-            screen !== "memorizing" ||
-            !currentQuestion ||
-            currentQuestion.type !== "recall"
+            screen !== "recall" ||
+            !currentQuestion
         ) {
-            return undefined;
+            return;
         }
 
-        clearInterval(timerRef.current);
+        if (countdownRef.current) {
+            clearInterval(
+                countdownRef.current
+            );
+        }
 
-        setRemainingTime(config.recallTime);
+        setRecallRemaining(
+            currentQuestion.recallTime
+        );
 
-        timerRef.current = setInterval(() => {
-            setRemainingTime((previous) => {
-                if (previous <= 1) {
-                    clearInterval(timerRef.current);
+        countdownRef.current =
+            setInterval(() => {
+                setRecallRemaining(
+                    (previous) => {
+                        if (previous <= 1) {
+                            clearInterval(
+                                countdownRef.current
+                            );
 
-                    setRecallVisible(false);
+                            setScreen(
+                                "question"
+                            );
 
-                    setScreen("question");
+                            setQuestionStartedAt(
+                                Date.now()
+                            );
 
-                    setQuestionStartTime(Date.now());
+                            return 0;
+                        }
 
-                    return 0;
-                }
-
-                return previous - 1;
-            });
-        }, 1000);
+                        return previous - 1;
+                    }
+                );
+            }, 1000);
 
         return () => {
-            clearInterval(timerRef.current);
+            if (countdownRef.current) {
+                clearInterval(
+                    countdownRef.current
+                );
+            }
         };
     }, [
         screen,
-        currentQuestion,
-        config.recallTime,
+        questionIndex,
     ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Start next round
-    |--------------------------------------------------------------------------
-    */
+    /* -------------------------------------------------------
+       KEYBOARD ENTER
+    ------------------------------------------------------- */
 
-    function startNextRound(nextRoundIndex) {
+    useEffect(() => {
+        const handleKeyDown = (
+            event
+        ) => {
+            if (
+                event.key === "Enter" &&
+                screen === "question"
+            ) {
+                event.preventDefault();
+
+                submitAnswer();
+            }
+        };
+
+        window.addEventListener(
+            "keydown",
+            handleKeyDown
+        );
+
+        return () => {
+            window.removeEventListener(
+                "keydown",
+                handleKeyDown
+            );
+        };
+    });
+
+    /* -------------------------------------------------------
+       NEXT QUESTION
+    ------------------------------------------------------- */
+
+    const moveToNextQuestion = (
+        result
+    ) => {
+        const updatedResults = [
+            ...questionResults,
+            result,
+        ];
+
+        setQuestionResults(
+            updatedResults
+        );
+
+        if (
+            questionIndex >=
+            questions.length - 1
+        ) {
+            finishRound(
+                updatedResults
+            );
+
+            return;
+        }
+
+        const nextIndex =
+            questionIndex + 1;
+
         const nextQuestion =
-            questions[nextRoundIndex];
+            questions[nextIndex];
 
-        setRound(nextRoundIndex);
-
-        setCurrentQuestion(nextQuestion);
+        setQuestionIndex(
+            nextIndex
+        );
 
         setAnswer("");
 
@@ -683,207 +758,234 @@ export default function NumberMemoryGame({ patient, onHome }) {
 
         setHint("");
 
-        setShowCorrectAnswer(false);
-
-        setRecallVisible(
-            nextQuestion.type === "recall"
+        setShowCorrectAnswer(
+            false
         );
 
-        if (nextQuestion.type === "recall") {
-            setRemainingTime(config.recallTime);
+        if (
+            nextQuestion.type ===
+            "numberRecall"
+        ) {
+            setRecallRemaining(
+                nextQuestion.recallTime
+            );
 
-            setScreen("memorizing");
+            setQuestionStartedAt(
+                null
+            );
+
+            setScreen("recall");
         } else {
-            setRemainingTime(0);
+            setQuestionStartedAt(
+                Date.now()
+            );
 
             setScreen("question");
-
-            setQuestionStartTime(Date.now());
         }
-    }
+    };
 
-    /*
-    |--------------------------------------------------------------------------
-    | Submit answer
-    |--------------------------------------------------------------------------
-    */
+    /* -------------------------------------------------------
+       SUBMIT ANSWER
+    ------------------------------------------------------- */
 
-    function handleSubmit(event) {
-        event.preventDefault();
-
-        if (!currentQuestion) {
+    const submitAnswer = () => {
+        if (
+            !currentQuestion ||
+            attempts >= 3 ||
+            screen !== "question"
+        ) {
             return;
         }
 
-        if (attempts >= MAX_ATTEMPTS) {
-            return;
-        }
+        if (!answer.trim()) {
+            setErrorMessage(
+                "Please enter your answer before submitting."
+            );
 
-        const cleanAnswer = normalizeAnswer(answer);
-
-        if (!cleanAnswer) {
-            setErrorMessage("Please enter your answer.");
             return;
         }
 
         setErrorMessage("");
 
-        const currentAttempt = attempts + 1;
-
-        const correctAnswer = normalizeAnswer(
-            currentQuestion.answer
-        );
-
-        const isCorrect =
-            cleanAnswer === correctAnswer;
+        const currentAttempt =
+            attempts + 1;
 
         const responseTime =
-            questionStartTime
-                ? (Date.now() - questionStartTime) / 1000
+            questionStartedAt
+                ? (Date.now() -
+                    questionStartedAt) /
+                1000
                 : 0;
 
-        setAttempts(currentAttempt);
+        const userAnswer =
+            normalizeAnswer(
+                answer,
+                currentQuestion.type
+            );
+
+        const correctAnswer =
+            normalizeAnswer(
+                currentQuestion.answer,
+                currentQuestion.type
+            );
+
+        const isCorrect =
+            userAnswer ===
+            correctAnswer;
+
+        /* ---------------------------------------------------
+           CORRECT ANSWER
+        --------------------------------------------------- */
 
         if (isCorrect) {
             const result = {
-                questionType: currentQuestion.type,
+                type: currentQuestion.type,
                 correct: true,
                 attempts: currentAttempt,
-                mistakes: currentAttempt - 1,
-                hints: currentAttempt - 1,
-                response_time: Number(
-                    responseTime.toFixed(2)
-                ),
+                mistakes:
+                    currentAttempt - 1,
+                hints:
+                    currentAttempt - 1,
+                response_time:
+                    responseTime,
             };
 
-            moveToNext(result);
+            moveToNextQuestion(
+                result
+            );
 
             return;
         }
 
-        /*
-         * Wrong answer:
-         *
-         * Always provide a hint.
-         */
-        const nextHint = getHint(currentQuestion);
+        /* ---------------------------------------------------
+           WRONG ANSWER
+           
+           IMPORTANT:
+           The patient's previous wrong answer is
+           automatically deleted here.
+        --------------------------------------------------- */
 
-        setHint(nextHint);
-
-        /*
-         * Third wrong attempt:
-         * stop accepting answers and reveal the answer.
-         */
-        if (currentAttempt >= MAX_ATTEMPTS) {
-            setShowCorrectAnswer(true);
-
-            const result = {
-                questionType: currentQuestion.type,
-                correct: false,
-                attempts: MAX_ATTEMPTS,
-                mistakes: MAX_ATTEMPTS,
-                hints: MAX_ATTEMPTS,
-                response_time: Number(
-                    responseTime.toFixed(2)
-                ),
-            };
-
-            setTimeout(() => {
-                moveToNext(result);
-            }, 2200);
-
-            return;
-        }
-
-        /*
-         * Allow another attempt.
-         */
         setAnswer("");
-    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Move to next round
-    |--------------------------------------------------------------------------
-    */
+        /* ---------------------------------------------------
+           THREE DIFFERENT HINTS
+        --------------------------------------------------- */
 
-    function moveToNext(result) {
-        const updatedResults = [
-            ...levelResults,
-            result,
-        ];
+        const hints =
+            getHints(currentQuestion);
 
-        setLevelResults(updatedResults);
+        const currentHint =
+            hints[currentAttempt - 1] ||
+            hints[hints.length - 1];
 
-        if (round < ROUNDS_PER_LEVEL - 1) {
-            startNextRound(round + 1);
+        setHint(currentHint);
 
-            return;
+        setAttempts(
+            currentAttempt
+        );
+
+        /* ---------------------------------------------------
+           THIRD WRONG ATTEMPT
+        --------------------------------------------------- */
+
+        if (currentAttempt >= 3) {
+            setShowCorrectAnswer(
+                true
+            );
+
+            if (
+                nextQuestionTimeoutRef.current
+            ) {
+                clearTimeout(
+                    nextQuestionTimeoutRef.current
+                );
+            }
+
+            nextQuestionTimeoutRef.current =
+                setTimeout(() => {
+                    const result = {
+                        type: currentQuestion.type,
+                        correct: false,
+                        attempts: 3,
+                        mistakes: 3,
+                        hints: 3,
+                        response_time:
+                            responseTime,
+                    };
+
+                    moveToNextQuestion(
+                        result
+                    );
+                }, 1800);
         }
+    };
 
-        finishLevel(updatedResults);
-    }
+    /* -------------------------------------------------------
+       FINISH ROUND
+    ------------------------------------------------------- */
 
-    /*
-    |--------------------------------------------------------------------------
-    | Finish level
-    |--------------------------------------------------------------------------
-    */
-
-    async function finishLevel(results) {
-        clearInterval(timerRef.current);
-
+    const finishRound = async (
+        results
+    ) => {
         const completionTime =
-            levelStartTime
-                ? (Date.now() - levelStartTime) / 1000
+            sessionStartedAt
+                ? (Date.now() -
+                    sessionStartedAt) /
+                1000
                 : 0;
+
+        const totalQuestions =
+            results.length;
 
         const correctAnswers =
             results.filter(
-                (item) => item.correct
+                (result) =>
+                    result.correct
             ).length;
 
         const incorrectAnswers =
-            results.length - correctAnswers;
+            totalQuestions -
+            correctAnswers;
 
         const totalAttempts =
             results.reduce(
-                (total, item) =>
-                    total + item.attempts,
+                (sum, result) =>
+                    sum + result.attempts,
                 0
             );
 
         const totalMistakes =
             results.reduce(
-                (total, item) =>
-                    total + item.mistakes,
+                (sum, result) =>
+                    sum + result.mistakes,
                 0
             );
 
         const totalHints =
             results.reduce(
-                (total, item) =>
-                    total + item.hints,
+                (sum, result) =>
+                    sum + result.hints,
                 0
             );
 
         const totalResponseTime =
             results.reduce(
-                (total, item) =>
-                    total + item.response_time,
+                (sum, result) =>
+                    sum +
+                    Number(
+                        result.response_time ||
+                        0
+                    ),
                 0
             );
 
         const accuracy =
-            results.length > 0
+            totalQuestions > 0
                 ? (correctAnswers /
-                    results.length) *
+                    totalQuestions) *
                 100
                 : 0;
 
-        /*
-         * Mistake rate = wrong attempts / total attempts.
-         */
         const mistakeRate =
             totalAttempts > 0
                 ? (totalMistakes /
@@ -891,575 +993,570 @@ export default function NumberMemoryGame({ patient, onHome }) {
                 100
                 : 0;
 
-        /*
-         * Hint rate = questions requiring at least one hint /
-         * total questions.
-         */
-        const questionsWithHints =
-            results.filter(
-                (item) => item.hints > 0
-            ).length;
-
         const hintRate =
-            results.length > 0
-                ? (questionsWithHints /
-                    results.length) *
+            totalAttempts > 0
+                ? (totalHints /
+                    totalAttempts) *
                 100
                 : 0;
 
         const averageResponseTime =
-            results.length > 0
+            totalQuestions > 0
                 ? totalResponseTime /
-                results.length
+                totalQuestions
                 : 0;
 
+        const effectiveDifficulty =
+            clamp(
+                Math.round(
+                    (level +
+                        adaptiveDifficulty) /
+                    2
+                ),
+                1,
+                5
+            );
+
         const performance = {
-            accuracy: Number(
-                accuracy.toFixed(2)
-            ),
+            accuracy:
+                Number(
+                    accuracy.toFixed(2)
+                ),
 
-            mistake_rate: Number(
-                mistakeRate.toFixed(2)
-            ),
+            mistake_rate:
+                Number(
+                    mistakeRate.toFixed(2)
+                ),
 
-            hint_rate: Number(
-                hintRate.toFixed(2)
-            ),
+            hint_rate:
+                Number(
+                    hintRate.toFixed(2)
+                ),
 
-            completion_time: Number(
-                completionTime.toFixed(2)
-            ),
+            completion_time:
+                Number(
+                    completionTime.toFixed(2)
+                ),
 
-            average_response_time: Number(
-                averageResponseTime.toFixed(2)
-            ),
+            average_response_time:
+                Number(
+                    averageResponseTime.toFixed(
+                        2
+                    )
+                ),
 
-            difficulty_level: level,
+            difficulty_level:
+                effectiveDifficulty,
 
-            attempts: totalAttempts,
+            attempts:
+                totalAttempts,
 
-            correct_answers: correctAnswers,
+            correct_answers:
+                correctAnswers,
 
-            incorrect_answers: incorrectAnswers,
+            incorrect_answers:
+                incorrectAnswers,
 
-            game_name: GAME_NAME,
+            game_name:
+                GAME_NAME,
         };
 
-        setResultData(performance);
-
-        setScreen("levelComplete");
-
-        /*
-         * Save performance to backend.
-         */
-        const patientId =
-            patient?.id ||
-            patient?.patient_id ||
-            patient?.patientId;
-
-        if (!patientId) {
-            return;
-        }
-
-        try {
-            const response = await fetch(
-                `${API_BASE_URL}/games/number-memory/performance`,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-                    },
-
-                    body: JSON.stringify({
-                        patient_id: patientId,
-                        ...performance,
-                    }),
-                }
+        const nextAdaptiveDifficulty =
+            calculateDifficulty(
+                performance,
+                adaptiveDifficulty
             );
 
-            if (!response.ok) {
-                throw new Error(
-                    "Performance could not be saved."
+        setAdaptiveDifficulty(
+            nextAdaptiveDifficulty
+        );
+
+        setSessionResult({
+            ...performance,
+            level,
+            totalQuestions,
+        });
+
+        setScreen(
+            "roundResult"
+        );
+
+        /* ---------------------------------------------------
+           SAVE PERFORMANCE
+        --------------------------------------------------- */
+
+        if (patientId) {
+            try {
+                const response =
+                    await fetch(
+                        `${API_BASE_URL}/games/numbers-and-recall/performance`,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+                            },
+
+                            body: JSON.stringify({
+                                patient_id:
+                                    patientId,
+
+                                ...performance,
+                            }),
+                        }
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Performance could not be saved"
+                    );
+                }
+            } catch (error) {
+                console.warn(
+                    "Performance save failed:",
+                    error
+                );
+
+                setErrorMessage(
+                    "Your result is shown, but it could not be saved right now."
                 );
             }
-        } catch (error) {
-            console.warn(
-                "Performance save failed:",
-                error
-            );
-
-            setErrorMessage(
-                "Your result is shown above, but it could not be saved to the server."
-            );
         }
-    }
+    };
 
-    /*
-    |--------------------------------------------------------------------------
-    | Continue after mandatory Level 3
-    |--------------------------------------------------------------------------
-    */
+    /* -------------------------------------------------------
+       NEXT ROUND
+    ------------------------------------------------------- */
 
-    function handleNextRound() {
-        startLevel(level + 1);
-    }
+    const handleNextRound = () => {
+        const nextLevel =
+            level + 1;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Dashboard
-    |--------------------------------------------------------------------------
-    */
+        setSessionStartedAt(
+            Date.now()
+        );
 
-    function handleBackToDashboard() {
-        clearInterval(timerRef.current);
+        beginRound(
+            nextLevel,
+            adaptiveDifficulty
+        );
+    };
 
-        if (onHome) {
-            onHome();
+    /* -------------------------------------------------------
+       DASHBOARD
+    ------------------------------------------------------- */
+
+    const handleBack = () => {
+        if (onBackToDashboard) {
+            onBackToDashboard();
+
             return;
         }
 
         window.history.back();
-    }
+    };
 
-    /*
-    |--------------------------------------------------------------------------
-    | Restart
-    |--------------------------------------------------------------------------
-    */
+    /* -------------------------------------------------------
+       CLEANUP
+    ------------------------------------------------------- */
 
-    function handleRestart() {
-        startLevel(1);
-    }
+    useEffect(() => {
+        return () => {
+            if (countdownRef.current) {
+                clearInterval(
+                    countdownRef.current
+                );
+            }
 
-    /*
-    |--------------------------------------------------------------------------
-    | INTRO
-    |--------------------------------------------------------------------------
-    */
+            if (
+                nextQuestionTimeoutRef.current
+            ) {
+                clearTimeout(
+                    nextQuestionTimeoutRef.current
+                );
+            }
+        };
+    }, []);
+
+    /* -------------------------------------------------------
+       INTRO SCREEN
+    ------------------------------------------------------- */
 
     if (screen === "intro") {
         return (
             <div className="number-memory-container">
-                <div className="nm-pattern nm-pattern-top" />
+                <div className="number-memory-card intro-card">
 
-                <main className="nm-main">
-                    <section className="nm-card nm-intro-card">
-                        <div className="nm-cultural-symbol">
-                            🧠
-                        </div>
+                    <div className="game-pattern">
+                        ᱚ ᱚ ᱚ
+                    </div>
 
-                        <div className="nm-heritage-label">
-                            NORTH EAST INDIA • COGNITIVE GAME
-                        </div>
+                    <div className="game-icon-large">
+                        🧠
+                    </div>
 
-                        <h1>Number Memory</h1>
+                    <h1>
+                        Number Memory
+                    </h1>
 
-                        <p className="nm-intro-subtitle">
-                            A gentle cognitive exercise combining
-                            number memory and simple arithmetic.
-                        </p>
+                    <p className="game-description">
+                        Strengthen your memory and
+                        thinking skills through
+                        numbers and simple
+                        calculations.
+                    </p>
 
-                        <div className="nm-instruction-card">
-                            <div className="nm-instruction-icon">
-                                🔢
-                            </div>
+                    <div className="instructions-box">
+                        <h2>
+                            How to Play
+                        </h2>
 
-                            <div>
-                                <h3>
-                                    How to play
-                                </h3>
-
-                                <p>
-                                    Remember numbers or solve
-                                    simple arithmetic questions.
-                                    Take your time and answer
-                                    carefully.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="nm-game-types">
-                            <div className="nm-type-item">
-                                <span>🧠</span>
-                                <strong>
-                                    Number Recall
-                                </strong>
-                            </div>
-
-                            <div className="nm-type-item">
-                                <span>➕</span>
-                                <strong>
-                                    Addition
-                                </strong>
-                            </div>
-
-                            <div className="nm-type-item">
-                                <span>➖</span>
-                                <strong>
-                                    Subtraction
-                                </strong>
-                            </div>
-
-                            <div className="nm-type-item">
-                                <span>✖️</span>
-                                <strong>
-                                    Multiplication
-                                </strong>
-                            </div>
-
-                            <div className="nm-type-item">
-                                <span>➗</span>
-                                <strong>
-                                    Division
-                                </strong>
-                            </div>
-                        </div>
-
-                        <div className="nm-first-level-note">
-                            <span>🌿</span>
+                        <div className="instruction-item">
+                            <span>🧠</span>
 
                             <p>
-                                You will automatically progress
-                                through the first{" "}
-                                <strong>
-                                    3 levels
-                                </strong>
-                                . Your difficulty is adjusted
-                                according to your previous
-                                performance.
+                                Remember number
+                                sequences and recall
+                                them after they
+                                disappear.
                             </p>
                         </div>
 
-                        <button
-                            type="button"
-                            className="nm-primary-button nm-large-button"
-                            onClick={handleStartGame}
-                            disabled={loadingPerformance}
-                        >
-                            {loadingPerformance
-                                ? "LOADING..."
-                                : "START GAME"}
-                        </button>
+                        <div className="instruction-item">
+                            <span>➕</span>
 
-                        <button
-                            type="button"
-                            className="nm-dashboard-button"
-                            onClick={
-                                handleBackToDashboard
-                            }
-                        >
-                            ← Back to Dashboard
-                        </button>
-                    </section>
-                </main>
-
-                <div className="nm-pattern nm-pattern-bottom" />
-            </div>
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | MEMORIZING SCREEN
-    |--------------------------------------------------------------------------
-    */
-
-    if (screen === "memorizing") {
-        return (
-            <div className="number-memory-container">
-                <div className="nm-pattern nm-pattern-top" />
-
-                <main className="nm-main">
-                    <section className="nm-card nm-game-card">
-                        <div className="nm-game-header">
-                            <div>
-                                <span className="nm-small-label">
-                                    NUMBER MEMORY
-                                </span>
-
-                                <h1>
-                                    Level {level}
-                                </h1>
-                            </div>
-
-                            <div className="nm-round-badge">
-                                Round {round + 1} of{" "}
-                                {ROUNDS_PER_LEVEL}
-                            </div>
+                            <p>
+                                Solve simple addition,
+                                subtraction,
+                                multiplication and
+                                division questions.
+                            </p>
                         </div>
 
-                        <div className="nm-progress-area">
-                            <div className="nm-progress-labels">
-                                <span>
-                                    Level {level}
-                                </span>
-
-                                <span>
-                                    {round + 1} /{" "}
-                                    {ROUNDS_PER_LEVEL}
-                                </span>
-                            </div>
-
-                            <div className="nm-progress-track">
-                                <div
-                                    className="nm-progress-fill"
-                                    style={{
-                                        width: `${((round + 1) /
-                                                ROUNDS_PER_LEVEL) *
-                                            100
-                                            }%`,
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="nm-memory-instruction">
-                            <span className="nm-memory-icon">
-                                👀
-                            </span>
-
-                            <div>
-                                <h2>
-                                    Remember these numbers
-                                </h2>
-
-                                <p>
-                                    Look carefully and
-                                    remember them in the
-                                    same order.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="nm-countdown">
-                            <span className="nm-countdown-number">
-                                {remainingTime}
-                            </span>
-
-                            <span className="nm-countdown-text">
-                                seconds
-                            </span>
-                        </div>
-
-                        <div className="nm-number-sequence">
-                            {currentQuestion?.sequence?.map(
-                                (number, index) => (
-                                    <React.Fragment
-                                        key={`${number}-${index}`}
-                                    >
-                                        <div className="nm-number-box">
-                                            {number}
-                                        </div>
-
-                                        {index <
-                                            currentQuestion.sequence
-                                                .length -
-                                            1 && (
-                                                <span className="nm-arrow">
-                                                    →
-                                                </span>
-                                            )}
-                                    </React.Fragment>
-                                )
-                            )}
-                        </div>
-
-                        <div className="nm-memory-tip">
+                        <div className="instruction-item">
                             <span>💡</span>
 
-                            <span>
-                                Try saying the numbers quietly
-                                to yourself.
-                            </span>
+                            <p>
+                                If your answer is
+                                wrong, you will
+                                receive a different
+                                helpful hint for
+                                each attempt.
+                            </p>
                         </div>
 
-                        <div className="nm-level-time-info">
-                            Level {level} gives you{" "}
-                            <strong>
-                                {config.recallTime} seconds
-                            </strong>{" "}
-                            to look at the sequence.
-                        </div>
-                    </section>
-                </main>
+                        <div className="instruction-item">
+                            <span>🔄</span>
 
-                <div className="nm-pattern nm-pattern-bottom" />
+                            <p>
+                                You can try each
+                                question up to
+                                3 times.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="level-info">
+                        <strong>
+                            First 3 Levels
+                        </strong>
+
+                        <span>
+                            You will play Levels 1,
+                            2 and 3. After Level 3,
+                            you can continue to
+                            another round or return
+                            to the dashboard.
+                        </span>
+                    </div>
+
+                    <p className="adaptive-text">
+                        Difficulty is automatically
+                        adjusted according to
+                        previous performance.
+                    </p>
+
+                    <div className="intro-buttons">
+
+                        <button
+                            className="primary-button"
+                            onClick={startGame}
+                            disabled={
+                                loadingPreviousPerformance
+                            }
+                        >
+                            {loadingPreviousPerformance
+                                ? "Loading..."
+                                : "Start Game"}
+                        </button>
+
+                        <button
+                            className="secondary-button"
+                            onClick={handleBack}
+                        >
+                            Back to Dashboard
+                        </button>
+
+                    </div>
+                </div>
             </div>
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | QUESTION SCREEN
-    |--------------------------------------------------------------------------
-    */
+    /* -------------------------------------------------------
+       RECALL SCREEN
+    ------------------------------------------------------- */
 
-    if (screen === "question") {
-        const isRecall =
-            currentQuestion?.type === "recall";
-
+    if (
+        screen === "recall" &&
+        currentQuestion
+    ) {
         return (
             <div className="number-memory-container">
-                <div className="nm-pattern nm-pattern-top" />
 
-                <main className="nm-main">
-                    <section className="nm-card nm-game-card">
-                        <div className="nm-game-header">
-                            <div>
-                                <span className="nm-small-label">
-                                    {currentQuestion?.icon}{" "}
-                                    {currentQuestion?.title}
-                                </span>
+                <div className="number-memory-card game-card">
 
-                                <h1>
-                                    Level {level}
-                                </h1>
-                            </div>
+                    <div className="game-header">
 
-                            <div className="nm-round-badge">
-                                Round {round + 1} of{" "}
-                                {ROUNDS_PER_LEVEL}
-                            </div>
+                        <div>
+                            <span className="level-badge">
+                                Level {level}
+                            </span>
+
+                            <h1>
+                                {getActivityIcon(
+                                    currentQuestion.type
+                                )}{" "}
+                                Number Recall
+                            </h1>
                         </div>
 
-                        <div className="nm-progress-area">
-                            <div className="nm-progress-labels">
-                                <span>
-                                    Level {level}
-                                </span>
-
-                                <span>
-                                    {round + 1} /{" "}
-                                    {ROUNDS_PER_LEVEL}
-                                </span>
-                            </div>
-
-                            <div className="nm-progress-track">
-                                <div
-                                    className="nm-progress-fill"
-                                    style={{
-                                        width: `${((round + 1) /
-                                                ROUNDS_PER_LEVEL) *
-                                            100
-                                            }%`,
-                                    }}
-                                />
-                            </div>
+                        <div className="question-counter">
+                            Question{" "}
+                            {questionIndex + 1}{" "}
+                            of{" "}
+                            {questions.length}
                         </div>
 
-                        {isRecall ? (
-                            <div className="nm-recall-heading">
-                                <div className="nm-recall-icon">
-                                    🧠
-                                </div>
+                    </div>
 
-                                <h2>
-                                    What numbers do you
-                                    remember?
-                                </h2>
+                    <div className="recall-instruction">
+                        <p>
+                            Remember these
+                            numbers carefully.
+                        </p>
+                    </div>
 
-                                <p>
-                                    Enter the numbers in the
-                                    same order.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="nm-arithmetic-area">
-                                <div className="nm-arithmetic-icon">
-                                    {currentQuestion?.icon}
-                                </div>
+                    <div className="sequence-display">
 
-                                <div className="nm-activity-label">
-                                    {
-                                        currentQuestion?.title
-                                    }
-                                </div>
+                        {currentQuestion.sequence.map(
+                            (number, index) => (
+                                <React.Fragment
+                                    key={index}
+                                >
 
-                                <h2>
-                                    {
-                                        currentQuestion?.question
-                                    }
-                                </h2>
+                                    <span className="memory-number">
+                                        {number}
+                                    </span>
 
-                                <p>
-                                    Take your time and solve
-                                    the question.
-                                </p>
-                            </div>
+                                    {index <
+                                        currentQuestion
+                                            .sequence.length -
+                                        1 && (
+                                            <span className="sequence-arrow">
+                                                →
+                                            </span>
+                                        )}
+
+                                </React.Fragment>
+                            )
                         )}
 
-                        <form
-                            className="nm-answer-form"
-                            onSubmit={
-                                handleSubmit
-                            }
-                        >
-                            <label htmlFor="number-memory-answer">
-                                Your answer
-                            </label>
+                    </div>
+
+                    <div className="countdown-circle">
+                        {recallRemaining}
+                    </div>
+
+                    <p className="countdown-text">
+                        Remember the sequence...
+                    </p>
+
+                    <div className="progress-bar-container">
+
+                        <div
+                            className="progress-bar"
+                            style={{
+                                width: `${(recallRemaining /
+                                        currentQuestion.recallTime) *
+                                    100
+                                    }%`,
+                            }}
+                        />
+
+                    </div>
+
+                </div>
+            </div>
+        );
+    }
+
+    /* -------------------------------------------------------
+       QUESTION SCREEN
+    ------------------------------------------------------- */
+
+    if (
+        screen === "question" &&
+        currentQuestion
+    ) {
+        return (
+            <div className="number-memory-container">
+
+                <div className="number-memory-card game-card">
+
+                    <div className="game-header">
+
+                        <div>
+                            <span className="level-badge">
+                                Level {level}
+                            </span>
+
+                            <h1>
+                                {getActivityIcon(
+                                    currentQuestion.type
+                                )}{" "}
+                                {getActivityLabel(
+                                    currentQuestion.type
+                                )}
+                            </h1>
+                        </div>
+
+                        <div className="question-counter">
+                            Question{" "}
+                            {questionIndex + 1}{" "}
+                            of{" "}
+                            {questions.length}
+                        </div>
+
+                    </div>
+
+                    <div className="question-area">
+
+                        {currentQuestion.type ===
+                            "numberRecall" && (
+                                <>
+                                    <p className="question-instruction">
+                                        Enter the numbers
+                                        in the same order.
+                                    </p>
+
+                                    <div className="question-symbol">
+                                        ?
+                                    </div>
+                                </>
+                            )}
+
+                        {currentQuestion.type !==
+                            "numberRecall" && (
+                                <>
+                                    <p className="question-instruction">
+                                        Solve this
+                                        calculation.
+                                    </p>
+
+                                    <div className="math-question">
+
+                                        <span>
+                                            {currentQuestion.a}
+                                        </span>
+
+                                        <span className="math-operator">
+
+                                            {currentQuestion.type ===
+                                                "addition" &&
+                                                "+"}
+
+                                            {currentQuestion.type ===
+                                                "subtraction" &&
+                                                "−"}
+
+                                            {currentQuestion.type ===
+                                                "multiplication" &&
+                                                "×"}
+
+                                            {currentQuestion.type ===
+                                                "division" &&
+                                                "÷"}
+
+                                        </span>
+
+                                        <span>
+                                            {currentQuestion.b}
+                                        </span>
+
+                                        <span>
+                                            =
+                                        </span>
+
+                                        <span>
+                                            ?
+                                        </span>
+
+                                    </div>
+                                </>
+                            )}
+
+                        <div className="answer-section">
 
                             <input
-                                id="number-memory-answer"
                                 type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                autoComplete="off"
                                 value={answer}
-                                onChange={(event) => {
-                                    const value =
-                                        event.target.value.replace(
-                                            /\D/g,
-                                            ""
-                                        );
-
-                                    setAnswer(value);
-                                    setErrorMessage("");
-                                }}
-                                placeholder="Enter your answer"
+                                onChange={(event) =>
+                                    setAnswer(
+                                        event.target.value
+                                    )
+                                }
+                                placeholder={
+                                    currentQuestion.type ===
+                                        "numberRecall"
+                                        ? "Enter the numbers"
+                                        : "Enter your answer"
+                                }
+                                className="answer-input"
                                 autoFocus
+                                disabled={
+                                    attempts >= 3 ||
+                                    showCorrectAnswer
+                                }
                             />
 
                             <button
-                                type="submit"
-                                className="nm-primary-button nm-submit-button"
-                                disabled={!answer}
+                                className="submit-button"
+                                onClick={
+                                    submitAnswer
+                                }
+                                disabled={
+                                    attempts >= 3 ||
+                                    showCorrectAnswer
+                                }
                             >
-                                CHECK ANSWER
+                                Submit Answer
                             </button>
-                        </form>
 
-                        <div className="nm-attempt-area">
-                            <span>
-                                Attempts:
-                            </span>
+                        </div>
 
-                            <div className="nm-attempt-dots">
-                                {[1, 2, 3].map(
-                                    (number) => (
-                                        <div
-                                            key={number}
-                                            className={`nm-attempt-dot ${number <=
-                                                    attempts
-                                                    ? "used"
-                                                    : ""
-                                                }`}
-                                        >
-                                            {number}
-                                        </div>
-                                    )
-                                )}
-                            </div>
-
-                            <small>
-                                Maximum 3 attempts
-                            </small>
+                        <div className="attempts-display">
+                            Attempt{" "}
+                            {attempts + 1} of 3
                         </div>
 
                         {hint && (
-                            <div className="nm-hint-box">
-                                <span>💡</span>
+                            <div className="hint-box">
+
+                                <div className="hint-icon">
+                                    💡
+                                </div>
 
                                 <div>
                                     <strong>
@@ -1470,270 +1567,214 @@ export default function NumberMemoryGame({ patient, onHome }) {
                                         {hint}
                                     </p>
                                 </div>
+
                             </div>
                         )}
 
                         {showCorrectAnswer && (
-                            <div className="nm-correct-answer-box">
-                                <span>✓</span>
+                            <div className="correct-answer-box">
 
-                                <div>
-                                    <strong>
-                                        Correct answer
-                                    </strong>
+                                <strong>
+                                    The correct answer is:
+                                </strong>
 
-                                    <p>
-                                        {
-                                            currentQuestion?.answer
-                                        }
-                                    </p>
-                                </div>
+                                <span>
+                                    {currentQuestion.type ===
+                                        "numberRecall"
+                                        ? currentQuestion.sequence.join(
+                                            " → "
+                                        )
+                                        : currentQuestion.answer}
+                                </span>
+
+                                <p>
+                                    Moving to the
+                                    next question...
+                                </p>
+
                             </div>
                         )}
 
                         {errorMessage && (
-                            <div className="nm-error-box">
+                            <div className="error-message">
                                 {errorMessage}
                             </div>
                         )}
 
-                        <div className="nm-elderly-tip">
-                            <span>🌿</span>
-
-                            <span>
-                                There is no need to hurry.
-                                Concentrate and answer when
-                                you are ready.
-                            </span>
-                        </div>
-                    </section>
-                </main>
-
-                <div className="nm-pattern nm-pattern-bottom" />
+                    </div>
+                </div>
             </div>
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | LEVEL COMPLETE SCREEN
-    |--------------------------------------------------------------------------
-    */
+    /* -------------------------------------------------------
+       RESULT SCREEN
+    ------------------------------------------------------- */
 
-    if (screen === "levelComplete") {
-        const accuracy =
-            resultData?.accuracy ?? 0;
-
-        const mandatoryLevelsComplete =
-            level >= MANDATORY_LEVELS;
+    if (
+        screen === "roundResult" &&
+        sessionResult
+    ) {
+        const isMandatoryLevel =
+            sessionResult.level < 3;
 
         return (
             <div className="number-memory-container">
-                <div className="nm-pattern nm-pattern-top" />
 
-                <main className="nm-main">
-                    <section className="nm-card nm-result-card">
-                        <div className="nm-result-icon">
-                            {accuracy >= 70
-                                ? "🎉"
-                                : "🌿"}
-                        </div>
+                <div className="number-memory-card result-card">
 
-                        <div className="nm-heritage-label">
-                            LEVEL COMPLETED
-                        </div>
+                    <div className="result-icon">
+                        🎉
+                    </div>
 
-                        <h1>
-                            {mandatoryLevelsComplete
-                                ? "First 3 Levels Complete!"
-                                : `Level ${level} Complete!`}
-                        </h1>
+                    <h1>
+                        Level{" "}
+                        {sessionResult.level}{" "}
+                        Complete!
+                    </h1>
 
-                        <p className="nm-result-message">
-                            {accuracy >= 90
-                                ? "Excellent work! Your memory performance was wonderful."
-                                : accuracy >= 70
-                                    ? "Great job! Keep exercising your memory."
-                                    : accuracy >= 50
-                                        ? "Good effort! Keep practicing."
-                                        : "Well done for completing the level. Keep trying!"}
-                        </p>
+                    <p className="result-message">
+                        Great work! Your
+                        performance has been
+                        recorded and will help
+                        adjust future questions.
+                    </p>
 
-                        <div className="nm-score-circle">
-                            <span>
-                                {Math.round(accuracy)}%
+                    <div className="result-stats">
+
+                        <div className="stat-box">
+                            <span className="stat-value">
+                                {sessionResult.accuracy}%
                             </span>
 
-                            <small>
+                            <span className="stat-label">
                                 Accuracy
-                            </small>
+                            </span>
                         </div>
 
-                        <div className="nm-result-grid">
-                            <div className="nm-result-stat">
-                                <span>✓</span>
+                        <div className="stat-box">
+                            <span className="stat-value">
+                                {sessionResult.correct_answers}
+                            </span>
 
-                                <strong>
-                                    {
-                                        resultData?.correct_answers ??
-                                        0
-                                    }
-                                </strong>
-
-                                <small>
-                                    Correct
-                                </small>
-                            </div>
-
-                            <div className="nm-result-stat">
-                                <span>🔢</span>
-
-                                <strong>
-                                    {ROUNDS_PER_LEVEL}
-                                </strong>
-
-                                <small>
-                                    Rounds
-                                </small>
-                            </div>
-
-                            <div className="nm-result-stat">
-                                <span>⏱️</span>
-
-                                <strong>
-                                    {Math.round(
-                                        resultData?.completion_time ??
-                                        0
-                                    )}
-                                    s
-                                </strong>
-
-                                <small>
-                                    Time
-                                </small>
-                            </div>
+                            <span className="stat-label">
+                                Correct
+                            </span>
                         </div>
 
-                        <div className="nm-level-summary">
-                            <div>
-                                <span>
-                                    Current Level
-                                </span>
+                        <div className="stat-box">
+                            <span className="stat-value">
+                                {sessionResult.attempts}
+                            </span>
 
-                                <strong>
-                                    Level {level}
-                                </strong>
-                            </div>
-
-                            <div>
-                                <span>
-                                    Game Types
-                                </span>
-
-                                <strong>
-                                    5 Types
-                                </strong>
-                            </div>
-
-                            <div>
-                                <span>
-                                    Difficulty
-                                </span>
-
-                                <strong>
-                                    Automatic
-                                </strong>
-                            </div>
+                            <span className="stat-label">
+                                Attempts
+                            </span>
                         </div>
 
-                        {!mandatoryLevelsComplete ? (
-                            <div className="nm-next-level-message">
-                                <span>🌱</span>
+                        <div className="stat-box">
+                            <span className="stat-value">
+                                {
+                                    sessionResult.average_response_time
+                                }
+                                s
+                            </span>
 
-                                <p>
-                                    Great work! Your next
-                                    level will begin
-                                    automatically when you
-                                    choose Next Level.
-                                </p>
-                            </div>
+                            <span className="stat-label">
+                                Avg. Response
+                            </span>
+                        </div>
+
+                        <div className="stat-box">
+                            <span className="stat-value">
+                                {sessionResult.hint_rate}%
+                            </span>
+
+                            <span className="stat-label">
+                                Hint Rate
+                            </span>
+                        </div>
+
+                        <div className="stat-box">
+                            <span className="stat-value">
+                                {sessionResult.totalQuestions}
+                            </span>
+
+                            <span className="stat-label">
+                                Questions
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div className="adaptive-result-box">
+
+                        <span>
+                            🧠
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                Difficulty automatically
+                                adjusted
+                            </strong>
+
+                            <p>
+                                Your next round will
+                                be adapted according
+                                to your performance.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    {errorMessage && (
+                        <div className="error-message">
+                            {errorMessage}
+                        </div>
+                    )}
+
+                    <div className="result-buttons">
+
+                        {isMandatoryLevel ? (
+                            <button
+                                className="primary-button"
+                                onClick={
+                                    handleNextRound
+                                }
+                            >
+                                Next Level
+                            </button>
                         ) : (
-                            <div className="nm-milestone-message">
-                                <span>🏆</span>
-
-                                <div>
-                                    <strong>
-                                        First 3 levels completed!
-                                    </strong>
-
-                                    <p>
-                                        You can now continue
-                                        with another round or
-                                        return to your
-                                        dashboard.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="nm-result-actions">
-                            {!mandatoryLevelsComplete ? (
+                            <>
                                 <button
-                                    type="button"
-                                    className="nm-primary-button nm-large-button"
+                                    className="primary-button"
                                     onClick={
                                         handleNextRound
                                     }
                                 >
-                                    NEXT LEVEL →
+                                    Next Round
                                 </button>
-                            ) : (
-                                <>
-                                    <button
-                                        type="button"
-                                        className="nm-primary-button nm-large-button"
-                                        onClick={
-                                            handleNextRound
-                                        }
-                                    >
-                                        NEXT ROUND →
-                                    </button>
 
-                                    <button
-                                        type="button"
-                                        className="nm-secondary-button nm-large-button"
-                                        onClick={
-                                            handleBackToDashboard
-                                        }
-                                    >
-                                        🏠 BACK TO DASHBOARD
-                                    </button>
-                                </>
-                            )}
-                        </div>
-
-                        {errorMessage && (
-                            <div className="nm-save-error">
-                                {errorMessage}
-                            </div>
+                                <button
+                                    className="secondary-button"
+                                    onClick={handleBack}
+                                >
+                                    Back to Dashboard
+                                </button>
+                            </>
                         )}
 
-                        <button
-                            type="button"
-                            className="nm-small-restart-button"
-                            onClick={
-                                handleRestart
-                            }
-                        >
-                            Restart from Level 1
-                        </button>
-                    </section>
-                </main>
+                    </div>
 
-                <div className="nm-pattern nm-pattern-bottom" />
+                </div>
             </div>
         );
     }
 
     return null;
-}
+};
+
+export default NumberMemoryGame;

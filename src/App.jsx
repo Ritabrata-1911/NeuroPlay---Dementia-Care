@@ -10,15 +10,38 @@ import { supabase } from './SupabaseClient';
 import LanguageSwitcher from './LanguageSwitcher';
 
 // ============================================================
-// HERO BACKDROP — layered tea-garden hills, bamboo, marigold sun
-// Pure inline SVG, no image assets required.
+// HERO BACKDROP — rotating background images
+// Images should be placed inside public/images/
 // ============================================================
 
 function HeroBackdrop() {
+    const backgroundImages = [
+        '/images/hero1.jpeg',
+        '/images/hero2.jpeg',
+        '/images/hero3.jpeg',
+        '/images/hero4.jpeg',
+        '/images/hero5.jpeg'
+    ];
+
+    const [currentImage, setCurrentImage] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentImage((previousImage) => {
+                return (
+                    (previousImage + 1) %
+                    backgroundImages.length
+                );
+            });
+        }, 4000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
+
     return (
-        <svg
-            viewBox="0 0 1400 520"
-            preserveAspectRatio="xMidYMax slice"
+        <div
             aria-hidden="true"
             style={{
                 position: 'absolute',
@@ -26,52 +49,39 @@ function HeroBackdrop() {
                 width: '100%',
                 height: '100%',
                 zIndex: 0,
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                overflow: 'hidden'
             }}
         >
-            {/* drifting clouds */}
-            <g className="cloud cloud-a">
-                <ellipse cx="0" cy="0" rx="55" ry="18" fill="#FFFFFF" opacity="0.85" />
-                <ellipse cx="-38" cy="7" rx="36" ry="14" fill="#FFFFFF" opacity="0.8" />
-                <ellipse cx="40" cy="8" rx="32" ry="13" fill="#FFFFFF" opacity="0.8" />
-            </g>
-            <g className="cloud cloud-b">
-                <ellipse cx="0" cy="0" rx="42" ry="14" fill="#FFFFFF" opacity="0.75" />
-                <ellipse cx="-28" cy="5" rx="26" ry="11" fill="#FFFFFF" opacity="0.7" />
-                <ellipse cx="30" cy="6" rx="24" ry="10" fill="#FFFFFF" opacity="0.7" />
-            </g>
-            <g className="cloud cloud-c">
-                <ellipse cx="0" cy="0" rx="48" ry="16" fill="#FFFFFF" opacity="0.7" />
-                <ellipse cx="-32" cy="6" rx="28" ry="12" fill="#FFFFFF" opacity="0.65" />
-                <ellipse cx="34" cy="7" rx="26" ry="11" fill="#FFFFFF" opacity="0.65" />
-            </g>
+            {backgroundImages.map((image, index) => (
+                <div
+                    key={image}
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backgroundImage: `url(${image})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                        opacity:
+                            index === currentImage
+                                ? 1
+                                : 0,
+                        transition:
+                            'opacity 1.5s ease-in-out'
+                    }}
+                />
+            ))}
 
-            {/* birds — each flies its own slow loop across the sky, wings flapping */}
-            <g className="bird bird-a">
-                <path
-                    className="bird-wings"
-                    d="M-16,0 Q0,-16 16,0 Q0,-7 -16,0 Z"
-                    fill="#2C4A3E"
-                    opacity="0.7"
-                />
-            </g>
-            <g className="bird bird-b">
-                <path
-                    className="bird-wings"
-                    d="M-13,0 Q0,-13 13,0 Q0,-6 -13,0 Z"
-                    fill="#2C4A3E"
-                    opacity="0.6"
-                />
-            </g>
-            <g className="bird bird-c">
-                <path
-                    className="bird-wings"
-                    d="M-11,0 Q0,-11 11,0 Q0,-5 -11,0 Z"
-                    fill="#2C4A3E"
-                    opacity="0.55"
-                />
-            </g>
-        </svg>
+            <div
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background:
+                        'rgba(255,255,255,0.18)'
+                }}
+            />
+        </div>
     );
 }
 
@@ -93,21 +103,13 @@ const breathingPhaseLabels = {
     hold2: 'breathing.phases.hold'
 };
 
+// ============================================================
+// MAIN APP
+// ============================================================
+
 function App() {
     // ============================================================
     // ROUTING
-    //
-    // currentScreen is now derived from the actual browser URL
-    // (via react-router-dom) instead of being held in local state.
-    // This means:
-    //   - the URL bar always reflects the visible screen
-    //   - refreshing the page reloads the SAME screen
-    //   - the browser back/forward buttons move through YOUR
-    //     app's history instead of skipping straight past it
-    //
-    // setCurrentScreen(screen) is kept as a wrapper around
-    // navigate() so every existing call site below (there are
-    // many) keeps working unchanged.
     // ============================================================
 
     const navigate = useNavigate();
@@ -120,55 +122,72 @@ function App() {
             : location.pathname.slice(1);
 
     const setCurrentScreen = (screen) => {
-        navigate(screen === 'home' ? '/' : `/${screen}`);
+        navigate(
+            screen === 'home'
+                ? '/'
+                : `/${screen}`
+        );
     };
 
-    const [activeModal, setActiveModal] = useState(null);
+    // ============================================================
+    // MODAL STATE
+    // ============================================================
+
+    const [activeModal, setActiveModal] =
+        useState(null);
 
     // ============================================================
     // PASSWORD RECOVERY STATE
     // ============================================================
 
-    const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+    const [isPasswordRecovery, setIsPasswordRecovery] =
+        useState(false);
 
     // ============================================================
     // CAREGIVER MANUAL STATE
     // ============================================================
 
-    const [activeManualTab, setActiveManualTab] = useState('guide');
+    const [activeManualTab, setActiveManualTab] =
+        useState('guide');
 
     // ============================================================
     // BREATHING EXERCISE STATE
     // ============================================================
 
-    const [breathingPhaseIndex, setBreathingPhaseIndex] = useState(0);
+    const [breathingPhaseIndex, setBreathingPhaseIndex] =
+        useState(0);
 
-    const [breathingTimer, setBreathingTimer] = useState(4);
+    const [breathingTimer, setBreathingTimer] =
+        useState(4);
 
-    const [isBreathingActive, setIsBreathingActive] = useState(false);
+    const [isBreathingActive, setIsBreathingActive] =
+        useState(false);
 
-    // Total seconds elapsed during the current breathing session
-    const [breathingElapsed, setBreathingElapsed] = useState(0);
+    const [breathingElapsed, setBreathingElapsed] =
+        useState(0);
 
-    // Used when the caregiver clicks a phase to preview it
-    const [isPreviewingPhase, setIsPreviewingPhase] = useState(false);
+    const [isPreviewingPhase, setIsPreviewingPhase] =
+        useState(false);
 
-    // Session length in minutes
-    const [sessionLength, setSessionLength] = useState(2);
+    const [sessionLength, setSessionLength] =
+        useState(2);
 
-    // Remaining session time
-    const [sessionSecondsLeft, setSessionSecondsLeft] = useState(2 * 60);
+    const [sessionSecondsLeft, setSessionSecondsLeft] =
+        useState(2 * 60);
 
     const breathingPhase =
         breathingPhases[breathingPhaseIndex];
 
     const breathingPhaseLabel =
-        t(breathingPhaseLabels[breathingPhase]);
+        t(
+            breathingPhaseLabels[
+                breathingPhase
+            ]
+        );
 
-    // Show a breathing phase if the exercise is running
-    // OR the user is previewing a phase
     const isShowingPhase =
-        isBreathingActive || isPreviewingPhase;
+        isBreathingActive ||
+        isPreviewingPhase;
 
     // ============================================================
     // BREATHING CIRCLE STYLES
@@ -227,13 +246,16 @@ function App() {
             ) {
                 if (mounted) {
                     setIsPasswordRecovery(true);
-                    setCurrentScreen('caregiverAuth');
+                    setCurrentScreen(
+                        'caregiverAuth'
+                    );
                 }
             }
 
             const {
                 data: { session }
-            } = await supabase.auth.getSession();
+            } =
+                await supabase.auth.getSession();
 
             if (!mounted) return;
 
@@ -242,7 +264,9 @@ function App() {
                 hash.includes('type=recovery')
             ) {
                 setIsPasswordRecovery(true);
-                setCurrentScreen('caregiverAuth');
+                setCurrentScreen(
+                    'caregiverAuth'
+                );
             }
         };
 
@@ -250,14 +274,25 @@ function App() {
 
         const {
             data: { subscription }
-        } = supabase.auth.onAuthStateChange((event) => {
-            if (!mounted) return;
+        } =
+            supabase.auth.onAuthStateChange(
+                (event) => {
+                    if (!mounted) return;
 
-            if (event === 'PASSWORD_RECOVERY') {
-                setIsPasswordRecovery(true);
-                setCurrentScreen('caregiverAuth');
-            }
-        });
+                    if (
+                        event ===
+                        'PASSWORD_RECOVERY'
+                    ) {
+                        setIsPasswordRecovery(
+                            true
+                        );
+
+                        setCurrentScreen(
+                            'caregiverAuth'
+                        );
+                    }
+                }
+            );
 
         return () => {
             mounted = false;
@@ -267,22 +302,6 @@ function App() {
 
     // ============================================================
     // AUTH SCREEN GUARD
-    //
-    // Problem this solves:
-    // Logging in navigates from /caregiverAuth -> /caregiverDashboard,
-    // which adds BOTH pages to browser history. If the user then
-    // presses Back, the URL goes to /caregiverAuth again — but the
-    // Supabase session is still valid (logging in doesn't get undone
-    // by pressing Back). CaregiverAuth/PatientLogin don't check for
-    // an existing session, so they'd just show the login form again,
-    // even though the user is still actually logged in.
-    //
-    // Fix: whenever the URL lands on an auth screen, check if a
-    // session already exists. If it does (and we're not in the
-    // middle of a password-reset flow), skip straight past the login
-    // form back to the dashboard. We use `replace` so this doesn't
-    // add yet another history entry — it overwrites the auth-screen
-    // entry, so Back won't get stuck flip-flopping between the two.
     // ============================================================
 
     useEffect(() => {
@@ -290,29 +309,44 @@ function App() {
 
         const guardAuthScreens = async () => {
             if (
-                currentScreen === 'caregiverAuth' &&
+                currentScreen ===
+                    'caregiverAuth' &&
                 !isPasswordRecovery
             ) {
                 const {
                     data: { session }
-                } = await supabase.auth.getSession();
+                } =
+                    await supabase.auth.getSession();
 
                 if (mounted && session) {
-                    navigate('/caregiverDashboard', {
-                        replace: true
-                    });
+                    navigate(
+                        '/caregiverDashboard',
+                        {
+                            replace: true
+                        }
+                    );
                 }
             }
 
-            if (currentScreen === 'patientAuth') {
-                const storedSession = sessionStorage.getItem(
-                    'neuroplay_patient_session'
-                );
+            if (
+                currentScreen ===
+                'patientAuth'
+            ) {
+                const storedSession =
+                    sessionStorage.getItem(
+                        'neuroplay_patient_session'
+                    );
 
-                if (mounted && storedSession) {
-                    navigate('/patientDashboard', {
-                        replace: true
-                    });
+                if (
+                    mounted &&
+                    storedSession
+                ) {
+                    navigate(
+                        '/patientDashboard',
+                        {
+                            replace: true
+                        }
+                    );
                 }
             }
         };
@@ -322,17 +356,13 @@ function App() {
         return () => {
             mounted = false;
         };
-    }, [currentScreen, isPasswordRecovery]);
+    }, [
+        currentScreen,
+        isPasswordRecovery
+    ]);
 
     // ============================================================
     // BREATHING TIMER
-    //
-    // 0 - 3 seconds   = Inhale
-    // 4 - 7 seconds   = Hold
-    // 8 - 11 seconds  = Exhale
-    // 12 - 15 seconds = Hold
-    //
-    // Then the cycle repeats.
     // ============================================================
 
     useEffect(() => {
@@ -341,9 +371,10 @@ function App() {
         }
 
         const interval = setInterval(() => {
-            setBreathingElapsed((previousElapsed) => {
-                return previousElapsed + 1;
-            });
+            setBreathingElapsed(
+                (previousElapsed) =>
+                    previousElapsed + 1
+            );
         }, 1000);
 
         return () => {
@@ -363,22 +394,14 @@ function App() {
         const totalSessionSeconds =
             sessionLength * 60;
 
-        // --------------------------------------------------------
-        // SESSION FINISHED
-        // --------------------------------------------------------
-
         if (
             breathingElapsed >=
             totalSessionSeconds
         ) {
             setIsBreathingActive(false);
-
             setBreathingElapsed(0);
-
             setBreathingPhaseIndex(0);
-
             setBreathingTimer(4);
-
             setSessionSecondsLeft(
                 totalSessionSeconds
             );
@@ -386,18 +409,10 @@ function App() {
             return;
         }
 
-        // --------------------------------------------------------
-        // DETERMINE CURRENT PHASE
-        // --------------------------------------------------------
-
         const phaseIndex =
             Math.floor(
                 breathingElapsed / 4
             ) % breathingPhases.length;
-
-        // --------------------------------------------------------
-        // DETERMINE COUNTDOWN
-        // --------------------------------------------------------
 
         const positionInsidePhase =
             breathingElapsed % 4;
@@ -410,10 +425,6 @@ function App() {
         );
 
         setBreathingTimer(timer);
-
-        // --------------------------------------------------------
-        // UPDATE SESSION COUNTDOWN
-        // --------------------------------------------------------
 
         setSessionSecondsLeft(
             totalSessionSeconds -
@@ -431,32 +442,18 @@ function App() {
 
     const toggleBreathing = () => {
         if (isBreathingActive) {
-            // ----------------------------------------------------
-            // STOP EXERCISE
-            // ----------------------------------------------------
-
             setIsBreathingActive(false);
-
             setBreathingElapsed(0);
-
             setBreathingPhaseIndex(0);
-
             setBreathingTimer(4);
 
             setSessionSecondsLeft(
                 sessionLength * 60
             );
         } else {
-            // ----------------------------------------------------
-            // START EXERCISE FROM BEGINNING
-            // ----------------------------------------------------
-
             setIsPreviewingPhase(false);
-
             setBreathingElapsed(0);
-
             setBreathingPhaseIndex(0);
-
             setBreathingTimer(4);
 
             setSessionSecondsLeft(
@@ -483,14 +480,12 @@ function App() {
         );
 
         setBreathingElapsed(0);
-
         setBreathingPhaseIndex(0);
-
         setBreathingTimer(4);
     };
 
     // ============================================================
-    // PREVIEW A BREATHING PHASE
+    // PREVIEW BREATHING PHASE
     // ============================================================
 
     const jumpToPhase = (idx) => {
@@ -499,9 +494,7 @@ function App() {
         }
 
         setIsPreviewingPhase(true);
-
         setBreathingPhaseIndex(idx);
-
         setBreathingTimer(4);
     };
 
@@ -535,13 +528,9 @@ function App() {
 
             <p>
                 {t('breathing.description')}
-
-
             </p>
 
-            {/* ----------------------------------------------------
-                SESSION LENGTH
-            ---------------------------------------------------- */}
+            {/* SESSION LENGTH */}
 
             <div className="session-length-selector">
 
@@ -554,9 +543,13 @@ function App() {
                     onClick={() =>
                         selectSessionLength(2)
                     }
-                    disabled={isBreathingActive}
+                    disabled={
+                        isBreathingActive
+                    }
                 >
-                    {t('breathing.minutes2')}
+                    {t(
+                        'breathing.minutes2'
+                    )}
                 </button>
 
                 <button
@@ -568,16 +561,18 @@ function App() {
                     onClick={() =>
                         selectSessionLength(5)
                     }
-                    disabled={isBreathingActive}
+                    disabled={
+                        isBreathingActive
+                    }
                 >
-                    {t('breathing.minutes5')}
+                    {t(
+                        'breathing.minutes5'
+                    )}
                 </button>
 
             </div>
 
-            {/* ----------------------------------------------------
-                PHASE STEPS
-            ---------------------------------------------------- */}
+            {/* BREATHING PHASES */}
 
             <div className="phase-steps">
 
@@ -594,7 +589,9 @@ function App() {
                                     : ''
                             }`}
                             onClick={() =>
-                                jumpToPhase(index)
+                                jumpToPhase(
+                                    index
+                                )
                             }
                             aria-pressed={
                                 isShowingPhase &&
@@ -602,24 +599,24 @@ function App() {
                                     index
                             }
                         >
-
                             <span className="phase-step-num">
                                 {index + 1}
                             </span>
 
                             <span className="phase-step-label">
-                                {t(breathingPhaseLabels[phase])}
+                                {t(
+                                    breathingPhaseLabels[
+                                        phase
+                                    ]
+                                )}
                             </span>
-
                         </button>
                     )
                 )}
 
             </div>
 
-            {/* ----------------------------------------------------
-                BREATHING CIRCLE
-            ---------------------------------------------------- */}
+            {/* BREATHING CIRCLE */}
 
             <div className="breathing-circle-container">
 
@@ -641,22 +638,24 @@ function App() {
                     <span className="phase-text">
                         {isShowingPhase
                             ? breathingPhaseLabel
-                            : t('breathing.ready')}
+                            : t(
+                                  'breathing.ready'
+                              )}
                     </span>
 
                     <span className="timer-text">
                         {isShowingPhase
                             ? `${breathingTimer}s`
-                            : t('breathing.seconds4')}
+                            : t(
+                                  'breathing.seconds4'
+                              )}
                     </span>
 
                 </div>
 
             </div>
 
-            {/* ----------------------------------------------------
-                HOLD MESSAGE
-            ---------------------------------------------------- */}
+            {/* HOLD CUE */}
 
             {isShowingPhase &&
                 (
@@ -666,46 +665,54 @@ function App() {
                         'hold2'
                 ) && (
                     <p className="hold-cue">
-                        ⏸ {t('breathing.holdCue')} ⏸
+                        ⏸{' '}
+                        {t(
+                            'breathing.holdCue'
+                        )}{' '}
+                        ⏸
                     </p>
                 )}
 
-            {/* ----------------------------------------------------
-                SESSION TIME
-            ---------------------------------------------------- */}
+            {/* REMAINING TIME */}
 
             {isBreathingActive && (
                 <p className="session-remaining">
-                    ⏱ {t('breathing.sessionTimeLeft')}{' '}
+                    ⏱{' '}
+                    {t(
+                        'breathing.sessionTimeLeft'
+                    )}{' '}
                     {formatTime(
                         sessionSecondsLeft
                     )}
                 </p>
             )}
 
-            {/* ----------------------------------------------------
-                START / STOP BUTTON
-            ---------------------------------------------------- */}
+            {/* START / STOP */}
 
             <button
                 className="breathing-toggle-btn"
                 onClick={toggleBreathing}
             >
                 {isBreathingActive
-                    ? `⏹️ ${t('breathing.stopExercise')}`
-                    : `▶️ ${t('breathing.startExercise')}`}
+                    ? `⏹️ ${t(
+                          'breathing.stopExercise'
+                      )}`
+                    : `▶️ ${t(
+                          'breathing.startExercise'
+                      )}`}
             </button>
 
-            {/* ----------------------------------------------------
-                PREVIEW MESSAGE
-            ---------------------------------------------------- */}
+            {/* PREVIEW HINT */}
 
             {isPreviewingPhase &&
                 !isBreathingActive && (
                     <p className="preview-hint">
-                        {t('breathing.preview', {
-                            phase: breathingPhaseLabel
-                        })}
+                        {t(
+                            'breathing.preview',
+                            {
+                                phase: breathingPhaseLabel
+                            }
+                        )}
                     </p>
                 )}
 
@@ -753,15 +760,25 @@ function App() {
 
                 <CaregiverAuth
                     onBackToHome={() => {
-                        setIsPasswordRecovery(false);
-                        setCurrentScreen('home');
+                        setIsPasswordRecovery(
+                            false
+                        );
+
+                        setCurrentScreen(
+                            'home'
+                        );
                     }}
+
                     onLoginSuccess={() => {
-                        setIsPasswordRecovery(false);
+                        setIsPasswordRecovery(
+                            false
+                        );
+
                         setCurrentScreen(
                             'caregiverDashboard'
                         );
                     }}
+
                     startInResetPassword={
                         isPasswordRecovery
                     }
@@ -784,6 +801,7 @@ function App() {
                 onBackToHome={() =>
                     setCurrentScreen('home')
                 }
+
                 onLoginSuccess={() =>
                     setCurrentScreen(
                         'patientDashboard'
@@ -818,6 +836,7 @@ function App() {
                         }
                         onClick={(e) => {
                             e.preventDefault();
+
                             setCurrentScreen(
                                 'home'
                             );
@@ -836,12 +855,15 @@ function App() {
                         }
                         onClick={(e) => {
                             e.preventDefault();
+
                             setCurrentScreen(
                                 'how-it-works'
                             );
                         }}
                     >
-                        {t('nav.howItWorks')}
+                        {t(
+                            'nav.howItWorks'
+                        )}
                     </a>
 
                     <a
@@ -854,6 +876,7 @@ function App() {
                         }
                         onClick={(e) => {
                             e.preventDefault();
+
                             setCurrentScreen(
                                 'about'
                             );
@@ -872,6 +895,7 @@ function App() {
                         }
                         onClick={(e) => {
                             e.preventDefault();
+
                             setCurrentScreen(
                                 'resources'
                             );
@@ -906,33 +930,75 @@ function App() {
 
                     <HeroBackdrop />
 
+                    {/* BRAND */}
+
                     <div className="brand-header">
 
                         <div className="logo-title">
 
-                            <span
-                                className="brain-icon"
+                            <div
+                                className="brand-logo-mark"
                                 role="img"
-                                aria-label={t('aria.brain')}
+                                aria-label={t(
+                                    'aria.brain'
+                                )}
                             >
-                                🧠
-                            </span>
+                                <span>🌸</span>
+                            </div>
 
-                            <h1>
-                                {t('brand')}
-                            </h1>
+                            <div>
+
+                                <h1>
+                                    {t('brand')}
+                                </h1>
+
+                                <p className="tagline">
+                                    {t(
+                                        'hero.tagline'
+                                    )}
+                                </p>
+
+                            </div>
 
                         </div>
 
-                        <p className="tagline">
-                            {t('hero.tagline')}
+                    </div>
+
+                    {/* HERO MESSAGE */}
+
+                    <div className="hero-copy">
+
+                        <div
+                            className="hero-leaf"
+                            aria-hidden="true"
+                        >
+                            ❧
+                        </div>
+
+                        <h2>
+                            Because Every Memory
+                            <br />
+                            <em>
+                                Still Matters
+                            </em>
+                        </h2>
+
+                        <p>
+                            Compassionate support
+                            for people with
+                            dementia,
+                            <br />
+                            rooted in the heart of
+                            Northeast India.
                         </p>
 
                     </div>
 
+                    {/* LOGIN CARDS */}
+
                     <div className="card-grid">
 
-                        {/* PATIENT LOGIN */}
+                        {/* PATIENT */}
 
                         <div
                             className="login-card patient-card"
@@ -941,27 +1007,102 @@ function App() {
                                     'patientAuth'
                                 )
                             }
-                            style={{
-                                cursor: 'pointer',
-                                zIndex: 10
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (
+                                    e.key ===
+                                        'Enter' ||
+                                    e.key === ' '
+                                ) {
+                                    setCurrentScreen(
+                                        'patientAuth'
+                                    );
+                                }
                             }}
                         >
 
                             <div
-                                className="avatar"
-                                role="img"
-                                aria-label={t('aria.patient')}
+                                className="card-icon patient-icon"
+                                aria-hidden="true"
                             >
-                                👴
+
+                                <svg
+                                    width="58"
+                                    height="58"
+                                    viewBox="0 0 64 64"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+
+                                    <circle
+                                        cx="32"
+                                        cy="22"
+                                        r="9"
+                                        stroke="currentColor"
+                                        strokeWidth="3"
+                                    />
+
+                                    <path
+                                        d="M15 51C15 40.5 22.5 34 32 34C41.5 34 49 40.5 49 51"
+                                        stroke="currentColor"
+                                        strokeWidth="3"
+                                        strokeLinecap="round"
+                                    />
+
+                                    <path
+                                        d="M22 17C24 12 28 9 33 9C40 9 45 14 45 21"
+                                        stroke="currentColor"
+                                        strokeWidth="3"
+                                        strokeLinecap="round"
+                                    />
+
+                                    <path
+                                        d="M17 24C14 29 15 34 18 38"
+                                        stroke="currentColor"
+                                        strokeWidth="3"
+                                        strokeLinecap="round"
+                                    />
+
+                                </svg>
+
                             </div>
 
                             <h3>
-                                {t('cards.patientLogin')}
+                                {t(
+                                    'cards.patientLogin'
+                                )}
                             </h3>
+
+                            <p>
+                                Play, learn, stay
+                                active
+                            </p>
+
+                            <button
+                                className="card-arrow"
+                                aria-label={t(
+                                    'cards.patientLogin'
+                                )}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+
+                                    setCurrentScreen(
+                                        'patientAuth'
+                                    );
+                                }}
+                            >
+                                →
+                            </button>
+
+                            <div
+                                className="card-landscape patient-landscape"
+                                aria-hidden="true"
+                            />
 
                         </div>
 
-                        {/* CAREGIVER LOGIN */}
+                        {/* CAREGIVER */}
 
                         <div
                             className="login-card caregiver-card"
@@ -970,27 +1111,114 @@ function App() {
                                     'caregiverAuth'
                                 )
                             }
-                            style={{
-                                cursor: 'pointer',
-                                zIndex: 10
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (
+                                    e.key ===
+                                        'Enter' ||
+                                    e.key === ' '
+                                ) {
+                                    setCurrentScreen(
+                                        'caregiverAuth'
+                                    );
+                                }
                             }}
                         >
 
                             <div
-                                className="avatar"
-                                role="img"
-                                aria-label={t('aria.caregiver')}
+                                className="card-icon caregiver-icon"
+                                aria-hidden="true"
                             >
-                                👩‍⚕️
+
+                                <svg
+                                    width="58"
+                                    height="58"
+                                    viewBox="0 0 64 64"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+
+                                    <path
+                                        d="M32 53C32 53 11 41 11 25C11 18 16 14 22 14C27 14 30 17 32 21C34 17 37 14 42 14C48 14 53 18 53 25C53 41 32 53 32 53Z"
+                                        fill="currentColor"
+                                    />
+
+                                    <path
+                                        d="M32 27C27 22 21 23 18 27"
+                                        stroke="white"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                    />
+
+                                    <path
+                                        d="M32 27C37 22 43 23 46 27"
+                                        stroke="white"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                    />
+
+                                </svg>
+
                             </div>
 
                             <h3>
-                                {t('cards.caregiverLogin')}
+                                {t(
+                                    'cards.caregiverLogin'
+                                )}
                             </h3>
+
+                            <p>
+                                Support, track, make
+                                a difference
+                            </p>
+
+                            <button
+                                className="card-arrow caregiver-arrow"
+                                aria-label={t(
+                                    'cards.caregiverLogin'
+                                )}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+
+                                    setCurrentScreen(
+                                        'caregiverAuth'
+                                    );
+                                }}
+                            >
+                                →
+                            </button>
+
+                            <div
+                                className="card-landscape caregiver-landscape"
+                                aria-hidden="true"
+                            />
 
                         </div>
 
                     </div>
+
+                    {/* URGENT HELP */}
+
+                    <button
+                        className="urgent-help-btn"
+                        onClick={() =>
+                            setActiveModal(
+                                'directory'
+                            )
+                        }
+                        aria-label="Need urgent help"
+                    >
+                        <span aria-hidden="true">
+                            ♧
+                        </span>
+
+                        Need urgent help?
+
+                        <strong aria-hidden="true">
+                            →
+                        </strong>
+                    </button>
 
                 </section>
             )}
@@ -1006,16 +1234,15 @@ function App() {
                     <div className="about-header">
 
                         <h1>
-                            {t('howItWorks.title')}
+                            {t(
+                                'howItWorks.title'
+                            )}
                         </h1>
 
                         <p className="about-subtitle">
-                            {t('howItWorks.subtitle')}
-
-
-
-
-
+                            {t(
+                                'howItWorks.subtitle'
+                            )}
                         </p>
 
                     </div>
@@ -1027,7 +1254,9 @@ function App() {
                             <div className="step-marker">
                                 <span
                                     role="img"
-                                    aria-label={t('aria.gameController')}
+                                    aria-label={t(
+                                        'aria.gameController'
+                                    )}
                                 >
                                     🎮
                                 </span>
@@ -1036,23 +1265,21 @@ function App() {
                             <div className="step-body">
 
                                 <span className="step-index">
-                                    {t('howItWorks.step1.label')}
+                                    {t(
+                                        'howItWorks.step1.label'
+                                    )}
                                 </span>
 
                                 <h2>
-                                    {t('howItWorks.step1.title')}
-
+                                    {t(
+                                        'howItWorks.step1.title'
+                                    )}
                                 </h2>
 
                                 <p>
-                                    {t('howItWorks.step1.text')}
-
-
-
-
-
-
-
+                                    {t(
+                                        'howItWorks.step1.text'
+                                    )}
                                 </p>
 
                             </div>
@@ -1064,7 +1291,9 @@ function App() {
                             <div className="step-marker">
                                 <span
                                     role="img"
-                                    aria-label={t('aria.speakingHead')}
+                                    aria-label={t(
+                                        'aria.speakingHead'
+                                    )}
                                 >
                                     🗣️
                                 </span>
@@ -1073,27 +1302,21 @@ function App() {
                             <div className="step-body">
 
                                 <span className="step-index">
-                                    {t('howItWorks.step2.label')}
+                                    {t(
+                                        'howItWorks.step2.label'
+                                    )}
                                 </span>
 
                                 <h2>
-                                    {t('howItWorks.step2.title')}
-
+                                    {t(
+                                        'howItWorks.step2.title'
+                                    )}
                                 </h2>
 
                                 <p>
-                                    {t('howItWorks.step2.text')}
-
-
-
-
-
-
-
-
-
-
-
+                                    {t(
+                                        'howItWorks.step2.text'
+                                    )}
                                 </p>
 
                             </div>
@@ -1105,7 +1328,9 @@ function App() {
                             <div className="step-marker">
                                 <span
                                     role="img"
-                                    aria-label={t('aria.barChart')}
+                                    aria-label={t(
+                                        'aria.barChart'
+                                    )}
                                 >
                                     📊
                                 </span>
@@ -1114,23 +1339,21 @@ function App() {
                             <div className="step-body">
 
                                 <span className="step-index">
-                                    {t('howItWorks.step3.label')}
+                                    {t(
+                                        'howItWorks.step3.label'
+                                    )}
                                 </span>
 
                                 <h2>
-                                    {t('howItWorks.step3.title')}
-
+                                    {t(
+                                        'howItWorks.step3.title'
+                                    )}
                                 </h2>
 
                                 <p>
-                                    {t('howItWorks.step3.text')}
-
-
-
-
-
-
-
+                                    {t(
+                                        'howItWorks.step3.text'
+                                    )}
                                 </p>
 
                             </div>
@@ -1153,7 +1376,9 @@ function App() {
                                 )
                             }
                         >
-                            {t('common.backHome')}
+                            {t(
+                                'common.backHome'
+                            )}
                         </button>
                     </div>
 
@@ -1174,16 +1399,15 @@ function App() {
                         </h1>
 
                         <p className="about-subtitle">
-                            {t('about.subtitle')}
-
-
-
-
+                            {t(
+                                'about.subtitle'
+                            )}
                         </p>
 
                         <span className="coverage-badge">
-                            {t('about.coverage')}
-
+                            {t(
+                                'about.coverage'
+                            )}
                         </span>
 
                     </div>
@@ -1195,24 +1419,23 @@ function App() {
                             <span
                                 className="about-mission-icon"
                                 role="img"
-                                aria-label={t('aria.target')}
+                                aria-label={t(
+                                    'aria.target'
+                                )}
                             >
                                 🎯
                             </span>
 
                             <h2>
-                                {t('about.mission.title')}
+                                {t(
+                                    'about.mission.title'
+                                )}
                             </h2>
 
                             <p>
-                                {t('about.mission.text')}
-
-
-
-
-
-
-
+                                {t(
+                                    'about.mission.text'
+                                )}
                             </p>
 
                         </div>
@@ -1224,7 +1447,9 @@ function App() {
                                 <span
                                     className="about-feature-icon"
                                     role="img"
-                                    aria-label={t('aria.handshake')}
+                                    aria-label={t(
+                                        'aria.handshake'
+                                    )}
                                 >
                                     🤝
                                 </span>
@@ -1232,19 +1457,15 @@ function App() {
                                 <div>
 
                                     <h3>
-                                        {t('about.caregiverSupport.title')}
+                                        {t(
+                                            'about.caregiverSupport.title'
+                                        )}
                                     </h3>
 
                                     <p>
-                                        {t('about.caregiverSupport.text')}
-
-
-
-
-
-
-
-
+                                        {t(
+                                            'about.caregiverSupport.text'
+                                        )}
                                     </p>
 
                                 </div>
@@ -1256,7 +1477,9 @@ function App() {
                                 <span
                                     className="about-feature-icon"
                                     role="img"
-                                    aria-label={t('aria.puzzlePiece')}
+                                    aria-label={t(
+                                        'aria.puzzlePiece'
+                                    )}
                                 >
                                     🧩
                                 </span>
@@ -1264,18 +1487,15 @@ function App() {
                                 <div>
 
                                     <h3>
-                                        {t('about.cultural.title')}
-
+                                        {t(
+                                            'about.cultural.title'
+                                        )}
                                     </h3>
 
                                     <p>
-                                        {t('about.cultural.text')}
-
-
-
-
-
-
+                                        {t(
+                                            'about.cultural.text'
+                                        )}
                                     </p>
 
                                 </div>
@@ -1300,7 +1520,9 @@ function App() {
                                 )
                             }
                         >
-                            {t('common.backHome')}
+                            {t(
+                                'common.backHome'
+                            )}
                         </button>
                     </div>
 
@@ -1317,23 +1539,20 @@ function App() {
                     <div className="resources-header">
 
                         <h1>
-                            {t('resources.title')}
-
+                            {t(
+                                'resources.title'
+                            )}
                         </h1>
 
                         <p className="resources-subtitle">
-                            {t('resources.subtitle')}
-
-
-
-
+                            {t(
+                                'resources.subtitle'
+                            )}
                         </p>
 
                     </div>
 
                     <div className="resources-grid">
-
-                        {/* DIRECTORY */}
 
                         <div className="resource-card">
 
@@ -1342,18 +1561,15 @@ function App() {
                             </div>
 
                             <h3>
-                                {t('resources.directory.title')}
-
-
+                                {t(
+                                    'resources.directory.title'
+                                )}
                             </h3>
 
                             <p>
-                                {t('resources.directory.text')}
-
-
-
-
-
+                                {t(
+                                    'resources.directory.text'
+                                )}
                             </p>
 
                             <button
@@ -1364,12 +1580,12 @@ function App() {
                                     )
                                 }
                             >
-                                {t('resources.directory.button')}
+                                {t(
+                                    'resources.directory.button'
+                                )}
                             </button>
 
                         </div>
-
-                        {/* CAREGIVER MANUAL */}
 
                         <div className="resource-card">
 
@@ -1378,17 +1594,15 @@ function App() {
                             </div>
 
                             <h3>
-                                {t('resources.manual.title')}
-
+                                {t(
+                                    'resources.manual.title'
+                                )}
                             </h3>
 
                             <p>
-                                {t('resources.manual.text')}
-
-
-
-
-
+                                {t(
+                                    'resources.manual.text'
+                                )}
                             </p>
 
                             <button
@@ -1399,12 +1613,12 @@ function App() {
                                     )
                                 }
                             >
-                                {t('resources.manual.button')}
+                                {t(
+                                    'resources.manual.button'
+                                )}
                             </button>
 
                         </div>
-
-                        {/* TIPS */}
 
                         <div className="resource-card">
 
@@ -1413,17 +1627,15 @@ function App() {
                             </div>
 
                             <h3>
-                                {t('resources.tips.title')}
-
+                                {t(
+                                    'resources.tips.title'
+                                )}
                             </h3>
 
                             <p>
-                                {t('resources.tips.text')}
-
-
-
-
-
+                                {t(
+                                    'resources.tips.text'
+                                )}
                             </p>
 
                             <button
@@ -1434,12 +1646,12 @@ function App() {
                                     )
                                 }
                             >
-                                {t('resources.tips.button')}
+                                {t(
+                                    'resources.tips.button'
+                                )}
                             </button>
 
                         </div>
-
-                        {/* SUPPORT */}
 
                         <div className="resource-card">
 
@@ -1448,17 +1660,15 @@ function App() {
                             </div>
 
                             <h3>
-                                {t('resources.support.title')}
-
+                                {t(
+                                    'resources.support.title'
+                                )}
                             </h3>
 
                             <p>
-                                {t('resources.support.text')}
-
-
-
-
-
+                                {t(
+                                    'resources.support.text'
+                                )}
                             </p>
 
                             <button
@@ -1469,7 +1679,9 @@ function App() {
                                     )
                                 }
                             >
-                                {t('resources.support.button')}
+                                {t(
+                                    'resources.support.button'
+                                )}
                             </button>
 
                         </div>
@@ -1490,7 +1702,9 @@ function App() {
                                 )
                             }
                         >
-                            {t('common.backHome')}
+                            {t(
+                                'common.backHome'
+                            )}
                         </button>
                     </div>
 
@@ -1502,6 +1716,7 @@ function App() {
             ==================================================== */}
 
             {activeModal && (
+
                 <div
                     className="modal-overlay"
                     onClick={() =>
@@ -1519,6 +1734,7 @@ function App() {
                         <button
                             className="modal-close-btn"
                             onClick={() => {
+
                                 if (
                                     'speechSynthesis' in
                                     window
@@ -1526,35 +1742,35 @@ function App() {
                                     window.speechSynthesis.cancel();
                                 }
 
-                                setActiveModal(null);
+                                setActiveModal(
+                                    null
+                                );
+
                             }}
                         >
                             ✕
                         </button>
 
                         {/* ====================================================
-                            DIRECTORY MODAL
-                            RESTORED FROM FIRST VERSION
+                            DIRECTORY
                         ==================================================== */}
 
                         {activeModal ===
                             'directory' && (
+
                             <div className="modal-body directory-modal-body">
 
                                 <h2>
-                                    🩺 {t('directory.title')}
-
-
-
+                                    🩺{' '}
+                                    {t(
+                                        'directory.title'
+                                    )}
                                 </h2>
 
                                 <p className="directory-subtext">
-                                    {t('directory.subtitle')}
-
-
-
-
-
+                                    {t(
+                                        'directory.subtitle'
+                                    )}
                                 </p>
 
                                 <div className="directory-scroll-box">
@@ -1569,40 +1785,29 @@ function App() {
 
                                             <li>
                                                 <strong>
-                                                    Gauhati Medical
-                                                    College &
-                                                    Hospital
-                                                    (GMCH),
-                                                    Guwahati:
+                                                    Gauhati Medical College & Hospital (GMCH), Guwahati:
                                                 </strong>{' '}
-                                                {t('directory.details.assam.gauhati')}
-
-
-
-
-
+                                                {t(
+                                                    'directory.details.assam.gauhati'
+                                                )}
                                             </li>
 
                                             <li>
                                                 <strong>
-                                                    Assam Medical
-                                                    College (AMC),
-                                                    Dibrugarh:
+                                                    Assam Medical College (AMC), Dibrugarh:
                                                 </strong>{' '}
-                                                {t('directory.details.assam.amc')}
-
-
+                                                {t(
+                                                    'directory.details.assam.amc'
+                                                )}
                                             </li>
 
                                             <li>
                                                 <strong>
-                                                    Silchar Medical
-                                                    College &
-                                                    Hospital (SMCH),
-                                                    Silchar:
+                                                    Silchar Medical College & Hospital (SMCH), Silchar:
                                                 </strong>{' '}
-                                                {t('directory.details.assam.silchar')}
-
+                                                {t(
+                                                    'directory.details.assam.silchar'
+                                                )}
                                             </li>
 
                                         </ul>
@@ -1619,27 +1824,20 @@ function App() {
 
                                             <li>
                                                 <strong>
-                                                    NEIGRIHMS,
-                                                    Shillong:
+                                                    NEIGRIHMS, Shillong:
                                                 </strong>{' '}
-                                                {t('directory.details.meghalaya.neigrihms')}
-
-
-
-
-
-
-
+                                                {t(
+                                                    'directory.details.meghalaya.neigrihms'
+                                                )}
                                             </li>
 
                                             <li>
                                                 <strong>
-                                                    Civil Hospital
-                                                    Shillong:
+                                                    Civil Hospital Shillong:
                                                 </strong>{' '}
-                                                {t('directory.details.meghalaya.civil')}
-
-
+                                                {t(
+                                                    'directory.details.meghalaya.civil'
+                                                )}
                                             </li>
 
                                         </ul>
@@ -1656,30 +1854,20 @@ function App() {
 
                                             <li>
                                                 <strong>
-                                                    Regional
-                                                    Institute of
-                                                    Medical
-                                                    Sciences (RIMS),
-                                                    Imphal:
+                                                    Regional Institute of Medical Sciences (RIMS), Imphal:
                                                 </strong>{' '}
-                                                {t('directory.details.manipur.rims')}
-
-
-
-
-
+                                                {t(
+                                                    'directory.details.manipur.rims'
+                                                )}
                                             </li>
 
                                             <li>
                                                 <strong>
-                                                    Jawaharlal Nehru
-                                                    Institute of
-                                                    Medical Sciences
-                                                    (JNIMS), Imphal:
+                                                    Jawaharlal Nehru Institute of Medical Sciences (JNIMS), Imphal:
                                                 </strong>{' '}
-                                                {t('directory.details.manipur.jnims')}
-
-
+                                                {t(
+                                                    'directory.details.manipur.jnims'
+                                                )}
                                             </li>
 
                                         </ul>
@@ -1696,17 +1884,11 @@ function App() {
 
                                             <li>
                                                 <strong>
-                                                    Agartala
-                                                    Government
-                                                    Medical College
-                                                    (AGMC) & GBP
-                                                    Hospital,
-                                                    Agartala:
+                                                    Agartala Government Medical College (AGMC) & GBP Hospital, Agartala:
                                                 </strong>{' '}
-                                                {t('directory.details.tripura.agmc')}
-
-
-
+                                                {t(
+                                                    'directory.details.tripura.agmc'
+                                                )}
                                             </li>
 
                                         </ul>
@@ -1723,13 +1905,11 @@ function App() {
 
                                             <li>
                                                 <strong>
-                                                    Zoram Medical
-                                                    College (ZMC),
-                                                    Falkawn, Aizawl:
+                                                    Zoram Medical College (ZMC), Falkawn, Aizawl:
                                                 </strong>{' '}
-                                                {t('directory.details.mizoram.zmc')}
-
-
+                                                {t(
+                                                    'directory.details.mizoram.zmc'
+                                                )}
                                             </li>
 
                                         </ul>
@@ -1746,14 +1926,11 @@ function App() {
 
                                             <li>
                                                 <strong>
-                                                    Kohima Naga
-                                                    Hospital
-                                                    Authority,
-                                                    Kohima:
+                                                    Kohima Naga Hospital Authority, Kohima:
                                                 </strong>{' '}
-                                                {t('directory.details.nagaland.kohima')}
-
-
+                                                {t(
+                                                    'directory.details.nagaland.kohima'
+                                                )}
                                             </li>
 
                                         </ul>
@@ -1763,37 +1940,27 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            🟢 Arunachal Pradesh
-                                            & Sikkim
+                                            🟢 Arunachal Pradesh & Sikkim
                                         </h3>
 
                                         <ul>
 
                                             <li>
                                                 <strong>
-                                                    Tomo Riba
-                                                    Institute of
-                                                    Health and
-                                                    Medical
-                                                    Sciences
-                                                    (TRIHMS),
-                                                    Naharlagun (AP):
+                                                    Tomo Riba Institute of Health and Medical Sciences (TRIHMS), Naharlagun (AP):
                                                 </strong>{' '}
-                                                {t('directory.details.arunachal.sikkim.trihms')}
-
+                                                {t(
+                                                    'directory.details.arunachal.sikkim.trihms'
+                                                )}
                                             </li>
 
                                             <li>
                                                 <strong>
-                                                    Sir Thutob
-                                                    Namgyal
-                                                    Memorial (STNM)
-                                                    Hospital,
-                                                    Gangtok (Sikkim):
+                                                    Sir Thutob Namgyal Memorial (STNM) Hospital, Gangtok (Sikkim):
                                                 </strong>{' '}
-                                                {t('directory.details.arunachal.sikkim.stnm')}
-
-
+                                                {t(
+                                                    'directory.details.arunachal.sikkim.stnm'
+                                                )}
                                             </li>
 
                                         </ul>
@@ -1803,34 +1970,30 @@ function App() {
                                     <div className="state-dir-block emergency-highlight-block">
 
                                         <h3>
-                                            🚨 {t('directory.emergency.title')}
-
-
+                                            🚨{' '}
+                                            {t(
+                                                'directory.emergency.title'
+                                            )}
                                         </h3>
 
                                         <ul>
 
                                             <li>
                                                 <strong>
-                                                    {t('directory.emergency.teleManas')}
-
-
-
+                                                    {t(
+                                                        'directory.emergency.teleManas'
+                                                    )}
                                                 </strong>{' '}
-                                                {t('directory.details.teleManasSupport')}
-
-
-
-
-
+                                                {t(
+                                                    'directory.details.teleManasSupport'
+                                                )}
                                             </li>
 
                                             <li>
                                                 <strong>
-                                                    {t('directory.emergency.national')}
-
-
-
+                                                    {t(
+                                                        'directory.emergency.national'
+                                                    )}
                                                 </strong>{' '}
                                                 112
                                             </li>
@@ -1845,27 +2008,25 @@ function App() {
                         )}
 
                         {/* ====================================================
-                            MANUAL MODAL
-                            ONLY ADDED THE ABOUT DEMENTIA TAB FROM FIRST VERSION
+                            CAREGIVER MANUAL
                         ==================================================== */}
 
                         {activeModal ===
                             'manual' && (
+
                             <div className="modal-body manual-modal-body">
 
                                 <h2>
-                                    📘 {t('manual.title')}
-
+                                    📘{' '}
+                                    {t(
+                                        'manual.title'
+                                    )}
                                 </h2>
 
                                 <p className="modal-subtitle">
-                                    {t('manual.subtitle')}
-
-
-
-
-
-
+                                    {t(
+                                        'manual.subtitle'
+                                    )}
                                 </p>
 
                                 <div className="manual-tabs">
@@ -1883,7 +2044,10 @@ function App() {
                                             )
                                         }
                                     >
-                                        📖 {t('manual.tabs.guide')}
+                                        📖{' '}
+                                        {t(
+                                            'manual.tabs.guide'
+                                        )}
                                     </button>
 
                                     <button
@@ -1899,7 +2063,10 @@ function App() {
                                             )
                                         }
                                     >
-                                        🕊️ {t('manual.tabs.deescalation')}
+                                        🕊️{' '}
+                                        {t(
+                                            'manual.tabs.deescalation'
+                                        )}
                                     </button>
 
                                     <button
@@ -1915,11 +2082,11 @@ function App() {
                                             )
                                         }
                                     >
-                                        🧘 {t('manual.tabs.breathing')}
-
+                                        🧘{' '}
+                                        {t(
+                                            'manual.tabs.breathing'
+                                        )}
                                     </button>
-
-                                    {/* ADDED FROM FIRST VERSION */}
 
                                     <button
                                         className={`tab-btn ${
@@ -1934,199 +2101,153 @@ function App() {
                                             )
                                         }
                                     >
-                                        🧠 {t('manual.tabs.dementia')}
+                                        🧠{' '}
+                                        {t(
+                                            'manual.tabs.dementia'
+                                        )}
                                     </button>
 
                                 </div>
 
                                 <div className="guide-scroll-container">
 
-                                    {/* EXISTING LATEST VERSION - GUIDE */}
-
                                     {activeManualTab ===
                                         'guide' && (
+
                                         <div className="tab-content">
 
                                             <h3>
-                                                {t('manual.guide.title')}
-
-
+                                                {t(
+                                                    'manual.guide.title'
+                                                )}
                                             </h3>
 
                                             <p>
-                                                {t('manual.guide.text')}
-
-
-
-
+                                                {t(
+                                                    'manual.guide.text'
+                                                )}
                                             </p>
 
                                         </div>
                                     )}
-
-                                    {/* EXISTING LATEST VERSION - DEESCALATION */}
 
                                     {activeManualTab ===
                                         'deescalation' && (
+
                                         <div className="tab-content">
 
                                             <h3>
-                                                {t('manual.deescalation.title')}
-
-
+                                                {t(
+                                                    'manual.deescalation.title'
+                                                )}
                                             </h3>
 
                                             <p>
-                                                {t('manual.deescalation.text')}
-
-
-
-
-
-
+                                                {t(
+                                                    'manual.deescalation.text'
+                                                )}
                                             </p>
 
                                         </div>
                                     )}
-
-                                    {/* EXISTING LATEST VERSION - BREATHING */}
 
                                     {activeManualTab ===
                                         'breathing' &&
                                         renderBreathingExercise()}
 
-                                    {/* ADDED FROM FIRST VERSION - ABOUT DEMENTIA */}
-
                                     {activeManualTab ===
                                         'dementia' && (
+
                                         <div className="tab-content">
 
                                             <h3>
-                                                {t('dementia.whatIs.title')}
+                                                {t(
+                                                    'dementia.whatIs.title'
+                                                )}
                                             </h3>
 
                                             <p>
-                                                {t('dementia.whatIs.text')}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                                                {t(
+                                                    'dementia.whatIs.text'
+                                                )}
                                             </p>
 
                                             <h3>
-                                                {t('dementia.earlySigns.title')}
+                                                {t(
+                                                    'dementia.earlySigns.title'
+                                                )}
                                             </h3>
 
                                             <p>
-                                                {t('dementia.earlySigns.text')}
-
-
-
-
-
-
-
-
-
-
-
-
+                                                {t(
+                                                    'dementia.earlySigns.text'
+                                                )}
                                             </p>
 
                                             <h3>
-                                                {t('dementia.stages.title')}
-
+                                                {t(
+                                                    'dementia.stages.title'
+                                                )}
                                             </h3>
 
                                             <p>
+
                                                 <strong>
-                                                    {t('dementia.stages.earlyLabel')}
+                                                    {t(
+                                                        'dementia.stages.earlyLabel'
+                                                    )}
                                                 </strong>{' '}
-                                                {t('dementia.stages.early')}
 
-
-
+                                                {t(
+                                                    'dementia.stages.early'
+                                                )}
 
                                                 <strong>
                                                     {' '}
-                                                    {t('dementia.stages.middleLabel')}
+                                                    {t(
+                                                        'dementia.stages.middleLabel'
+                                                    )}
                                                 </strong>{' '}
-                                                {t('dementia.stages.middle')}
 
-
-
-
-
+                                                {t(
+                                                    'dementia.stages.middle'
+                                                )}
 
                                                 <strong>
                                                     {' '}
-                                                    {t('dementia.stages.lateLabel')}
+                                                    {t(
+                                                        'dementia.stages.lateLabel'
+                                                    )}
                                                 </strong>{' '}
-                                                {t('dementia.stages.late')}
 
-
-
-
-
+                                                {t(
+                                                    'dementia.stages.late'
+                                                )}
 
                                             </p>
 
                                             <h3>
-                                                {t('dementia.detection.title')}
-
+                                                {t(
+                                                    'dementia.detection.title'
+                                                )}
                                             </h3>
 
                                             <p>
-                                                {t('dementia.detection.text')}
-
-
-
-
-
-
-
-
-
-
-
+                                                {t(
+                                                    'dementia.detection.text'
+                                                )}
                                             </p>
 
                                             <h3>
-                                                {t('dementia.supporting.title')}
-
+                                                {t(
+                                                    'dementia.supporting.title'
+                                                )}
                                             </h3>
 
                                             <p>
-                                                {t('dementia.supporting.text')}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                                                {t(
+                                                    'dementia.supporting.text'
+                                                )}
                                             </p>
 
                                         </div>
@@ -2138,139 +2259,102 @@ function App() {
                         )}
 
                         {/* ====================================================
-                            TIPS MODAL
-                            RESTORED FROM FIRST VERSION
+                            TIPS
                         ==================================================== */}
 
                         {activeModal ===
                             'tips' && (
+
                             <div className="modal-body directory-modal-body">
 
                                 <h2>
-                                    📚 {t('tips.title')}
-
+                                    📚{' '}
+                                    {t(
+                                        'tips.title'
+                                    )}
                                 </h2>
 
                                 <p className="directory-subtext">
-                                    {t('tips.subtitle')}
-
-
+                                    {t(
+                                        'tips.subtitle'
+                                    )}
                                 </p>
 
                                 <div className="directory-scroll-box">
 
                                     <div className="state-dir-block">
-
                                         <h3>
-                                            🥗 {t('tips.nutrition.title')}
+                                            🥗{' '}
+                                            {t(
+                                                'tips.nutrition.title'
+                                            )}
                                         </h3>
 
                                         <p>
-                                            {t('tips.nutrition.text')}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                                            {t(
+                                                'tips.nutrition.text'
+                                            )}
                                         </p>
-
                                     </div>
 
                                     <div className="state-dir-block">
-
                                         <h3>
-                                            🚶 {t('tips.activity.title')}
+                                            🚶{' '}
+                                            {t(
+                                                'tips.activity.title'
+                                            )}
                                         </h3>
 
                                         <p>
-                                            {t('tips.activity.text')}
-
-
-
-
-
-
-
-
-
-
+                                            {t(
+                                                'tips.activity.text'
+                                            )}
                                         </p>
-
                                     </div>
 
                                     <div className="state-dir-block">
-
                                         <h3>
-                                            😴 {t('tips.sleep.title')}
+                                            😴{' '}
+                                            {t(
+                                                'tips.sleep.title'
+                                            )}
                                         </h3>
 
                                         <p>
-                                            {t('tips.sleep.text')}
-
-
-
-
-
-
-
-
-
-
-
+                                            {t(
+                                                'tips.sleep.text'
+                                            )}
                                         </p>
-
                                     </div>
 
                                     <div className="state-dir-block">
-
                                         <h3>
-                                            🏠 {t('tips.safety.title')}
+                                            🏠{' '}
+                                            {t(
+                                                'tips.safety.title'
+                                            )}
                                         </h3>
 
                                         <p>
-                                            {t('tips.safety.text')}
-
-
-
-
-
-
-
-
-
+                                            {t(
+                                                'tips.safety.text'
+                                            )}
                                         </p>
-
                                     </div>
 
                                     <div className="state-dir-block">
-
                                         <h3>
-                                            💬 {t('tips.communication.title')}
+                                            💬{' '}
+                                            {t(
+                                                'tips.communication.title'
+                                            )}
                                         </h3>
 
                                         <p>
-                                            {t('tips.communication.text')}
-
-
-
-
-
-
-
-
-
-
+                                            {t(
+                                                'tips.communication.text'
+                                            )}
                                         </p>
-
                                     </div>
 
                                 </div>
@@ -2279,24 +2363,25 @@ function App() {
                         )}
 
                         {/* ====================================================
-                            SUPPORT MODAL
-                            RESTORED FROM FIRST VERSION
+                            SUPPORT
                         ==================================================== */}
 
                         {activeModal ===
                             'support' && (
+
                             <div className="modal-body directory-modal-body">
 
                                 <h2>
-                                    🤝 {t('support.title')}
-
+                                    🤝{' '}
+                                    {t(
+                                        'support.title'
+                                    )}
                                 </h2>
 
                                 <p className="directory-subtext">
-                                    {t('support.subtitle')}
-
-
-
+                                    {t(
+                                        'support.subtitle'
+                                    )}
                                 </p>
 
                                 <div className="directory-scroll-box">
@@ -2304,26 +2389,16 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            🧑‍🤝‍🧑 {t('support.local.title')}
-
-
+                                            🧑‍🤝‍🧑{' '}
+                                            {t(
+                                                'support.local.title'
+                                            )}
                                         </h3>
 
                                         <p>
-                                            {t('support.local.text')}
-
-
-
-
-
-
-
-
-
-
-
-
-
+                                            {t(
+                                                'support.local.text'
+                                            )}
                                         </p>
 
                                     </div>
@@ -2331,23 +2406,16 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            🏢 {t('support.organizations.title')}
-
-
+                                            🏢{' '}
+                                            {t(
+                                                'support.organizations.title'
+                                            )}
                                         </h3>
 
                                         <p>
-                                            {t('support.organizations.text')}
-
-
-
-
-
-
-
-
-
-
+                                            {t(
+                                                'support.organizations.text'
+                                            )}
                                         </p>
 
                                     </div>
@@ -2355,21 +2423,16 @@ function App() {
                                     <div className="state-dir-block">
 
                                         <h3>
-                                            💻 {t('support.online.title')}
+                                            💻{' '}
+                                            {t(
+                                                'support.online.title'
+                                            )}
                                         </h3>
 
                                         <p>
-                                            {t('support.online.text')}
-
-
-
-
-
-
-
-
-
-
+                                            {t(
+                                                'support.online.text'
+                                            )}
                                         </p>
 
                                     </div>
@@ -2377,21 +2440,16 @@ function App() {
                                     <div className="state-dir-block emergency-highlight-block">
 
                                         <h3>
-                                            🕊️ {t('support.mentalHealth.title')}
-
-
+                                            🕊️{' '}
+                                            {t(
+                                                'support.mentalHealth.title'
+                                            )}
                                         </h3>
 
                                         <p>
-                                            {t('support.mentalHealth.text')}
-
-
-
-
-
-
-
-
+                                            {t(
+                                                'support.mentalHealth.text'
+                                            )}
                                         </p>
 
                                     </div>
@@ -2402,21 +2460,25 @@ function App() {
                         )}
 
                         {/* ====================================================
-                            QUICK CALM MODAL
+                            QUICK CALM
                         ==================================================== */}
 
                         {activeModal ===
                             'quickCalm' && (
+
                             <div className="modal-body quick-calm-modal-body">
 
                                 <h2>
-                                    🧘 {t('quickCalm.title')}
+                                    🧘{' '}
+                                    {t(
+                                        'quickCalm.title'
+                                    )}
                                 </h2>
 
                                 <p className="modal-subtitle">
-                                    {t('quickCalm.subtitle')}
-
-
+                                    {t(
+                                        'quickCalm.subtitle'
+                                    )}
                                 </p>
 
                                 {renderBreathingExercise()}
@@ -2431,6 +2493,8 @@ function App() {
 
             {/* ====================================================
                 FLOATING QUICK CALM BUTTON
+                UPDATED:
+                QUICK CALM NOW APPEARS ON ALL PAGES INCLUDING HOME
             ==================================================== */}
 
             <button
@@ -2440,28 +2504,41 @@ function App() {
                         'quickCalm'
                     )
                 }
-                aria-label={t('aria.quickCalm')}
+                aria-label={t(
+                    'aria.quickCalm'
+                )}
             >
-                🧘 {t('quickCalm.button')}
+                🧘{' '}
+                {t(
+                    'quickCalm.button'
+                )}
             </button>
 
             {/* ====================================================
                 EMERGENCY BANNER
+                KEPT ON NON-HOME PAGES
             ==================================================== */}
 
-            <div className="emergency-banner">
+            {currentScreen !== 'home' && (
+                <div className="emergency-banner">
 
-                <span>
-                    {t('emergency.banner')}
-                </span>
+                    <span>
+                        {t(
+                            'emergency.banner'
+                        )}
+                    </span>
 
-                <button className="help-btn">
-                    {t('emergency.button')}
-                </button>
+                    <button className="help-btn">
+                        {t(
+                            'emergency.button'
+                        )}
+                    </button>
 
-            </div>
+                </div>
+            )}
 
         </div>
     );
 }
+
 export default App;

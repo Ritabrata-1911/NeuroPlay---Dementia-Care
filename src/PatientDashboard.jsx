@@ -139,6 +139,12 @@ export default function PatientDashboard({ onLogout }) {
     const [showProfileModal, setShowProfileModal] = useState(false);
     const avatarInputRef = useRef(null);
 
+    const [editingProfile, setEditingProfile] = useState(false);
+    const [profileForm, setProfileForm] = useState({});
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileSaveError, setProfileSaveError] = useState('');
+    const [profileSaveSuccess, setProfileSaveSuccess] = useState('');
+
     useEffect(() => {
         const storedSession = sessionStorage.getItem(
             'neuroplay_patient_session'
@@ -190,30 +196,63 @@ export default function PatientDashboard({ onLogout }) {
     }, [patient?.id, patient?.patient_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Fetch the real assigned caregiver from Supabase using the patient's
-    // caregiver_id, so the card always shows the actual assigned caregiver
-    // rather than a hardcoded fallback name.
+    // caregiver_id. The RPC reads the caregiver's current Auth metadata, so
+    // profile edits made by the caregiver are reflected here as well.
     useEffect(() => {
         const patientId = patient?.id || patient?.patient_id;
         if (!patientId) return;
 
         let active = true;
-        supabase
-            .rpc('get_patient_caregiver_info', { p_patient_id: patientId })
-            .then(({ data, error }) => {
-                if (!active) return;
-                if (error) {
-                    console.error('Caregiver fetch error:', error);
-                    return;
-                }
-                if (data && data.length > 0) {
-                    setAssignedCaregiver({
-                        full_name: data[0].caregiver_name,
-                    });
-                }
-            });
 
-        return () => { active = false; };
-    }, [patient]);
+        const loadAssignedCaregiver = async () => {
+            const { data, error } = await supabase.rpc(
+                'get_patient_caregiver_info',
+                { p_patient_id: patientId }
+            );
+
+            if (!active) return;
+
+            if (error) {
+                console.error('Caregiver fetch error:', error);
+                return;
+            }
+
+            if (data && data.length > 0) {
+                const caregiverRow = data[0];
+
+                setAssignedCaregiver({
+                    ...caregiverRow,
+                    full_name:
+                        caregiverRow.caregiver_name ||
+                        caregiverRow.full_name ||
+                        '',
+                    phone_number:
+                        caregiverRow.phone_number ||
+                        caregiverRow.caregiver_phone ||
+                        '',
+                });
+            } else {
+                setAssignedCaregiver(null);
+            }
+        };
+
+        loadAssignedCaregiver();
+
+        // Auth metadata is persisted in Supabase and the patient dashboard
+        // may already be open when the caregiver changes their profile.
+        // Refresh when the patient returns to this tab/window so the newest
+        // caregiver details are shown without requiring a logout/login.
+        const handleWindowFocus = () => {
+            loadAssignedCaregiver();
+        };
+
+        window.addEventListener('focus', handleWindowFocus);
+
+        return () => {
+            active = false;
+            window.removeEventListener('focus', handleWindowFocus);
+        };
+    }, [patient?.id, patient?.patient_id]);
 
     useEffect(() => {
         const patientId = patient?.id || patient?.patient_id;
@@ -519,6 +558,62 @@ export default function PatientDashboard({ onLogout }) {
         }
 
         persistPatientUpdate({ avatar_url: null });
+    }
+
+    function openEditProfile() {
+        setProfileForm({
+            full_name: patient?.full_name || patient?.name || '',
+            phone_number: patient?.phone_number || '',
+            dob: patient?.dob || '',
+            gender: patient?.gender || '',
+            area: patient?.area || '',
+            address: patient?.address || '',
+        });
+        setProfileSaveError('');
+        setProfileSaveSuccess('');
+        setEditingProfile(true);
+    }
+
+    async function handleProfileSave(e) {
+        e.preventDefault();
+        const patientId = patient?.id || patient?.patient_id;
+        if (!patientId) return;
+
+        const trimmed = {
+            full_name: profileForm.full_name.trim(),
+            phone_number: profileForm.phone_number.trim(),
+            dob: profileForm.dob || null,
+            gender: profileForm.gender.trim(),
+            area: profileForm.area.trim(),
+            address: profileForm.address.trim(),
+        };
+
+        if (!trimmed.full_name) {
+            setProfileSaveError('Name cannot be empty.');
+            return;
+        }
+
+        setProfileSaving(true);
+        setProfileSaveError('');
+        setProfileSaveSuccess('');
+
+        const { error } = await supabase
+            .from('patients')
+            .update(trimmed)
+            .eq('id', patientId);
+
+        setProfileSaving(false);
+
+        if (error) {
+            console.error('Failed to save patient profile:', error.message);
+            setProfileSaveError('Could not save changes. Please try again.');
+            return;
+        }
+
+        persistPatientUpdate(trimmed);
+        setProfileSaveSuccess('Profile updated!');
+        setEditingProfile(false);
+        setTimeout(() => setProfileSaveSuccess(''), 3000);
     }
 
     async function handleSendNoteToCaregiver() {
@@ -1251,19 +1346,21 @@ export default function PatientDashboard({ onLogout }) {
             {showProfileModal && (
                 <div
                     className="modal-overlay"
-                    onClick={() => setShowProfileModal(false)}
+                    onClick={() => { setShowProfileModal(false); setEditingProfile(false); }}
                 >
                     <div
                         className="modal-content"
                         onClick={(e) => e.stopPropagation()}
+                        style={{ maxWidth: '520px', width: '100%' }}
                     >
                         <button
                             className="modal-close-btn"
-                            onClick={() => setShowProfileModal(false)}
+                            onClick={() => { setShowProfileModal(false); setEditingProfile(false); }}
                         >
                             ✕
                         </button>
 
+                        {/* Avatar + name row */}
                         <div className="profile-modal-header">
                             <div className="profile-modal-avatar-wrap">
                                 {avatarUrl ? (
@@ -1298,10 +1395,10 @@ export default function PatientDashboard({ onLogout }) {
                                 />
                             </div>
 
-                            <div>
-                                <h2>{patientName}</h2>
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ margin: '0 0 0.15rem' }}>{patientName}</h2>
                                 <p className="profile-modal-email">
-                                    {t('patientDashboard.settings.patientId')}: {patient.id || patient.patient_id}
+                                    Patient ID: {patient.id || patient.patient_id}
                                 </p>
 
                                 <div className="profile-avatar-actions">
@@ -1327,11 +1424,149 @@ export default function PatientDashboard({ onLogout }) {
                                 </div>
 
                                 {avatarError && (
-                                    <p className="error-message" style={{ marginTop: '0.35rem' }}>
-                                        {avatarError}
-                                    </p>
+                                    <p className="error-message" style={{ marginTop: '0.35rem' }}>{avatarError}</p>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Profile info / edit form */}
+                        <div style={{ marginTop: '1.5rem' }}>
+                            {!editingProfile ? (
+                                // Read-only view
+                                <div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem 1.5rem', marginBottom: '1.25rem' }}>
+                                        {[
+                                            { label: 'Full Name', value: patient.full_name || patient.name },
+                                            { label: 'Phone', value: patient.phone_number },
+                                            { label: 'Date of Birth', value: patient.dob },
+                                            { label: 'Gender', value: patient.gender },
+                                            { label: 'Area', value: patient.area },
+                                            { label: 'Address', value: patient.address },
+                                        ].map(({ label, value }) => (
+                                            <div key={label}>
+                                                <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--db-slate-text, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>{label}</span>
+                                                <span style={{ fontSize: '0.95rem', color: value ? 'var(--db-navy-text, #1e293b)' : '#aaa' }}>{value || '—'}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {profileSaveSuccess && (
+                                        <p style={{ color: '#16a34a', fontSize: '0.875rem', marginBottom: '0.75rem' }}>✓ {profileSaveSuccess}</p>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        className="reminder-save-btn"
+                                        style={{ width: '100%' }}
+                                        onClick={openEditProfile}
+                                    >
+                                        ✏️ Edit Profile
+                                    </button>
+                                </div>
+                            ) : (
+                                // Edit form
+                                <form onSubmit={handleProfileSave}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem 1.25rem', marginBottom: '1rem' }}>
+                                        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', gridColumn: '1 / -1' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--db-slate-text, #64748b)' }}>Full Name *</span>
+                                            <input
+                                                type="text"
+                                                value={profileForm.full_name}
+                                                onChange={(e) => setProfileForm((p) => ({ ...p, full_name: e.target.value }))}
+                                                placeholder="Your full name"
+                                                maxLength={80}
+                                                required
+                                                style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--db-border-color, #e2e8f0)', borderRadius: '8px', fontSize: '0.95rem' }}
+                                            />
+                                        </label>
+
+                                        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--db-slate-text, #64748b)' }}>Phone</span>
+                                            <input
+                                                type="tel"
+                                                value={profileForm.phone_number}
+                                                onChange={(e) => setProfileForm((p) => ({ ...p, phone_number: e.target.value }))}
+                                                placeholder="+91 00000 00000"
+                                                maxLength={20}
+                                                style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--db-border-color, #e2e8f0)', borderRadius: '8px', fontSize: '0.95rem' }}
+                                            />
+                                        </label>
+
+                                        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--db-slate-text, #64748b)' }}>Date of Birth</span>
+                                            <input
+                                                type="date"
+                                                value={profileForm.dob}
+                                                onChange={(e) => setProfileForm((p) => ({ ...p, dob: e.target.value }))}
+                                                style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--db-border-color, #e2e8f0)', borderRadius: '8px', fontSize: '0.95rem' }}
+                                            />
+                                        </label>
+
+                                        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--db-slate-text, #64748b)' }}>Gender</span>
+                                            <select
+                                                value={profileForm.gender}
+                                                onChange={(e) => setProfileForm((p) => ({ ...p, gender: e.target.value }))}
+                                                style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--db-border-color, #e2e8f0)', borderRadius: '8px', fontSize: '0.95rem', background: 'white' }}
+                                            >
+                                                <option value="">Select…</option>
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                                <option value="other">Other</option>
+                                                <option value="prefer_not_to_say">Prefer not to say</option>
+                                            </select>
+                                        </label>
+
+                                        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--db-slate-text, #64748b)' }}>Area / City</span>
+                                            <input
+                                                type="text"
+                                                value={profileForm.area}
+                                                onChange={(e) => setProfileForm((p) => ({ ...p, area: e.target.value }))}
+                                                placeholder="e.g. Kolkata"
+                                                maxLength={60}
+                                                style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--db-border-color, #e2e8f0)', borderRadius: '8px', fontSize: '0.95rem' }}
+                                            />
+                                        </label>
+
+                                        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', gridColumn: '1 / -1' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--db-slate-text, #64748b)' }}>Address</span>
+                                            <input
+                                                type="text"
+                                                value={profileForm.address}
+                                                onChange={(e) => setProfileForm((p) => ({ ...p, address: e.target.value }))}
+                                                placeholder="Street address"
+                                                maxLength={120}
+                                                style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--db-border-color, #e2e8f0)', borderRadius: '8px', fontSize: '0.95rem' }}
+                                            />
+                                        </label>
+                                    </div>
+
+                                    {profileSaveError && (
+                                        <p className="error-message" style={{ marginBottom: '0.75rem' }}>{profileSaveError}</p>
+                                    )}
+
+                                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                        <button
+                                            type="button"
+                                            className="btn-outline"
+                                            style={{ flex: 1 }}
+                                            onClick={() => setEditingProfile(false)}
+                                            disabled={profileSaving}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="reminder-save-btn"
+                                            style={{ flex: 2 }}
+                                            disabled={profileSaving}
+                                        >
+                                            {profileSaving ? 'Saving…' : 'Save Changes'}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
                         </div>
                     </div>
                 </div>

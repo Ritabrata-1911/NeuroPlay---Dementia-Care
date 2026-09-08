@@ -176,6 +176,15 @@ export default function CaregiverDashboard() {
     const [avatarUploading, setAvatarUploading] = useState(false);
     const [avatarError, setAvatarError] = useState(null);
     const avatarInputRef = useRef(null);
+
+    // Caregiver profile editing. These values are stored in Supabase Auth
+    // user_metadata (raw_user_meta_data) and are therefore persistent in the
+    // database and available to every part of the app that reads the user.
+    const [editingProfile, setEditingProfile] = useState(false);
+    const [profileForm, setProfileForm] = useState({});
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileSaveError, setProfileSaveError] = useState('');
+    const [profileSaveSuccess, setProfileSaveSuccess] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [reportsPatientId, setReportsPatientId] = useState(null);
     const [memoriesPatientId, setMemoriesPatientId] = useState(null);
@@ -740,6 +749,22 @@ export default function CaregiverDashboard() {
                     </div>
                 </div>
 
+                {patients.length > 1 && (
+                    <div className="reminder-patient-picker">
+                        <span>{t('caregiverDashboard.reminders.patient')}</span>
+                        {patients.map((p) => (
+                            <button
+                                type="button"
+                                key={p.id}
+                                className={`filter-pill ${p.id === selectedReminderPatient?.id ? 'filter-pill-active' : ''}`}
+                                onClick={() => setReminderPatientId(p.id)}
+                            >
+                                {p.full_name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {!selectedReminderPatient ? (
                     <div className="reminder-empty-state">{t('caregiverDashboard.dailyRoutine.addPatient')}</div>
                 ) : (
@@ -1059,6 +1084,152 @@ export default function CaregiverDashboard() {
         navigate('/');
     };
 
+    const openProfileEditor = () => {
+        const currentMeta = user?.user_metadata || {};
+
+        setProfileForm({
+            full_name: currentMeta.full_name || '',
+            phone_number: currentMeta.phone_number || '',
+            alt_phone: currentMeta.alt_phone || '',
+            dob: currentMeta.dob || '',
+            gender: currentMeta.gender || '',
+            area: currentMeta.area || '',
+            address: currentMeta.address || '',
+            country: currentMeta.country || '',
+            relationship: currentMeta.relationship || '',
+            experience: currentMeta.experience || '',
+            emergency_name: currentMeta.emergency_name || '',
+            emergency_phone: currentMeta.emergency_phone || '',
+        });
+
+        setProfileSaveError('');
+        setProfileSaveSuccess('');
+        setEditingProfile(true);
+    };
+
+    const handleProfileFormChange = (event) => {
+        const { name, value } = event.target;
+
+        let nextValue = value;
+
+        if (
+            ['phone_number', 'alt_phone', 'emergency_phone'].includes(name)
+        ) {
+            nextValue = value.replace(/\D/g, '').slice(0, 10);
+        }
+
+        if (name === 'experience') {
+            nextValue = value.replace(/\D/g, '').slice(0, 3);
+        }
+
+        setProfileForm((previous) => ({
+            ...previous,
+            [name]: nextValue,
+        }));
+
+        setProfileSaveError('');
+        setProfileSaveSuccess('');
+    };
+
+    const handleProfileSave = async (event) => {
+        event.preventDefault();
+
+        const fullName = (profileForm.full_name || '').trim();
+        const phoneNumber = (profileForm.phone_number || '').trim();
+        const altPhone = (profileForm.alt_phone || '').trim();
+        const emergencyPhone = (profileForm.emergency_phone || '').trim();
+
+        if (!fullName) {
+            setProfileSaveError('Full name is required.');
+            return;
+        }
+
+        if (phoneNumber && !/^\d{10}$/.test(phoneNumber)) {
+            setProfileSaveError('Phone number must contain exactly 10 digits.');
+            return;
+        }
+
+        if (altPhone && !/^\d{10}$/.test(altPhone)) {
+            setProfileSaveError('Alternate phone must contain exactly 10 digits.');
+            return;
+        }
+
+        if (emergencyPhone && !/^\d{10}$/.test(emergencyPhone)) {
+            setProfileSaveError('Emergency contact phone must contain exactly 10 digits.');
+            return;
+        }
+
+        if (profileForm.dob) {
+            const selectedDate = new Date(`${profileForm.dob}T00:00:00`);
+            const todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0);
+
+            if (Number.isNaN(selectedDate.getTime()) || selectedDate > todayDate) {
+                setProfileSaveError('Date of birth cannot be in the future.');
+                return;
+            }
+        }
+
+        setProfileSaving(true);
+        setProfileSaveError('');
+        setProfileSaveSuccess('');
+
+        const updatedMetadata = {
+            full_name: fullName,
+            phone_number: phoneNumber,
+            alt_phone: altPhone,
+            dob: profileForm.dob || '',
+            gender: profileForm.gender || '',
+            area: (profileForm.area || '').trim(),
+            address: (profileForm.address || '').trim(),
+            country: (profileForm.country || '').trim(),
+            relationship: (profileForm.relationship || '').trim(),
+            experience: (profileForm.experience || '').trim(),
+            emergency_name: (profileForm.emergency_name || '').trim(),
+            emergency_phone: emergencyPhone,
+        };
+
+        const { data: updatedUserData, error } =
+            await supabase.auth.updateUser({
+                data: updatedMetadata,
+            });
+
+        if (error) {
+            console.error('Failed to update caregiver profile:', error.message);
+            setProfileSaveError(
+                error.message || 'Unable to save your profile. Please try again.'
+            );
+            setProfileSaving(false);
+            return;
+        }
+
+        // updateUser returns the fresh auth user. Keeping it in React state
+        // makes the new details immediately flow into the header, profile
+        // modal, Settings export, emergency card, and every other section
+        // that reads caregiver metadata.
+        if (updatedUserData?.user) {
+            setUser(updatedUserData.user);
+        }
+
+        setProfileSaving(false);
+        setProfileSaveSuccess('Profile updated successfully.');
+        setEditingProfile(false);
+
+        // Refresh the auth user once more so the local state cannot remain
+        // stale if the Supabase client refreshes the session after the update.
+        const {
+            data: { user: freshUser },
+        } = await supabase.auth.getUser();
+
+        if (freshUser) {
+            setUser(freshUser);
+        }
+
+        setTimeout(() => {
+            setProfileSaveSuccess('');
+        }, 3500);
+    };
+
     // Uploads a new profile photo to Supabase Storage, then points the
     // caregiver's user_metadata.avatar_url at the resulting public URL —
     // same "profile lives in auth metadata" pattern as the rest of the
@@ -1355,21 +1526,28 @@ export default function CaregiverDashboard() {
         return (
             <div
                 className="modal-overlay"
-                onClick={() =>
-                    setShowProfileModal(false)
-                }
+                onClick={() => {
+                    if (!profileSaving) {
+                        setShowProfileModal(false);
+                        setEditingProfile(false);
+                        setProfileSaveError('');
+                    }
+                }}
             >
                 <div
-                    className="modal-content"
-                    onClick={(e) =>
-                        e.stopPropagation()
-                    }
+                    className={`modal-content ${editingProfile ? 'profile-modal-editing' : ''}`}
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <button
                         className="modal-close-btn"
-                        onClick={() =>
-                            setShowProfileModal(false)
-                        }
+                        onClick={() => {
+                            if (profileSaving) return;
+                            setShowProfileModal(false);
+                            setEditingProfile(false);
+                            setProfileSaveError('');
+                        }}
+                        disabled={profileSaving}
+                        aria-label="Close profile"
                     >
                         ✕
                     </button>
@@ -1392,7 +1570,7 @@ export default function CaregiverDashboard() {
                                 type="button"
                                 className="profile-modal-avatar-edit-btn"
                                 onClick={() => avatarInputRef.current?.click()}
-                                disabled={avatarUploading}
+                                disabled={avatarUploading || profileSaving}
                                 aria-label="Change profile photo"
                                 title="Change profile photo"
                             >
@@ -1408,7 +1586,7 @@ export default function CaregiverDashboard() {
                             />
                         </div>
 
-                        <div>
+                        <div className="profile-modal-heading-content">
                             <h2>{caregiverName}</h2>
 
                             <p className="profile-modal-email">
@@ -1420,9 +1598,11 @@ export default function CaregiverDashboard() {
                                     type="button"
                                     className="profile-avatar-action-link"
                                     onClick={() => avatarInputRef.current?.click()}
-                                    disabled={avatarUploading}
+                                    disabled={avatarUploading || profileSaving}
                                 >
-                                    {avatarUploading ? 'Working…' : (avatarUrl ? 'Change photo' : 'Upload photo')}
+                                    {avatarUploading
+                                        ? 'Working…'
+                                        : (avatarUrl ? 'Change photo' : 'Upload photo')}
                                 </button>
 
                                 {avatarUrl && (
@@ -1430,7 +1610,7 @@ export default function CaregiverDashboard() {
                                         type="button"
                                         className="profile-avatar-action-link profile-avatar-action-danger"
                                         onClick={handleRemoveAvatar}
-                                        disabled={avatarUploading}
+                                        disabled={avatarUploading || profileSaving}
                                     >
                                         Remove photo
                                     </button>
@@ -1445,38 +1625,161 @@ export default function CaregiverDashboard() {
                         </div>
                     </div>
 
-                    <div className="profile-details-grid">
-                        {PROFILE_FIELDS.map(
-                            ({ key, labelKey }) => {
-                                const value = meta[key];
+                    {profileSaveSuccess && (
+                        <div className="profile-save-success">
+                            ✓ {profileSaveSuccess}
+                        </div>
+                    )}
 
-                                if (!value) return null;
+                    {editingProfile ? (
+                        <form
+                            className="profile-edit-form"
+                            onSubmit={handleProfileSave}
+                        >
+                            <div className="profile-edit-grid">
+                                {PROFILE_FIELDS.map(({ key, labelKey }) => {
+                                    const value = profileForm[key] ?? '';
+                                    const isLongText = ['address'].includes(key);
 
-                                return (
-                                    <div
-                                        className="profile-detail-row"
-                                        key={key}
-                                    >
-                                        <span className="profile-detail-label">
-                                            {t(labelKey)}
-                                        </span>
+                                    return (
+                                        <div
+                                            className={`profile-edit-field ${isLongText ? 'profile-edit-field-full' : ''}`}
+                                            key={key}
+                                        >
+                                            <label htmlFor={`caregiver-${key}`}>
+                                                {t(labelKey)}
+                                                {key === 'full_name' && (
+                                                    <span className="profile-required"> *</span>
+                                                )}
+                                            </label>
 
-                                        <span className="profile-detail-value">
-                                            {value}
-                                        </span>
-                                    </div>
-                                );
-                            }
-                        )}
-                    </div>
+                                            {key === 'gender' ? (
+                                                <select
+                                                    id={`caregiver-${key}`}
+                                                    name={key}
+                                                    value={value}
+                                                    onChange={handleProfileFormChange}
+                                                    className="profile-edit-input"
+                                                >
+                                                    <option value="">Select gender</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            ) : key === 'dob' ? (
+                                                <input
+                                                    id={`caregiver-${key}`}
+                                                    type="date"
+                                                    name={key}
+                                                    value={value}
+                                                    max={new Date().toISOString().slice(0, 10)}
+                                                    onChange={handleProfileFormChange}
+                                                    className="profile-edit-input"
+                                                />
+                                            ) : isLongText ? (
+                                                <textarea
+                                                    id={`caregiver-${key}`}
+                                                    name={key}
+                                                    value={value}
+                                                    onChange={handleProfileFormChange}
+                                                    className="profile-edit-input profile-edit-textarea"
+                                                    rows={3}
+                                                />
+                                            ) : (
+                                                <input
+                                                    id={`caregiver-${key}`}
+                                                    type={
+                                                        ['phone_number', 'alt_phone', 'emergency_phone'].includes(key)
+                                                            ? 'tel'
+                                                            : key === 'experience'
+                                                                ? 'number'
+                                                                : 'text'
+                                                    }
+                                                    name={key}
+                                                    value={value}
+                                                    onChange={handleProfileFormChange}
+                                                    className="profile-edit-input"
+                                                    min={key === 'experience' ? '0' : undefined}
+                                                    max={key === 'experience' ? '100' : undefined}
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
 
-                    {PROFILE_FIELDS.every(
-                        ({ key }) => !meta[key]
-                    ) && (
-                            <p className="profile-empty-note">
-                                {t('caregiverDashboard.profile.empty')}
-                            </p>
-                        )}
+                            {profileSaveError && (
+                                <p className="profile-edit-error">
+                                    ⚠️ {profileSaveError}
+                                </p>
+                            )}
+
+                            <div className="profile-edit-actions">
+                                <button
+                                    type="button"
+                                    className="profile-edit-cancel-btn"
+                                    onClick={() => {
+                                        if (profileSaving) return;
+                                        setEditingProfile(false);
+                                        setProfileSaveError('');
+                                    }}
+                                    disabled={profileSaving}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="profile-edit-save-btn"
+                                    disabled={profileSaving}
+                                >
+                                    {profileSaving ? 'Saving…' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <>
+                            <div className="profile-details-grid">
+                                {PROFILE_FIELDS.map(({ key, labelKey }) => {
+                                    const value = meta[key];
+
+                                    if (!value) return null;
+
+                                    return (
+                                        <div
+                                            className="profile-detail-row"
+                                            key={key}
+                                        >
+                                            <span className="profile-detail-label">
+                                                {t(labelKey)}
+                                            </span>
+
+                                            <span className="profile-detail-value">
+                                                {value}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {PROFILE_FIELDS.every(({ key }) => !meta[key]) && (
+                                <p className="profile-empty-note">
+                                    {t('caregiverDashboard.profile.empty')}
+                                </p>
+                            )}
+
+                            <div className="profile-view-actions">
+                                <button
+                                    type="button"
+                                    className="profile-edit-save-btn"
+                                    onClick={openProfileEditor}
+                                    disabled={avatarUploading}
+                                >
+                                    ✏️ Edit Profile
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         );
@@ -1969,7 +2272,7 @@ export default function CaregiverDashboard() {
                 {renderSidebar('reminders')}
 
                 <div className="dashboard-main">
-                    {renderPageHeader(t('caregiverDashboard.reminders.title'), t('caregiverDashboard.reminders.subtitle'))}
+                    {renderPageHeader('Reminders & Daily Routine', t('caregiverDashboard.reminders.subtitle'))}
 
                     {renderDailyRoutinePanel()}
 
