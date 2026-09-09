@@ -32,6 +32,7 @@ import {
     fetchTodaysMood,
     getDailyReflectivePrompt,
 } from './EngagementService';
+import BrainExercisesTab from './BrainExercisesTab';
 
 const GAME_CATEGORIES = [
     { id: 'memory', icon: '🧠' },
@@ -1249,62 +1250,7 @@ export default function PatientDashboard({ onLogout }) {
                     })()}
 
                     {activeTab === 'exercises' && (
-                        <section className="db-section">
-                            <div className="db-section-header">
-                                <div>
-                                    <h3>{t('patientDashboard.exercises.title')}</h3>
-                                    <p>{t('patientDashboard.exercises.subtitle')}</p>
-                                </div>
-                            </div>
-
-                            <div className="db-exercises-grid">
-                                {groupedGames.map((category) => (
-                                    <div className="db-exercise-category-card" key={category.id}>
-                                        <div className="db-category-heading">
-                                            <span className="db-category-emoji">{category.icon}</span>
-                                            <div>
-                                                <h4>{t(`patientDashboard.gameCategories.${category.id}.title`)}</h4>
-                                                <p>{t(`patientDashboard.gameCategories.${category.id}.description`)}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="db-exercise-items-list">
-                                            {category.games.map((game) => (
-                                                <div
-                                                    className={`db-exercise-row ${!game.playable ? 'disabled' : ''}`}
-                                                    key={game.id}
-                                                >
-                                                    <div className="db-exercise-info">
-                                                        <span className="db-exercise-icon">{game.icon}</span>
-                                                        <div>
-                                                            <div className="db-exercise-title-line">
-                                                                <strong>{t(`patientDashboard.games.${game.id}.title`)}</strong>
-                                                                <span className={`db-status-pill ${game.playable ? 'active' : 'upcoming'}`}>
-                                                                    {game.playable ? t('patientDashboard.exercises.ready') : t('patientDashboard.exercises.comingSoon')}
-                                                                </span>
-                                                            </div>
-                                                            <p>{t(`patientDashboard.games.${game.id}.description`)}</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <button
-                                                        className="db-btn db-btn-primary"
-                                                        disabled={!game.playable}
-                                                        onClick={() => {
-                                                            if (game.playable) {
-                                                                setActiveGame(game.id);
-                                                            }
-                                                        }}
-                                                    >
-                                                        {game.playable ? t('patientDashboard.exercises.play') : t('patientDashboard.exercises.locked')}
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
+                        <BrainExercisesTab onPlay={(id) => setActiveGame(id)} t={t} />
                     )}
 
                     {activeTab === 'settings' && (
