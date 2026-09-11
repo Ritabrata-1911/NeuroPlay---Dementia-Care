@@ -2,9 +2,19 @@ import React, { useEffect, useRef, useState } from "react";
 import "./NumberMemoryGame.css";
 
 const API_BASE_URL = "http://localhost:5000/api";
-const GAME_NAME = "Number Memory";
 
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+/*
+ * IMPORTANT:
+ * The game was renamed from "Number Memory" to "Number Recall".
+ */
+const GAME_NAME = "Number Recall";
+
+const MIN_LEVEL = 1;
+const MAX_LEVEL = 5;
+const MAX_ATTEMPTS_PER_QUESTION = 3;
+
+const clamp = (value, min, max) =>
+    Math.min(Math.max(value, min), max);
 
 const randomInt = (min, max) =>
     Math.floor(Math.random() * (max - min + 1)) + min;
@@ -14,7 +24,11 @@ const shuffle = (array) => {
 
     for (let i = result.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [result[i], result[j]] = [result[j], result[i]];
+
+        [result[i], result[j]] = [
+            result[j],
+            result[i],
+        ];
     }
 
     return result;
@@ -24,77 +38,96 @@ const shuffle = (array) => {
    LEVEL CONFIGURATION
 ------------------------------------------------------- */
 
+const LEVEL_CONFIG = {
+    1: {
+        recallLength: 3,
+        recallTime: 4,
+        additionMax: 10,
+        subtractionMax: 10,
+        multiplicationMax: 5,
+        divisionMax: 10,
+    },
+
+    2: {
+        recallLength: 4,
+        recallTime: 5,
+        additionMax: 20,
+        subtractionMax: 20,
+        multiplicationMax: 7,
+        divisionMax: 20,
+    },
+
+    3: {
+        recallLength: 5,
+        recallTime: 6,
+        additionMax: 30,
+        subtractionMax: 30,
+        multiplicationMax: 9,
+        divisionMax: 30,
+    },
+
+    4: {
+        recallLength: 6,
+        recallTime: 7,
+        additionMax: 50,
+        subtractionMax: 50,
+        multiplicationMax: 10,
+        divisionMax: 50,
+    },
+
+    5: {
+        recallLength: 7,
+        recallTime: 8,
+        additionMax: 75,
+        subtractionMax: 75,
+        multiplicationMax: 12,
+        divisionMax: 75,
+    },
+};
+
 const getLevelConfig = (level) => {
-    const safeLevel = clamp(level, 1, 5);
+    const safeLevel = clamp(
+        Number(level) || MIN_LEVEL,
+        MIN_LEVEL,
+        MAX_LEVEL
+    );
 
-    const configs = {
-        1: {
-            recallLength: 3,
-            recallTime: 4,
-            additionMax: 10,
-            subtractionMax: 10,
-            multiplicationMax: 5,
-            divisionMax: 10,
-        },
-
-        2: {
-            recallLength: 4,
-            recallTime: 5,
-            additionMax: 20,
-            subtractionMax: 20,
-            multiplicationMax: 7,
-            divisionMax: 20,
-        },
-
-        3: {
-            recallLength: 5,
-            recallTime: 6,
-            additionMax: 30,
-            subtractionMax: 30,
-            multiplicationMax: 9,
-            divisionMax: 30,
-        },
-
-        4: {
-            recallLength: 6,
-            recallTime: 7,
-            additionMax: 50,
-            subtractionMax: 50,
-            multiplicationMax: 10,
-            divisionMax: 50,
-        },
-
-        5: {
-            recallLength: 7,
-            recallTime: 8,
-            additionMax: 75,
-            subtractionMax: 75,
-            multiplicationMax: 12,
-            divisionMax: 75,
-        },
-    };
-
-    return configs[safeLevel];
+    return LEVEL_CONFIG[safeLevel];
 };
 
 /* -------------------------------------------------------
-   NUMBER RECALL
+   NUMBER SEQUENCE
 ------------------------------------------------------- */
 
 const createNumberSequence = (length) => {
-    return Array.from({ length }, () => randomInt(0, 9));
+    return Array.from(
+        { length },
+        () => randomInt(0, 9)
+    );
 };
 
 /* -------------------------------------------------------
    ARITHMETIC QUESTIONS
 ------------------------------------------------------- */
 
-const createArithmeticQuestion = (type, difficulty) => {
-    const config = getLevelConfig(difficulty);
+const createArithmeticQuestion = (
+    type,
+    level
+) => {
+    const config = getLevelConfig(level);
+
+    /* ---------------- ADDITION ---------------- */
 
     if (type === "addition") {
-        const a = randomInt(1, config.additionMax);
-        const b = randomInt(1, config.additionMax);
+        const a = randomInt(
+            0,
+            config.additionMax
+        );
+
+        const b = randomInt(
+            0,
+            config.additionMax
+        );
 
         return {
             type,
@@ -104,10 +137,31 @@ const createArithmeticQuestion = (type, difficulty) => {
         };
     }
 
-    if (type === "subtraction") {
-        let a = randomInt(1, config.subtractionMax);
-        let b = randomInt(1, config.subtractionMax);
+    /* ---------------- SUBTRACTION ---------------- */
 
+    if (type === "subtraction") {
+        /*
+         * We deliberately allow:
+         *
+         * 10 - 10 = 0
+         *
+         * This is important because 0 is a valid answer.
+         */
+
+        let a = randomInt(
+            0,
+            config.subtractionMax
+        );
+
+        let b = randomInt(
+            0,
+            config.subtractionMax
+        );
+
+        /*
+         * Make sure the answer is never negative.
+         * Equal values are allowed.
+         */
         if (b > a) {
             [a, b] = [b, a];
         }
@@ -120,9 +174,18 @@ const createArithmeticQuestion = (type, difficulty) => {
         };
     }
 
+    /* ---------------- MULTIPLICATION ---------------- */
+
     if (type === "multiplication") {
-        const a = randomInt(2, config.multiplicationMax);
-        const b = randomInt(2, 5);
+        const a = randomInt(
+            0,
+            config.multiplicationMax
+        );
+
+        const b = randomInt(
+            0,
+            5
+        );
 
         return {
             type,
@@ -132,18 +195,37 @@ const createArithmeticQuestion = (type, difficulty) => {
         };
     }
 
+    /* ---------------- DIVISION ---------------- */
+
     if (type === "division") {
+        /*
+         * Generate division questions with whole-number
+         * answers only.
+         *
+         * Example:
+         * 24 ÷ 6 = 4
+         */
+
         const divisor = randomInt(
-            2,
-            Math.min(10, config.divisionMax)
+            1,
+            Math.min(
+                10,
+                config.divisionMax
+            )
         );
 
         const maxQuotient = Math.max(
             1,
-            Math.floor(config.divisionMax / divisor)
+            Math.floor(
+                config.divisionMax /
+                    divisor
+            )
         );
 
-        const quotient = randomInt(1, maxQuotient);
+        const quotient = randomInt(
+            1,
+            maxQuotient
+        );
 
         return {
             type,
@@ -160,26 +242,37 @@ const createArithmeticQuestion = (type, difficulty) => {
    QUESTION CREATION
 ------------------------------------------------------- */
 
-const createQuestion = (type, level, adaptiveDifficulty) => {
+const createQuestion = (
+    type,
+    level,
+    adaptiveDifficulty
+) => {
     if (type === "numberRecall") {
-        const config = getLevelConfig(level);
+        const config =
+            getLevelConfig(level);
 
-        const sequence = createNumberSequence(
-            config.recallLength
-        );
+        const sequence =
+            createNumberSequence(
+                config.recallLength
+            );
 
         return {
             type,
             sequence,
             answer: sequence.join(""),
-            recallTime: config.recallTime,
+            recallTime:
+                config.recallTime,
         };
     }
 
     const effectiveDifficulty = clamp(
-        Math.round((level + adaptiveDifficulty) / 2),
-        1,
-        5
+        Math.round(
+            (Number(level) +
+                Number(adaptiveDifficulty || 1)) /
+                2
+        ),
+        MIN_LEVEL,
+        MAX_LEVEL
     );
 
     return createArithmeticQuestion(
@@ -192,7 +285,9 @@ const createQuestion = (type, level, adaptiveDifficulty) => {
    QUESTION TYPES
 ------------------------------------------------------- */
 
-const createMixedQuestionTypes = (count) => {
+const createMixedQuestionTypes = (
+    count
+) => {
     const baseTypes = [
         "numberRecall",
         "addition",
@@ -201,26 +296,49 @@ const createMixedQuestionTypes = (count) => {
         "division",
     ];
 
-    const types = [...baseTypes];
+    /*
+     * Make sure every type appears at least once.
+     */
+    const types = shuffle([
+        ...baseTypes,
+    ]);
 
     while (types.length < count) {
         types.push(
-            baseTypes[randomInt(0, baseTypes.length - 1)]
+            baseTypes[
+                randomInt(
+                    0,
+                    baseTypes.length - 1
+                )
+            ]
         );
     }
 
-    return shuffle(types).slice(0, count);
+    return shuffle(types).slice(
+        0,
+        count
+    );
 };
 
 /* -------------------------------------------------------
    QUESTION COUNT
 ------------------------------------------------------- */
 
-const determineQuestionCount = (level) => {
+const determineQuestionCount = (
+    level
+) => {
+    /*
+     * Level 1 = 5 questions
+     * Level 2 = 6 questions
+     * Level 3 = 7 questions
+     * Level 4 = 8 questions
+     * Level 5 = 9 questions
+     */
+
     return clamp(
-        4 + Math.min(level, 5),
+        4 + Number(level),
         5,
-        10
+        9
     );
 };
 
@@ -233,7 +351,11 @@ const calculateDifficulty = (
     currentDifficulty = 1
 ) => {
     if (!previousPerformance) {
-        return 1;
+        return clamp(
+            currentDifficulty,
+            MIN_LEVEL,
+            MAX_LEVEL
+        );
     }
 
     const accuracy = Number(
@@ -249,7 +371,8 @@ const calculateDifficulty = (
     );
 
     const responseTime = Number(
-        previousPerformance.average_response_time || 0
+        previousPerformance.average_response_time ||
+            0
     );
 
     let score = 0;
@@ -286,46 +409,74 @@ const calculateDifficulty = (
 
     if (score >= 3) {
         return clamp(
-            currentDifficulty + 1,
-            1,
-            5
+            Number(currentDifficulty) + 1,
+            MIN_LEVEL,
+            MAX_LEVEL
         );
     }
 
     if (score <= -2) {
         return clamp(
-            currentDifficulty - 1,
-            1,
-            5
+            Number(currentDifficulty) - 1,
+            MIN_LEVEL,
+            MAX_LEVEL
         );
     }
 
     return clamp(
-        currentDifficulty,
-        1,
-        5
+        Number(currentDifficulty),
+        MIN_LEVEL,
+        MAX_LEVEL
     );
 };
 
 /* -------------------------------------------------------
-   NORMALIZE ANSWERS
+   ANSWER NORMALIZATION
 ------------------------------------------------------- */
 
-const normalizeAnswer = (value, type) => {
-    if (type === "numberRecall") {
-        return String(value || "").replace(/\D/g, "");
+const normalizeAnswer = (
+    value,
+    type
+) => {
+    /*
+     * IMPORTANT BUG FIX:
+     *
+     * OLD:
+     * String(value || "")
+     *
+     * Problem:
+     * String(0 || "") === ""
+     *
+     * So 0 was treated as an empty answer.
+     *
+     * NEW:
+     * Explicitly check null/undefined.
+     */
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
     }
 
-    return String(value || "")
+    if (type === "numberRecall") {
+        return String(value)
+            .replace(/\D/g, "");
+    }
+
+    return String(value)
         .trim()
         .replace(/\s+/g, "");
 };
 
 /* -------------------------------------------------------
-   THREE DIFFERENT HINTS
+   HINTS
 ------------------------------------------------------- */
 
-const getHints = (question) => {
+const getHints = (
+    question
+) => {
     if (!question) {
         return [];
     }
@@ -379,35 +530,49 @@ const getHints = (question) => {
    LABELS
 ------------------------------------------------------- */
 
-const getActivityLabel = (type) => {
+const getActivityLabel = (
+    type
+) => {
     switch (type) {
         case "numberRecall":
             return "Number Recall";
+
         case "addition":
             return "Addition";
+
         case "subtraction":
             return "Subtraction";
+
         case "multiplication":
             return "Multiplication";
+
         case "division":
             return "Division";
+
         default:
-            return "Memory Question";
+            return "Number Recall";
     }
 };
 
-const getActivityIcon = (type) => {
+const getActivityIcon = (
+    type
+) => {
     switch (type) {
         case "numberRecall":
             return "🧠";
+
         case "addition":
             return "➕";
+
         case "subtraction":
             return "➖";
+
         case "multiplication":
             return "✖️";
+
         case "division":
             return "➗";
+
         default:
             return "🧠";
     }
@@ -418,32 +583,63 @@ const getActivityIcon = (type) => {
 ------------------------------------------------------- */
 
 const NumberMemoryGame = ({
+    patient,
     patientId,
+    onHome,
     onBackToDashboard,
 }) => {
-    const [screen, setScreen] = useState("intro");
+    /*
+     * Support both prop names so the game works with
+     * different versions of PatientDashboard.
+     */
 
-    const [level, setLevel] = useState(1);
+    const resolvedPatientId =
+        patientId ||
+        patient?.id ||
+        null;
 
-    const [adaptiveDifficulty, setAdaptiveDifficulty] =
+    const dashboardCallback =
+        onHome ||
+        onBackToDashboard ||
+        null;
+
+    const [screen, setScreen] =
+        useState("intro");
+
+    const [level, setLevel] =
         useState(1);
 
-    const [questions, setQuestions] = useState([]);
+    const [
+        adaptiveDifficulty,
+        setAdaptiveDifficulty,
+    ] = useState(1);
 
-    const [questionIndex, setQuestionIndex] =
+    const [questions, setQuestions] =
+        useState([]);
+
+    const [
+        questionIndex,
+        setQuestionIndex,
+    ] = useState(0);
+
+    const [answer, setAnswer] =
+        useState("");
+
+    const [attempts, setAttempts] =
         useState(0);
 
-    const [answer, setAnswer] = useState("");
+    const [hint, setHint] =
+        useState("");
 
-    const [attempts, setAttempts] = useState(0);
+    const [
+        showCorrectAnswer,
+        setShowCorrectAnswer,
+    ] = useState(false);
 
-    const [hint, setHint] = useState("");
-
-    const [showCorrectAnswer, setShowCorrectAnswer] =
-        useState(false);
-
-    const [recallRemaining, setRecallRemaining] =
-        useState(0);
+    const [
+        recallRemaining,
+        setRecallRemaining,
+    ] = useState(0);
 
     const [
         previousPerformance,
@@ -455,22 +651,33 @@ const NumberMemoryGame = ({
         setLoadingPreviousPerformance,
     ] = useState(false);
 
-    const [sessionStartedAt, setSessionStartedAt] =
-        useState(null);
+    const [
+        sessionStartedAt,
+        setSessionStartedAt,
+    ] = useState(null);
 
-    const [questionStartedAt, setQuestionStartedAt] =
-        useState(null);
+    const [
+        questionStartedAt,
+        setQuestionStartedAt,
+    ] = useState(null);
 
-    const [questionResults, setQuestionResults] =
-        useState([]);
+    const [
+        questionResults,
+        setQuestionResults,
+    ] = useState([]);
 
-    const [sessionResult, setSessionResult] =
-        useState(null);
+    const [
+        sessionResult,
+        setSessionResult,
+    ] = useState(null);
 
-    const [errorMessage, setErrorMessage] =
-        useState("");
+    const [
+        errorMessage,
+        setErrorMessage,
+    ] = useState("");
 
-    const countdownRef = useRef(null);
+    const countdownRef =
+        useRef(null);
 
     const nextQuestionTimeoutRef =
         useRef(null);
@@ -484,16 +691,19 @@ const NumberMemoryGame = ({
 
     const fetchPreviousPerformance =
         async () => {
-            if (!patientId) {
+            if (!resolvedPatientId) {
                 return null;
             }
 
             try {
-                setLoadingPreviousPerformance(true);
-
-                const response = await fetch(
-                    `${API_BASE_URL}/games/numbers-and-recall/performance/${patientId}`
+                setLoadingPreviousPerformance(
+                    true
                 );
+
+                const response =
+                    await fetch(
+                        `${API_BASE_URL}/games/numbers-and-recall/performance/${resolvedPatientId}`
+                    );
 
                 if (!response.ok) {
                     throw new Error(
@@ -501,7 +711,8 @@ const NumberMemoryGame = ({
                     );
                 }
 
-                const data = await response.json();
+                const data =
+                    await response.json();
 
                 const performance =
                     data.performance ||
@@ -528,16 +739,23 @@ const NumberMemoryGame = ({
         };
 
     /* -------------------------------------------------------
-       START ROUND
+       START LEVEL / ROUND
     ------------------------------------------------------- */
 
     const beginRound = (
         roundLevel,
         difficultyValue = adaptiveDifficulty
     ) => {
+        const safeLevel =
+            clamp(
+                Number(roundLevel) || 1,
+                MIN_LEVEL,
+                MAX_LEVEL
+            );
+
         const questionCount =
             determineQuestionCount(
-                roundLevel
+                safeLevel
             );
 
         const types =
@@ -549,14 +767,16 @@ const NumberMemoryGame = ({
             types.map((type) =>
                 createQuestion(
                     type,
-                    roundLevel,
+                    safeLevel,
                     difficultyValue
                 )
             );
 
-        setLevel(roundLevel);
+        setLevel(safeLevel);
 
-        setQuestions(generatedQuestions);
+        setQuestions(
+            generatedQuestions
+        );
 
         setQuestionIndex(0);
 
@@ -583,7 +803,9 @@ const NumberMemoryGame = ({
                 firstQuestion.recallTime
             );
 
-            setQuestionStartedAt(null);
+            setQuestionStartedAt(
+                null
+            );
 
             setScreen("recall");
         } else {
@@ -599,31 +821,36 @@ const NumberMemoryGame = ({
        START GAME
     ------------------------------------------------------- */
 
-    const startGame = async () => {
-        setErrorMessage("");
+    const startGame =
+        async () => {
+            setErrorMessage("");
 
-        const previous =
-            await fetchPreviousPerformance();
+            const previous =
+                await fetchPreviousPerformance();
 
-        const calculatedDifficulty =
-            calculateDifficulty(
-                previous,
-                1
+            setPreviousPerformance(
+                previous
             );
 
-        setAdaptiveDifficulty(
-            calculatedDifficulty
-        );
+            const calculatedDifficulty =
+                calculateDifficulty(
+                    previous,
+                    1
+                );
 
-        setSessionStartedAt(
-            Date.now()
-        );
+            setAdaptiveDifficulty(
+                calculatedDifficulty
+            );
 
-        beginRound(
-            1,
-            calculatedDifficulty
-        );
-    };
+            setSessionStartedAt(
+                Date.now()
+            );
+
+            beginRound(
+                1,
+                calculatedDifficulty
+            );
+        };
 
     /* -------------------------------------------------------
        RECALL COUNTDOWN
@@ -637,7 +864,9 @@ const NumberMemoryGame = ({
             return;
         }
 
-        if (countdownRef.current) {
+        if (
+            countdownRef.current
+        ) {
             clearInterval(
                 countdownRef.current
             );
@@ -651,7 +880,9 @@ const NumberMemoryGame = ({
             setInterval(() => {
                 setRecallRemaining(
                     (previous) => {
-                        if (previous <= 1) {
+                        if (
+                            previous <= 1
+                        ) {
                             clearInterval(
                                 countdownRef.current
                             );
@@ -673,7 +904,9 @@ const NumberMemoryGame = ({
             }, 1000);
 
         return () => {
-            if (countdownRef.current) {
+            if (
+                countdownRef.current
+            ) {
                 clearInterval(
                     countdownRef.current
                 );
@@ -682,6 +915,7 @@ const NumberMemoryGame = ({
     }, [
         screen,
         questionIndex,
+        currentQuestion,
     ]);
 
     /* -------------------------------------------------------
@@ -689,18 +923,19 @@ const NumberMemoryGame = ({
     ------------------------------------------------------- */
 
     useEffect(() => {
-        const handleKeyDown = (
-            event
-        ) => {
-            if (
-                event.key === "Enter" &&
-                screen === "question"
-            ) {
-                event.preventDefault();
+        const handleKeyDown =
+            (event) => {
+                if (
+                    event.key ===
+                        "Enter" &&
+                    screen ===
+                        "question"
+                ) {
+                    event.preventDefault();
 
-                submitAnswer();
-            }
-        };
+                    submitAnswer();
+                }
+            };
 
         window.addEventListener(
             "keydown",
@@ -716,446 +951,538 @@ const NumberMemoryGame = ({
     });
 
     /* -------------------------------------------------------
-       NEXT QUESTION
+       MOVE TO NEXT QUESTION
     ------------------------------------------------------- */
 
-    const moveToNextQuestion = (
-        result
-    ) => {
-        const updatedResults = [
-            ...questionResults,
-            result,
-        ];
+    const moveToNextQuestion =
+        (result) => {
+            const updatedResults = [
+                ...questionResults,
+                result,
+            ];
 
-        setQuestionResults(
-            updatedResults
-        );
-
-        if (
-            questionIndex >=
-            questions.length - 1
-        ) {
-            finishRound(
+            setQuestionResults(
                 updatedResults
             );
 
-            return;
-        }
+            if (
+                questionIndex >=
+                questions.length - 1
+            ) {
+                finishRound(
+                    updatedResults
+                );
 
-        const nextIndex =
-            questionIndex + 1;
+                return;
+            }
 
-        const nextQuestion =
-            questions[nextIndex];
+            const nextIndex =
+                questionIndex + 1;
 
-        setQuestionIndex(
-            nextIndex
-        );
+            const nextQuestion =
+                questions[nextIndex];
 
-        setAnswer("");
-
-        setAttempts(0);
-
-        setHint("");
-
-        setShowCorrectAnswer(
-            false
-        );
-
-        if (
-            nextQuestion.type ===
-            "numberRecall"
-        ) {
-            setRecallRemaining(
-                nextQuestion.recallTime
+            setQuestionIndex(
+                nextIndex
             );
 
-            setQuestionStartedAt(
-                null
+            setAnswer("");
+
+            setAttempts(0);
+
+            setHint("");
+
+            setShowCorrectAnswer(
+                false
             );
 
-            setScreen("recall");
-        } else {
-            setQuestionStartedAt(
-                Date.now()
-            );
+            if (
+                nextQuestion.type ===
+                "numberRecall"
+            ) {
+                setRecallRemaining(
+                    nextQuestion.recallTime
+                );
 
-            setScreen("question");
-        }
-    };
+                setQuestionStartedAt(
+                    null
+                );
+
+                setScreen("recall");
+            } else {
+                setQuestionStartedAt(
+                    Date.now()
+                );
+
+                setScreen("question");
+            }
+        };
 
     /* -------------------------------------------------------
        SUBMIT ANSWER
     ------------------------------------------------------- */
 
-    const submitAnswer = () => {
-        if (
-            !currentQuestion ||
-            attempts >= 3 ||
-            screen !== "question"
-        ) {
-            return;
-        }
-
-        if (!answer.trim()) {
-            setErrorMessage(
-                "Please enter your answer before submitting."
-            );
-
-            return;
-        }
-
-        setErrorMessage("");
-
-        const currentAttempt =
-            attempts + 1;
-
-        const responseTime =
-            questionStartedAt
-                ? (Date.now() -
-                    questionStartedAt) /
-                1000
-                : 0;
-
-        const userAnswer =
-            normalizeAnswer(
-                answer,
-                currentQuestion.type
-            );
-
-        const correctAnswer =
-            normalizeAnswer(
-                currentQuestion.answer,
-                currentQuestion.type
-            );
-
-        const isCorrect =
-            userAnswer ===
-            correctAnswer;
-
-        /* ---------------------------------------------------
-           CORRECT ANSWER
-        --------------------------------------------------- */
-
-        if (isCorrect) {
-            const result = {
-                type: currentQuestion.type,
-                correct: true,
-                attempts: currentAttempt,
-                mistakes:
-                    currentAttempt - 1,
-                hints:
-                    currentAttempt - 1,
-                response_time:
-                    responseTime,
-            };
-
-            moveToNextQuestion(
-                result
-            );
-
-            return;
-        }
-
-        /* ---------------------------------------------------
-           WRONG ANSWER
-           
-           IMPORTANT:
-           The patient's previous wrong answer is
-           automatically deleted here.
-        --------------------------------------------------- */
-
-        setAnswer("");
-
-        /* ---------------------------------------------------
-           THREE DIFFERENT HINTS
-        --------------------------------------------------- */
-
-        const hints =
-            getHints(currentQuestion);
-
-        const currentHint =
-            hints[currentAttempt - 1] ||
-            hints[hints.length - 1];
-
-        setHint(currentHint);
-
-        setAttempts(
-            currentAttempt
-        );
-
-        /* ---------------------------------------------------
-           THIRD WRONG ATTEMPT
-        --------------------------------------------------- */
-
-        if (currentAttempt >= 3) {
-            setShowCorrectAnswer(
-                true
-            );
-
+    const submitAnswer =
+        () => {
             if (
-                nextQuestionTimeoutRef.current
+                !currentQuestion ||
+                attempts >=
+                    MAX_ATTEMPTS_PER_QUESTION ||
+                screen !==
+                    "question"
             ) {
-                clearTimeout(
-                    nextQuestionTimeoutRef.current
-                );
+                return;
             }
 
-            nextQuestionTimeoutRef.current =
-                setTimeout(() => {
-                    const result = {
-                        type: currentQuestion.type,
-                        correct: false,
-                        attempts: 3,
-                        mistakes: 3,
-                        hints: 3,
-                        response_time:
-                            responseTime,
-                    };
+            /*
+             * Do NOT use !answer here because "0" is a
+             * valid answer.
+             */
+            if (
+                answer === null ||
+                answer === undefined ||
+                String(answer).trim() === ""
+            ) {
+                setErrorMessage(
+                    "Please enter your answer before submitting."
+                );
 
-                    moveToNextQuestion(
-                        result
+                return;
+            }
+
+            setErrorMessage("");
+
+            const currentAttempt =
+                attempts + 1;
+
+            const responseTime =
+                questionStartedAt
+                    ? (Date.now() -
+                          questionStartedAt) /
+                      1000
+                    : 0;
+
+            const userAnswer =
+                normalizeAnswer(
+                    answer,
+                    currentQuestion.type
+                );
+
+            const correctAnswer =
+                normalizeAnswer(
+                    currentQuestion.answer,
+                    currentQuestion.type
+                );
+
+            const isCorrect =
+                userAnswer ===
+                correctAnswer;
+
+            /* ---------------------------------------------------
+               CORRECT ANSWER
+            --------------------------------------------------- */
+
+            if (isCorrect) {
+                const result = {
+                    type:
+                        currentQuestion.type,
+
+                    correct: true,
+
+                    attempts:
+                        currentAttempt,
+
+                    mistakes:
+                        currentAttempt - 1,
+
+                    hints:
+                        currentAttempt - 1,
+
+                    response_time:
+                        responseTime,
+                };
+
+                moveToNextQuestion(
+                    result
+                );
+
+                return;
+            }
+
+            /* ---------------------------------------------------
+               WRONG ANSWER
+            --------------------------------------------------- */
+
+            /*
+             * Automatically remove the previous wrong answer.
+             * The patient gets a fresh empty input.
+             */
+            setAnswer("");
+
+            const hints =
+                getHints(
+                    currentQuestion
+                );
+
+            const currentHint =
+                hints[
+                    Math.min(
+                        currentAttempt - 1,
+                        hints.length - 1
+                    )
+                ];
+
+            setHint(
+                currentHint
+            );
+
+            setAttempts(
+                currentAttempt
+            );
+
+            /* ---------------------------------------------------
+               THIRD WRONG ATTEMPT
+            --------------------------------------------------- */
+
+            if (
+                currentAttempt >=
+                MAX_ATTEMPTS_PER_QUESTION
+            ) {
+                setShowCorrectAnswer(
+                    true
+                );
+
+                if (
+                    nextQuestionTimeoutRef.current
+                ) {
+                    clearTimeout(
+                        nextQuestionTimeoutRef.current
                     );
-                }, 1800);
-        }
-    };
+                }
+
+                nextQuestionTimeoutRef.current =
+                    setTimeout(() => {
+                        const result =
+                            {
+                                type:
+                                    currentQuestion.type,
+
+                                correct: false,
+
+                                attempts:
+                                    MAX_ATTEMPTS_PER_QUESTION,
+
+                                mistakes:
+                                    MAX_ATTEMPTS_PER_QUESTION,
+
+                                hints:
+                                    MAX_ATTEMPTS_PER_QUESTION,
+
+                                response_time:
+                                    responseTime,
+                            };
+
+                        moveToNextQuestion(
+                            result
+                        );
+                    }, 1800);
+            }
+        };
 
     /* -------------------------------------------------------
-       FINISH ROUND
+       FINISH LEVEL
     ------------------------------------------------------- */
 
-    const finishRound = async (
-        results
-    ) => {
-        const completionTime =
-            sessionStartedAt
-                ? (Date.now() -
-                    sessionStartedAt) /
-                1000
-                : 0;
+    const finishRound =
+        async (results) => {
+            const completionTime =
+                sessionStartedAt
+                    ? (Date.now() -
+                          sessionStartedAt) /
+                      1000
+                    : 0;
 
-        const totalQuestions =
-            results.length;
+            const totalQuestions =
+                results.length;
 
-        const correctAnswers =
-            results.filter(
-                (result) =>
-                    result.correct
-            ).length;
+            const correctAnswers =
+                results.filter(
+                    (result) =>
+                        result.correct
+                ).length;
 
-        const incorrectAnswers =
-            totalQuestions -
-            correctAnswers;
+            const incorrectAnswers =
+                totalQuestions -
+                correctAnswers;
 
-        const totalAttempts =
-            results.reduce(
-                (sum, result) =>
-                    sum + result.attempts,
-                0
-            );
+            const totalAttempts =
+                results.reduce(
+                    (sum, result) =>
+                        sum +
+                        Number(
+                            result.attempts ||
+                                0
+                        ),
+                    0
+                );
 
-        const totalMistakes =
-            results.reduce(
-                (sum, result) =>
-                    sum + result.mistakes,
-                0
-            );
+            const totalMistakes =
+                results.reduce(
+                    (sum, result) =>
+                        sum +
+                        Number(
+                            result.mistakes ||
+                                0
+                        ),
+                    0
+                );
 
-        const totalHints =
-            results.reduce(
-                (sum, result) =>
-                    sum + result.hints,
-                0
-            );
+            const totalHints =
+                results.reduce(
+                    (sum, result) =>
+                        sum +
+                        Number(
+                            result.hints ||
+                                0
+                        ),
+                    0
+                );
 
-        const totalResponseTime =
-            results.reduce(
-                (sum, result) =>
-                    sum +
-                    Number(
-                        result.response_time ||
-                        0
+            const totalResponseTime =
+                results.reduce(
+                    (sum, result) =>
+                        sum +
+                        Number(
+                            result.response_time ||
+                                0
+                        ),
+                    0
+                );
+
+            const accuracy =
+                totalQuestions > 0
+                    ? (correctAnswers /
+                          totalQuestions) *
+                      100
+                    : 0;
+
+            const mistakeRate =
+                totalAttempts > 0
+                    ? (totalMistakes /
+                          totalAttempts) *
+                      100
+                    : 0;
+
+            const hintRate =
+                totalAttempts > 0
+                    ? (totalHints /
+                          totalAttempts) *
+                      100
+                    : 0;
+
+            const averageResponseTime =
+                totalQuestions > 0
+                    ? totalResponseTime /
+                      totalQuestions
+                    : 0;
+
+            const effectiveDifficulty =
+                clamp(
+                    Math.round(
+                        (level +
+                            adaptiveDifficulty) /
+                            2
                     ),
-                0
-            );
+                    MIN_LEVEL,
+                    MAX_LEVEL
+                );
 
-        const accuracy =
-            totalQuestions > 0
-                ? (correctAnswers /
-                    totalQuestions) *
-                100
-                : 0;
-
-        const mistakeRate =
-            totalAttempts > 0
-                ? (totalMistakes /
-                    totalAttempts) *
-                100
-                : 0;
-
-        const hintRate =
-            totalAttempts > 0
-                ? (totalHints /
-                    totalAttempts) *
-                100
-                : 0;
-
-        const averageResponseTime =
-            totalQuestions > 0
-                ? totalResponseTime /
-                totalQuestions
-                : 0;
-
-        const effectiveDifficulty =
-            clamp(
-                Math.round(
-                    (level +
-                        adaptiveDifficulty) /
-                    2
-                ),
-                1,
-                5
-            );
-
-        const performance = {
-            accuracy:
-                Number(
+            /*
+             * FINAL REPORT
+             *
+             * These are the exact requested report fields.
+             */
+            const performance = {
+                accuracy: Number(
                     accuracy.toFixed(2)
                 ),
 
-            mistake_rate:
-                Number(
+                mistake_rate: Number(
                     mistakeRate.toFixed(2)
                 ),
 
-            hint_rate:
-                Number(
+                hint_rate: Number(
                     hintRate.toFixed(2)
                 ),
 
-            completion_time:
-                Number(
-                    completionTime.toFixed(2)
-                ),
+                completion_time:
+                    Number(
+                        completionTime.toFixed(
+                            2
+                        )
+                    ),
 
-            average_response_time:
-                Number(
-                    averageResponseTime.toFixed(
-                        2
-                    )
-                ),
+                average_response_time:
+                    Number(
+                        averageResponseTime.toFixed(
+                            2
+                        )
+                    ),
 
-            difficulty_level:
-                effectiveDifficulty,
+                difficulty_level:
+                    effectiveDifficulty,
 
-            attempts:
-                totalAttempts,
+                attempts:
+                    totalAttempts,
 
-            correct_answers:
-                correctAnswers,
+                correct_answers:
+                    correctAnswers,
 
-            incorrect_answers:
-                incorrectAnswers,
+                incorrect_answers:
+                    incorrectAnswers,
 
-            game_name:
-                GAME_NAME,
-        };
+                game_name:
+                    GAME_NAME,
+            };
 
-        const nextAdaptiveDifficulty =
-            calculateDifficulty(
-                performance,
-                adaptiveDifficulty
+            /*
+             * Calculate next adaptive difficulty.
+             */
+            const nextAdaptiveDifficulty =
+                calculateDifficulty(
+                    performance,
+                    adaptiveDifficulty
+                );
+
+            setAdaptiveDifficulty(
+                nextAdaptiveDifficulty
             );
 
-        setAdaptiveDifficulty(
-            nextAdaptiveDifficulty
-        );
+            setSessionResult({
+                ...performance,
+                level,
+                totalQuestions,
+            });
 
-        setSessionResult({
-            ...performance,
-            level,
-            totalQuestions,
-        });
+            setScreen(
+                "roundResult"
+            );
 
-        setScreen(
-            "roundResult"
-        );
+            /* ---------------------------------------------------
+               CONSOLE REPORT
+            --------------------------------------------------- */
 
-        /* ---------------------------------------------------
-           SAVE PERFORMANCE
-        --------------------------------------------------- */
+            console.log(
+                "Number Recall Report:",
+                performance
+            );
 
-        if (patientId) {
-            try {
-                const response =
-                    await fetch(
-                        `${API_BASE_URL}/games/numbers-and-recall/performance`,
-                        {
-                            method: "POST",
+            /* ---------------------------------------------------
+               SAVE PERFORMANCE TO BACKEND
+            --------------------------------------------------- */
 
-                            headers: {
-                                "Content-Type":
-                                    "application/json",
-                            },
+            if (resolvedPatientId) {
+                try {
+                    const response =
+                        await fetch(
+                            `${API_BASE_URL}/games/numbers-and-recall/performance`,
+                            {
+                                method: "POST",
 
-                            body: JSON.stringify({
-                                patient_id:
-                                    patientId,
+                                headers: {
+                                    "Content-Type":
+                                        "application/json",
+                                },
 
-                                ...performance,
-                            }),
-                        }
+                                body: JSON.stringify(
+                                    {
+                                        patient_id:
+                                            resolvedPatientId,
+
+                                        ...performance,
+                                    }
+                                ),
+                            }
+                        );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Performance could not be saved"
+                        );
+                    }
+
+                    console.log(
+                        "Number Recall performance saved successfully."
+                    );
+                } catch (error) {
+                    console.warn(
+                        "Performance save failed:",
+                        error
                     );
 
-                if (!response.ok) {
-                    throw new Error(
-                        "Performance could not be saved"
+                    setErrorMessage(
+                        "Your result is shown, but it could not be saved right now."
                     );
                 }
-            } catch (error) {
-                console.warn(
-                    "Performance save failed:",
-                    error
-                );
-
-                setErrorMessage(
-                    "Your result is shown, but it could not be saved right now."
-                );
             }
-        }
-    };
+        };
 
     /* -------------------------------------------------------
-       NEXT ROUND
+       NEXT LEVEL / ROUND
     ------------------------------------------------------- */
 
-    const handleNextRound = () => {
-        const nextLevel =
-            level + 1;
+    const handleNextRound =
+        () => {
+            /*
+             * Never allow the level to become 6.
+             *
+             * Level 5 is the maximum level.
+             */
+            const nextLevel =
+                clamp(
+                    level + 1,
+                    MIN_LEVEL,
+                    MAX_LEVEL
+                );
 
-        setSessionStartedAt(
-            Date.now()
-        );
+            setSessionStartedAt(
+                Date.now()
+            );
 
-        beginRound(
-            nextLevel,
-            adaptiveDifficulty
-        );
-    };
+            beginRound(
+                nextLevel,
+                adaptiveDifficulty
+            );
+        };
 
     /* -------------------------------------------------------
-       DASHBOARD
+       BACK TO PATIENT DASHBOARD
     ------------------------------------------------------- */
 
-    const handleBack = () => {
-        if (onBackToDashboard) {
-            onBackToDashboard();
+    const handleBack =
+        () => {
+            /*
+             * PatientDashboard should provide onHome.
+             *
+             * This prevents the game from accidentally
+             * returning to the login/home page.
+             */
+            if (
+                typeof dashboardCallback ===
+                "function"
+            ) {
+                dashboardCallback();
+                return;
+            }
 
-            return;
-        }
-
-        window.history.back();
-    };
+            /*
+             * Compatibility fallback.
+             *
+             * If neither callback is supplied, go back one
+             * browser history step.
+             */
+            window.history.back();
+        };
 
     /* -------------------------------------------------------
        CLEANUP
@@ -1163,7 +1490,9 @@ const NumberMemoryGame = ({
 
     useEffect(() => {
         return () => {
-            if (countdownRef.current) {
+            if (
+                countdownRef.current
+            ) {
                 clearInterval(
                     countdownRef.current
                 );
@@ -1179,9 +1508,9 @@ const NumberMemoryGame = ({
         };
     }, []);
 
-    /* -------------------------------------------------------
+    /* =======================================================
        INTRO SCREEN
-    ------------------------------------------------------- */
+    ======================================================= */
 
     if (screen === "intro") {
         return (
@@ -1197,14 +1526,14 @@ const NumberMemoryGame = ({
                     </div>
 
                     <h1>
-                        Number Memory
+                        Number Recall
                     </h1>
 
                     <p className="game-description">
                         Strengthen your memory and
                         thinking skills through
-                        numbers and simple
-                        calculations.
+                        number sequences and
+                        simple calculations.
                     </p>
 
                     <div className="instructions-box">
@@ -1213,41 +1542,53 @@ const NumberMemoryGame = ({
                         </h2>
 
                         <div className="instruction-item">
-                            <span>🧠</span>
+                            <span>
+                                🧠
+                            </span>
 
                             <p>
                                 Remember number
-                                sequences and recall
-                                them after they
-                                disappear.
+                                sequences and
+                                recall them after
+                                they disappear.
                             </p>
                         </div>
 
                         <div className="instruction-item">
-                            <span>➕</span>
+                            <span>
+                                ➕
+                            </span>
 
                             <p>
-                                Solve simple addition,
+                                Solve simple
+                                addition,
                                 subtraction,
-                                multiplication and
-                                division questions.
+                                multiplication
+                                and division
+                                questions.
                             </p>
                         </div>
 
                         <div className="instruction-item">
-                            <span>💡</span>
+                            <span>
+                                💡
+                            </span>
 
                             <p>
                                 If your answer is
-                                wrong, you will
-                                receive a different
-                                helpful hint for
-                                each attempt.
+                                wrong, the wrong
+                                answer is cleared
+                                automatically and
+                                you can try again
+                                with a helpful
+                                hint.
                             </p>
                         </div>
 
                         <div className="instruction-item">
-                            <span>🔄</span>
+                            <span>
+                                🔄
+                            </span>
 
                             <p>
                                 You can try each
@@ -1259,15 +1600,15 @@ const NumberMemoryGame = ({
 
                     <div className="level-info">
                         <strong>
-                            First 3 Levels
+                            5 Levels
                         </strong>
 
                         <span>
-                            You will play Levels 1,
-                            2 and 3. After Level 3,
-                            you can continue to
-                            another round or return
-                            to the dashboard.
+                            You will progress
+                            through Levels 1 to 5.
+                            Difficulty becomes
+                            more challenging as
+                            you progress.
                         </span>
                     </div>
 
@@ -1281,21 +1622,25 @@ const NumberMemoryGame = ({
 
                         <button
                             className="primary-button"
-                            onClick={startGame}
+                            onClick={
+                                startGame
+                            }
                             disabled={
                                 loadingPreviousPerformance
                             }
                         >
                             {loadingPreviousPerformance
                                 ? "Loading..."
-                                : "Start Game"}
+                                : "▶ Start Game"}
                         </button>
 
                         <button
                             className="secondary-button"
-                            onClick={handleBack}
+                            onClick={
+                                handleBack
+                            }
                         >
-                            Back to Dashboard
+                            🏠 Back to Patient Dashboard
                         </button>
 
                     </div>
@@ -1304,9 +1649,9 @@ const NumberMemoryGame = ({
         );
     }
 
-    /* -------------------------------------------------------
+    /* =======================================================
        RECALL SCREEN
-    ------------------------------------------------------- */
+    ======================================================= */
 
     if (
         screen === "recall" &&
@@ -1325,18 +1670,18 @@ const NumberMemoryGame = ({
                             </span>
 
                             <h1>
-                                {getActivityIcon(
-                                    currentQuestion.type
-                                )}{" "}
-                                Number Recall
+                                🧠 Number Recall
                             </h1>
                         </div>
 
                         <div className="question-counter">
                             Question{" "}
-                            {questionIndex + 1}{" "}
+                            {questionIndex +
+                                1}{" "}
                             of{" "}
-                            {questions.length}
+                            {
+                                questions.length
+                            }
                         </div>
 
                     </div>
@@ -1351,23 +1696,31 @@ const NumberMemoryGame = ({
                     <div className="sequence-display">
 
                         {currentQuestion.sequence.map(
-                            (number, index) => (
+                            (
+                                number,
+                                index
+                            ) => (
                                 <React.Fragment
-                                    key={index}
+                                    key={
+                                        index
+                                    }
                                 >
 
                                     <span className="memory-number">
-                                        {number}
+                                        {
+                                            number
+                                        }
                                     </span>
 
                                     {index <
                                         currentQuestion
-                                            .sequence.length -
-                                        1 && (
-                                            <span className="sequence-arrow">
-                                                →
-                                            </span>
-                                        )}
+                                            .sequence
+                                            .length -
+                                            1 && (
+                                        <span className="sequence-arrow">
+                                            →
+                                        </span>
+                                    )}
 
                                 </React.Fragment>
                             )
@@ -1376,11 +1729,14 @@ const NumberMemoryGame = ({
                     </div>
 
                     <div className="countdown-circle">
-                        {recallRemaining}
+                        {
+                            recallRemaining
+                        }
                     </div>
 
                     <p className="countdown-text">
-                        Remember the sequence...
+                        Remember the
+                        sequence...
                     </p>
 
                     <div className="progress-bar-container">
@@ -1388,10 +1744,15 @@ const NumberMemoryGame = ({
                         <div
                             className="progress-bar"
                             style={{
-                                width: `${(recallRemaining /
-                                        currentQuestion.recallTime) *
-                                    100
-                                    }%`,
+                                width: `${
+                                    currentQuestion
+                                        .recallTime >
+                                    0
+                                        ? (recallRemaining /
+                                              currentQuestion.recallTime) *
+                                          100
+                                        : 0
+                                }%`,
                             }}
                         />
 
@@ -1402,9 +1763,9 @@ const NumberMemoryGame = ({
         );
     }
 
-    /* -------------------------------------------------------
+    /* =======================================================
        QUESTION SCREEN
-    ------------------------------------------------------- */
+    ======================================================= */
 
     if (
         screen === "question" &&
@@ -1423,20 +1784,27 @@ const NumberMemoryGame = ({
                             </span>
 
                             <h1>
-                                {getActivityIcon(
-                                    currentQuestion.type
-                                )}{" "}
-                                {getActivityLabel(
-                                    currentQuestion.type
-                                )}
+                                {
+                                    getActivityIcon(
+                                        currentQuestion.type
+                                    )
+                                }{" "}
+                                {
+                                    getActivityLabel(
+                                        currentQuestion.type
+                                    )
+                                }
                             </h1>
                         </div>
 
                         <div className="question-counter">
                             Question{" "}
-                            {questionIndex + 1}{" "}
+                            {questionIndex +
+                                1}{" "}
                             of{" "}
-                            {questions.length}
+                            {
+                                questions.length
+                            }
                         </div>
 
                     </div>
@@ -1445,88 +1813,102 @@ const NumberMemoryGame = ({
 
                         {currentQuestion.type ===
                             "numberRecall" && (
-                                <>
-                                    <p className="question-instruction">
-                                        Enter the numbers
-                                        in the same order.
-                                    </p>
+                            <>
+                                <p className="question-instruction">
+                                    Enter the
+                                    numbers in
+                                    the same
+                                    order.
+                                </p>
 
-                                    <div className="question-symbol">
-                                        ?
-                                    </div>
-                                </>
-                            )}
+                                <div className="question-symbol">
+                                    ?
+                                </div>
+                            </>
+                        )}
 
                         {currentQuestion.type !==
                             "numberRecall" && (
-                                <>
-                                    <p className="question-instruction">
-                                        Solve this
-                                        calculation.
-                                    </p>
+                            <>
+                                <p className="question-instruction">
+                                    Solve this
+                                    calculation.
+                                </p>
 
-                                    <div className="math-question">
+                                <div className="math-question">
 
-                                        <span>
-                                            {currentQuestion.a}
-                                        </span>
+                                    <span>
+                                        {
+                                            currentQuestion.a
+                                        }
+                                    </span>
 
-                                        <span className="math-operator">
+                                    <span className="math-operator">
 
-                                            {currentQuestion.type ===
-                                                "addition" &&
-                                                "+"}
+                                        {currentQuestion.type ===
+                                            "addition" &&
+                                            "+"}
 
-                                            {currentQuestion.type ===
-                                                "subtraction" &&
-                                                "−"}
+                                        {currentQuestion.type ===
+                                            "subtraction" &&
+                                            "−"}
 
-                                            {currentQuestion.type ===
-                                                "multiplication" &&
-                                                "×"}
+                                        {currentQuestion.type ===
+                                            "multiplication" &&
+                                            "×"}
 
-                                            {currentQuestion.type ===
-                                                "division" &&
-                                                "÷"}
+                                        {currentQuestion.type ===
+                                            "division" &&
+                                            "÷"}
 
-                                        </span>
+                                    </span>
 
-                                        <span>
-                                            {currentQuestion.b}
-                                        </span>
+                                    <span>
+                                        {
+                                            currentQuestion.b
+                                        }
+                                    </span>
 
-                                        <span>
-                                            =
-                                        </span>
+                                    <span>
+                                        =
+                                    </span>
 
-                                        <span>
-                                            ?
-                                        </span>
+                                    <span>
+                                        ?
+                                    </span>
 
-                                    </div>
-                                </>
-                            )}
+                                </div>
+                            </>
+                        )}
 
                         <div className="answer-section">
 
                             <input
                                 type="text"
-                                value={answer}
-                                onChange={(event) =>
+                                inputMode="numeric"
+                                value={
+                                    answer
+                                }
+                                onChange={(
+                                    event
+                                ) =>
                                     setAnswer(
-                                        event.target.value
+                                        event
+                                            .target
+                                            .value
                                     )
                                 }
                                 placeholder={
                                     currentQuestion.type ===
-                                        "numberRecall"
+                                    "numberRecall"
                                         ? "Enter the numbers"
                                         : "Enter your answer"
                                 }
                                 className="answer-input"
                                 autoFocus
                                 disabled={
-                                    attempts >= 3 ||
+                                    attempts >=
+                                        MAX_ATTEMPTS_PER_QUESTION ||
                                     showCorrectAnswer
                                 }
                             />
@@ -1537,7 +1919,8 @@ const NumberMemoryGame = ({
                                     submitAnswer
                                 }
                                 disabled={
-                                    attempts >= 3 ||
+                                    attempts >=
+                                        MAX_ATTEMPTS_PER_QUESTION ||
                                     showCorrectAnswer
                                 }
                             >
@@ -1548,7 +1931,14 @@ const NumberMemoryGame = ({
 
                         <div className="attempts-display">
                             Attempt{" "}
-                            {attempts + 1} of 3
+                            {Math.min(
+                                attempts + 1,
+                                MAX_ATTEMPTS_PER_QUESTION
+                            )}{" "}
+                            of{" "}
+                            {
+                                MAX_ATTEMPTS_PER_QUESTION
+                            }
                         </div>
 
                         {hint && (
@@ -1564,7 +1954,9 @@ const NumberMemoryGame = ({
                                     </strong>
 
                                     <p>
-                                        {hint}
+                                        {
+                                            hint
+                                        }
                                     </p>
                                 </div>
 
@@ -1575,29 +1967,36 @@ const NumberMemoryGame = ({
                             <div className="correct-answer-box">
 
                                 <strong>
-                                    The correct answer is:
+                                    The correct
+                                    answer is:
                                 </strong>
 
                                 <span>
                                     {currentQuestion.type ===
-                                        "numberRecall"
+                                    "numberRecall"
                                         ? currentQuestion.sequence.join(
-                                            " → "
-                                        )
+                                              " → "
+                                          )
                                         : currentQuestion.answer}
                                 </span>
 
                                 <p>
-                                    Moving to the
-                                    next question...
+                                    Moving to
+                                    the next
+                                    question...
                                 </p>
 
                             </div>
                         )}
 
                         {errorMessage && (
-                            <div className="error-message">
-                                {errorMessage}
+                            <div
+                                className="error-message"
+                                role="alert"
+                            >
+                                {
+                                    errorMessage
+                                }
                             </div>
                         )}
 
@@ -1607,16 +2006,24 @@ const NumberMemoryGame = ({
         );
     }
 
-    /* -------------------------------------------------------
+    /* =======================================================
        RESULT SCREEN
-    ------------------------------------------------------- */
+    ======================================================= */
 
     if (
         screen === "roundResult" &&
         sessionResult
     ) {
+        /*
+         * Levels 1-4:
+         * only Next Level
+         *
+         * Level 5:
+         * Next Round + Back to Dashboard
+         */
         const isMandatoryLevel =
-            sessionResult.level < 3;
+            sessionResult.level <
+            MAX_LEVEL;
 
         return (
             <div className="number-memory-container">
@@ -1629,22 +2036,28 @@ const NumberMemoryGame = ({
 
                     <h1>
                         Level{" "}
-                        {sessionResult.level}{" "}
+                        {
+                            sessionResult.level
+                        }{" "}
                         Complete!
                     </h1>
 
                     <p className="result-message">
                         Great work! Your
-                        performance has been
-                        recorded and will help
-                        adjust future questions.
+                        performance has
+                        been recorded and
+                        will help adjust
+                        future questions.
                     </p>
 
                     <div className="result-stats">
 
                         <div className="stat-box">
                             <span className="stat-value">
-                                {sessionResult.accuracy}%
+                                {
+                                    sessionResult.accuracy
+                                }
+                                %
                             </span>
 
                             <span className="stat-label">
@@ -1654,21 +2067,40 @@ const NumberMemoryGame = ({
 
                         <div className="stat-box">
                             <span className="stat-value">
-                                {sessionResult.correct_answers}
+                                {
+                                    sessionResult.mistake_rate
+                                }
+                                %
                             </span>
 
                             <span className="stat-label">
-                                Correct
+                                Mistake Rate
                             </span>
                         </div>
 
                         <div className="stat-box">
                             <span className="stat-value">
-                                {sessionResult.attempts}
+                                {
+                                    sessionResult.hint_rate
+                                }
+                                %
                             </span>
 
                             <span className="stat-label">
-                                Attempts
+                                Hint Rate
+                            </span>
+                        </div>
+
+                        <div className="stat-box">
+                            <span className="stat-value">
+                                {
+                                    sessionResult.completion_time
+                                }
+                                s
+                            </span>
+
+                            <span className="stat-label">
+                                Completion Time
                             </span>
                         </div>
 
@@ -1687,21 +2119,61 @@ const NumberMemoryGame = ({
 
                         <div className="stat-box">
                             <span className="stat-value">
-                                {sessionResult.hint_rate}%
+                                {
+                                    sessionResult.difficulty_level
+                                }
                             </span>
 
                             <span className="stat-label">
-                                Hint Rate
+                                Difficulty Level
                             </span>
                         </div>
 
                         <div className="stat-box">
                             <span className="stat-value">
-                                {sessionResult.totalQuestions}
+                                {
+                                    sessionResult.attempts
+                                }
                             </span>
 
                             <span className="stat-label">
-                                Questions
+                                Attempts
+                            </span>
+                        </div>
+
+                        <div className="stat-box">
+                            <span className="stat-value">
+                                {
+                                    sessionResult.correct_answers
+                                }
+                            </span>
+
+                            <span className="stat-label">
+                                Correct Answers
+                            </span>
+                        </div>
+
+                        <div className="stat-box">
+                            <span className="stat-value">
+                                {
+                                    sessionResult.incorrect_answers
+                                }
+                            </span>
+
+                            <span className="stat-label">
+                                Incorrect Answers
+                            </span>
+                        </div>
+
+                        <div className="stat-box">
+                            <span className="stat-value game-name-stat">
+                                {
+                                    sessionResult.game_name
+                                }
+                            </span>
+
+                            <span className="stat-label">
+                                Game Name
                             </span>
                         </div>
 
@@ -1714,25 +2186,32 @@ const NumberMemoryGame = ({
                         </span>
 
                         <div>
-
                             <strong>
-                                Difficulty automatically
+                                Difficulty
+                                automatically
                                 adjusted
                             </strong>
 
                             <p>
-                                Your next round will
-                                be adapted according
-                                to your performance.
+                                Your next
+                                level will
+                                be adapted
+                                according to
+                                your
+                                performance.
                             </p>
-
                         </div>
 
                     </div>
 
                     {errorMessage && (
-                        <div className="error-message">
-                            {errorMessage}
+                        <div
+                            className="error-message"
+                            role="alert"
+                        >
+                            {
+                                errorMessage
+                            }
                         </div>
                     )}
 
@@ -1745,7 +2224,7 @@ const NumberMemoryGame = ({
                                     handleNextRound
                                 }
                             >
-                                Next Level
+                                ▶ Next Level
                             </button>
                         ) : (
                             <>
@@ -1755,14 +2234,16 @@ const NumberMemoryGame = ({
                                         handleNextRound
                                     }
                                 >
-                                    Next Round
+                                    🔄 Next Round
                                 </button>
 
                                 <button
                                     className="secondary-button"
-                                    onClick={handleBack}
+                                    onClick={
+                                        handleBack
+                                    }
                                 >
-                                    Back to Dashboard
+                                    🏠 Back to Patient Dashboard
                                 </button>
                             </>
                         )}

@@ -104,13 +104,16 @@ button {
     height: 82px;
 
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
 
     padding: 0 5vw;
 
-    background: transparent;
-    box-shadow: none;
+    background: rgba(247, 244, 236, 0.88);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+
+    box-shadow: 0 1px 0 rgba(44, 74, 62, 0.10);
     border: none;
 
     z-index: 100;
@@ -119,50 +122,62 @@ button {
 .nav-links {
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 32px;
 }
 
 .nav-links a {
-    color: #304D42;
-    font-size: 14px;
+    color: #1E3D2F;
+    font-size: 18px;
     font-weight: 600;
     text-decoration: none;
+    letter-spacing: 0.3px;
+
+    text-shadow: none;
 
     transition:
-        color 0.25s ease,
-        transform 0.25s ease;
+        color 0.22s ease,
+        transform 0.22s ease;
 }
 
 .nav-links a:hover {
     color: var(--terracotta);
+    transform: translateY(-1px);
 }
 
 .nav-links a.active-link {
-    color: #304D42;
+    color: #1E3D2F;
     text-decoration: underline;
-    text-decoration-thickness: 2px;
+    text-decoration-thickness: 2.5px;
     text-underline-offset: 8px;
+    text-decoration-color: var(--marigold);
 }
 
 .nav-btn {
-    background: transparent;
-    color: #304D42;
+    background: var(--tea-green);
+    color: #fff;
 
     border: none;
-    padding: 0;
-    border-radius: 0;
+    padding: 11px 28px;
+    border-radius: 50px;
 
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
 
     cursor: pointer;
 
-    transition: color 0.25s ease;
+    box-shadow: 0 4px 16px rgba(44, 74, 62, 0.28);
+
+    transition:
+        background 0.22s ease,
+        transform 0.22s ease,
+        box-shadow 0.22s ease;
 }
 
 .nav-btn:hover {
-    background: transparent;
-    color: var(--terracotta);
+    background: var(--tea-green-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(44, 74, 62, 0.38);
 }
 
 
@@ -193,7 +208,7 @@ button {
    It becomes the full-screen background.
 */
 
-.hero-section > div[aria-hidden="true"] {
+.hero-section>div[aria-hidden="true"] {
     position: absolute !important;
     inset: 0 !important;
 
@@ -216,12 +231,10 @@ button {
     inset: 0;
 
     background:
-        linear-gradient(
-            90deg,
-            rgba(247, 244, 236, 0.02) 0%,
-            rgba(247, 244, 236, 0.05) 38%,
-            rgba(247, 244, 236, 0.24) 100%
-        );
+        linear-gradient(100deg,
+            rgba(247, 244, 236, 0.08) 0%,
+            rgba(247, 244, 236, 0.15) 45%,
+            rgba(247, 244, 236, 0.30) 100%);
 
     z-index: 2;
 
@@ -232,11 +245,11 @@ button {
    Keep HeroBackdrop behind actual content.
 */
 
-.hero-section > * {
+.hero-section>* {
     position: relative;
 }
 
-.hero-section > div[aria-hidden="true"] {
+.hero-section>div[aria-hidden="true"] {
     position: absolute !important;
 }
 
@@ -309,6 +322,7 @@ button {
     }
 
     @keyframes swayBamboo {
+
         0%,
         100% {
             transform: rotate(-2deg);
@@ -386,6 +400,7 @@ button {
     }
 
     @keyframes flap {
+
         0%,
         100% {
             transform: scaleY(1);
@@ -450,66 +465,29 @@ button {
    ============================================================ */
 
 .brand-header {
-    position: absolute;
-    top: 32px;
-    left: 5vw;
-    margin: 0;
-    z-index: 20;
+    display: none;
 }
 
 .logo-title {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 16px;
+    gap: 14px;
     margin: 0;
 }
 
 
 /* Custom logo */
 
-.brand-logo-mark {
-    width: 62px;
-    height: 62px;
-
-    border: 3px solid #315547;
-    border-radius: 50% 50% 48% 52%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background: rgba(247, 244, 236, 0.42);
-
-    position: relative;
-
-    transform: rotate(-7deg);
-
-    box-shadow:
-        0 3px 12px rgba(44, 74, 62, 0.08);
+.brand-logo-img {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    display: block;
+    flex-shrink: 0;
 }
 
-.brand-logo-mark::before {
-    content: '';
-
-    position: absolute;
-
-    width: 19px;
-    height: 19px;
-
-    border-radius: 50%;
-    border: 2px solid #315547;
-
-    bottom: -7px;
-    left: 7px;
-}
-
-.brand-logo-mark span {
-    font-size: 25px;
-    transform: rotate(7deg);
-}
-
-.logo-title > div:last-child {
+.logo-title>div:last-child {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -518,28 +496,46 @@ button {
 .logo-title h1 {
     margin: 0;
     font-family: 'Fraunces', serif;
-    font-size: 2.75rem;
+    font-size: 2.1rem;
     line-height: 0.95;
-    font-weight: 600;
-    color: #315547;
-    letter-spacing: -1.5px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -1px;
     text-shadow:
-        0 2px 10px rgba(255, 255, 255, 0.7);
+        0 2px 8px rgba(0, 0, 0, 0.5),
+        0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Brand name inside navbar (light background) */
+.nav-brand-name {
+    margin: 0;
+    font-family: 'Fraunces', serif;
+    font-size: 1.85rem;
+    line-height: 0.95;
+    font-weight: 800;
+    color: #060E09 !important;
+    letter-spacing: -1px;
+    text-shadow: none !important;
 }
 
 .tagline {
-    margin: 10px 0 0;
+    margin: 6px 0 0;
     font-family: 'Fraunces', serif;
-    font-size: 17px;
+    font-size: 13px;
     font-weight: 500;
     font-style: italic;
     line-height: 1.25;
-    color: #405B50;
+    color: rgba(255, 255, 255, 0.90);
     letter-spacing: 0.2px;
     text-align: left;
     white-space: nowrap;
-    text-shadow:
-        0 1px 7px rgba(255, 255, 255, 0.8);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+
+/* Tagline inside navbar (light background) */
+.navbar .tagline {
+    color: var(--ink-soft);
+    text-shadow: none;
 }
 
 
@@ -550,11 +546,11 @@ button {
 .hero-copy {
     position: absolute;
 
-    top: 17%;
-    left: 49%;
+    top: 8%;
+    left: 46%;
 
-    width: 47%;
-    max-width: 700px;
+    width: 50%;
+    max-width: 720px;
 
     z-index: 15;
 
@@ -584,37 +580,35 @@ button {
 
     line-height: 1.08;
 
-    font-weight: 600;
+    font-weight: 700;
 
-    color: #315547;
+    color: #1E3D2F;
 
     letter-spacing: -1px;
 
-    text-shadow:
-        0 2px 15px rgba(255, 255, 255, 0.8);
+    text-shadow: none;
 }
 
 .hero-copy h2 em {
     font-family: 'Fraunces', serif;
 
-    font-weight: 500;
+    font-weight: 600;
     font-style: italic;
 
-    color: #315547;
+    color: #2C5F46;
 }
 
 .hero-copy p {
     margin: 22px 0 0;
 
-    font-size: 17px;
+    font-size: 19px;
     line-height: 1.55;
 
-    color: #52645B;
+    color: #3D5C4A;
 
     font-weight: 500;
 
-    text-shadow:
-        0 1px 8px rgba(255, 255, 255, 0.85);
+    text-shadow: none;
 }
 
 
@@ -625,15 +619,15 @@ button {
 .card-grid {
     position: absolute;
 
-    right: 10%;
-    bottom: 12%;
+    right: 20%;
+    bottom: 3%;
 
-    width: min(45vw, 720px);
+    width: min(42vw, 620px);
 
     display: grid;
     grid-template-columns: 1fr 1fr;
 
-    gap: 22px;
+    gap: 20px;
 
     z-index: 20;
 
@@ -647,13 +641,13 @@ button {
     position: relative;
 
     min-width: 0;
-    height: 270px;
+    height: 250px;
 
-    padding: 28px 28px 20px;
+    padding: 26px 26px 18px;
 
-    border-radius: 18px;
+    border-radius: 16px;
 
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    border: none;
 
     overflow: hidden;
 
@@ -667,55 +661,76 @@ button {
 
     cursor: pointer;
 
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+
     box-shadow:
-        0 15px 40px rgba(43, 70, 58, 0.16);
+        0 12px 40px rgba(20, 40, 30, 0.22),
+        0 2px 8px rgba(20, 40, 30, 0.10);
 
     transition:
-        transform 0.3s ease,
-        box-shadow 0.3s ease;
+        transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.28s ease;
 }
 
 .login-card:hover {
-    transform: translateY(-7px);
+    transform: translateY(-8px) scale(1.02);
 
     box-shadow:
-        0 22px 45px rgba(43, 70, 58, 0.23);
+        0 24px 56px rgba(20, 40, 30, 0.30),
+        0 4px 12px rgba(20, 40, 30, 0.14);
+}
+
+.login-card:active {
+    transform: translateY(-3px) scale(0.99);
 }
 
 
 /* Patient card */
 
 .patient-card {
-    background:
-        linear-gradient(
-            180deg,
-            rgba(246, 250, 244, 0.96),
-            rgba(226, 239, 230, 0.94)
-        );
-
-    border-top: none;
+    background: linear-gradient(160deg, #EEF7F1 0%, #D4ECDC 100%);
+    border-top: 3px solid #315547;
 }
 
 .patient-card h3 {
-    color: #315547;
+    color: #244B3A;
+}
+
+.patient-card::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(49, 85, 71, 0.06);
+    pointer-events: none;
 }
 
 
 /* Caregiver card */
 
 .caregiver-card {
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255, 249, 243, 0.97),
-            rgba(248, 232, 219, 0.95)
-        );
-
-    border-top: none;
+    background: linear-gradient(160deg, #FBF3EE 0%, #F0D9C8 100%);
+    border-top: 3px solid #A3624E;
 }
 
 .caregiver-card h3 {
-    color: #A3624E;
+    color: #8B4A36;
+}
+
+.caregiver-card::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(163, 98, 78, 0.06);
+    pointer-events: none;
 }
 
 
@@ -757,12 +772,13 @@ button {
 
     font-family: 'Fraunces', serif;
 
-    font-size: 22px;
-    font-weight: 600;
+    font-size: 21px;
+    font-weight: 700;
 
     text-align: center;
 
-    letter-spacing: 0;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
 }
 
 
@@ -788,16 +804,16 @@ button {
    ============================================================ */
 
 .card-arrow {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
 
     border: none;
     border-radius: 50%;
 
-    background: #315547;
+    background: #244B3A;
     color: white;
 
-    font-size: 23px;
+    font-size: 22px;
 
     display: flex;
     align-items: center;
@@ -838,11 +854,11 @@ button {
     left: 0;
 
     width: 100%;
-    height: 72px;
+    height: 85px;
 
     overflow: hidden;
 
-    opacity: 0.42;
+    opacity: 0.75;
 
     pointer-events: none;
 }
@@ -852,18 +868,17 @@ button {
 
     position: absolute;
 
-    left: -10%;
-    bottom: 5px;
+    left: -5%;
+    bottom: 0px;
 
-    width: 120%;
-    height: 55px;
+    width: 110%;
+    height: 60px;
 
-    border-radius: 50% 50% 0 0;
+    border-radius: 55% 55% 0 0 / 40% 40% 0 0;
 
-    background:
-        rgba(101, 133, 112, 0.35);
+    background: rgba(88, 140, 105, 0.28);
 
-    transform: rotate(2deg);
+    transform: rotate(1deg);
 }
 
 .card-landscape::after {
@@ -871,24 +886,29 @@ button {
 
     position: absolute;
 
-    left: 20%;
-    bottom: 8px;
+    left: 5%;
+    bottom: 0;
 
-    width: 100px;
-    height: 25px;
+    width: 90%;
+    height: 40px;
 
-    border-top:
-        3px solid rgba(49, 85, 71, 0.55);
+    border-radius: 60% 60% 0 0 / 50% 50% 0 0;
 
-    border-radius: 50%;
+    background: rgba(60, 110, 80, 0.22);
+
+    transform: rotate(-1deg);
 }
 
 .patient-landscape {
     color: #4D7560;
 }
 
-.caregiver-landscape {
-    color: #A86C55;
+.caregiver-landscape::before {
+    background: rgba(163, 110, 80, 0.25) !important;
+}
+
+.caregiver-landscape::after {
+    background: rgba(140, 85, 60, 0.18) !important;
 }
 
 
@@ -899,58 +919,65 @@ button {
 .urgent-help-btn {
     position: fixed;
 
-    right: 28px;
-    bottom: 25px;
+    right: 24px;
+    bottom: 24px;
 
     z-index: 1000;
 
     display: flex;
     align-items: center;
 
-    gap: 12px;
+    gap: 10px;
 
-    padding: 13px 19px;
+    padding: 13px 22px;
 
     border:
-        1px solid rgba(255, 255, 255, 0.4);
+        1px solid rgba(255, 255, 255, 0.45);
 
-    border-radius: 30px;
+    border-radius: 50px;
 
     background:
-        rgba(45, 83, 68, 0.88);
+        rgba(36, 75, 58, 0.92);
 
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 
     color: white;
 
     font-family: 'Karla', sans-serif;
 
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.2px;
 
     cursor: pointer;
 
     box-shadow:
-        0 8px 25px rgba(30, 51, 42, 0.2);
+        0 8px 28px rgba(30, 51, 42, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
 
     transition:
-        transform 0.2s ease,
-        background 0.2s ease;
+        transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+        background 0.22s ease,
+        box-shadow 0.22s ease;
 }
 
 .urgent-help-btn:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
 
-    background:
-        rgba(35, 67, 54, 0.95);
+    background: rgba(28, 60, 46, 0.97);
+
+    box-shadow:
+        0 14px 36px rgba(30, 51, 42, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .urgent-help-btn span {
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .urgent-help-btn strong {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 400;
 }
 
@@ -965,6 +992,8 @@ button {
     color: white;
 
     padding: 1rem 2rem;
+
+    margin-top: 82px;
 
     display: flex;
     justify-content: center;
@@ -1007,7 +1036,7 @@ button {
 .page-content {
     flex: 1;
 
-    padding: 4rem 2rem;
+    padding: calc(82px + 3rem) 2rem 4rem;
 
     max-width: 1100px;
 
@@ -1174,7 +1203,7 @@ button {
    ============================================================ */
 
 .page-content.how-it-works-page {
-    padding: 40px 20px;
+    padding: calc(82px + 3rem) 20px 4rem;
 
     max-width: 1200px;
 
@@ -1928,7 +1957,7 @@ button {
     width: 100%;
 }
 
-.breathing-section > h3 {
+.breathing-section>h3 {
     font-family:
         'Fraunces', serif;
 
@@ -1941,7 +1970,7 @@ button {
     font-size: 1.2rem;
 }
 
-.breathing-section > p {
+.breathing-section>p {
     max-width: 600px;
 
     margin:
@@ -2256,6 +2285,7 @@ button {
    ============================================================ */
 
 @keyframes holdPulse {
+
     0%,
     100% {
         box-shadow:
@@ -2417,47 +2447,47 @@ button {
     bottom: 5.5rem;
     right: 1.5rem;
 
-    background-color:
-        var(--sage-dark);
+    background: var(--marigold);
 
-    color:
-        #ffffff;
+    color: #ffffff;
 
-    border:
-        none;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 
-    padding:
-        0.75rem 1.25rem;
+    padding: 12px 22px;
 
-    border-radius: 30px;
+    border-radius: 50px;
 
     font-weight: 700;
-
-    font-size: 0.95rem;
+    font-size: 0.93rem;
+    letter-spacing: 0.2px;
 
     cursor: pointer;
 
     box-shadow:
-        0 8px 20px rgba(85, 114, 96, 0.4);
+        0 8px 24px rgba(232, 163, 61, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 
     z-index: 900;
 
     transition:
-        transform 0.15s ease,
-        background-color 0.2s ease;
+        transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+        background 0.22s ease,
+        box-shadow 0.22s ease;
 }
 
 .quick-calm-fab:hover {
-    background-color:
-        var(--tea-green-dark);
-
-    transform:
-        translateY(-2px);
+    background: var(--marigold-dark);
+    transform: translateY(-4px);
+    box-shadow:
+        0 14px 32px rgba(232, 163, 61, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .quick-calm-fab:active {
-    transform:
-        scale(0.96);
+    transform: scale(0.96);
 }
 
 .quick-calm-modal-body {
@@ -2934,5 +2964,143 @@ a:focus-visible {
 
         scroll-behavior:
             auto !important;
+    }
+}
+
+/* ============================================================
+   CONTACT PAGE
+   ============================================================ */
+
+.contact-page .about-header h1 {
+    color: var(--tea-green);
+}
+
+.contact-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 3rem;
+    align-items: start;
+    margin-top: 0.5rem;
+}
+
+.contact-info-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.contact-info-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 16px var(--shadow-soft);
+    border-left: 4px solid var(--sage);
+}
+
+.contact-info-card.emergency-card {
+    border-left-color: var(--alert);
+    background: #fff5f5;
+}
+
+.contact-info-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+.contact-info-card h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--tea-green);
+    margin: 0 0 0.3rem 0;
+}
+
+.contact-info-card p {
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    margin: 0;
+    line-height: 1.55;
+}
+
+.contact-form {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 8px 32px var(--shadow-soft);
+}
+
+.contact-form h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--tea-green);
+    margin: 0 0 1.75rem 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.3px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: 'Karla', sans-serif;
+    color: var(--ink);
+    background: var(--cream);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+    resize: vertical;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--tea-green);
+    box-shadow: 0 0 0 3px rgba(44, 74, 62, 0.12);
+}
+
+.contact-submit-btn {
+    width: 100%;
+    padding: 0.9rem 1.5rem;
+    background: var(--tea-green);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-family: 'Karla', sans-serif;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+    box-shadow: 0 4px 16px rgba(44, 74, 62, 0.28);
+}
+
+.contact-submit-btn:hover {
+    background: var(--tea-green-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(44, 74, 62, 0.35);
+}
+
+@media (max-width: 768px) {
+    .contact-layout {
+        grid-template-columns: 1fr;
     }
 }

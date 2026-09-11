@@ -1,60 +1,120 @@
 .number-memory-container {
     min-height: 100vh;
     background:
-        linear-gradient(rgba(248, 250, 247, 0.96),
-            rgba(238, 245, 239, 0.96)),
-        repeating-linear-gradient(45deg,
+        linear-gradient(
+            rgba(248, 250, 247, 0.96),
+            rgba(238, 245, 239, 0.96)
+        ),
+        repeating-linear-gradient(
+            45deg,
             transparent,
             transparent 18px,
             rgba(72, 110, 82, 0.06) 18px,
-            rgba(72, 110, 82, 0.06) 20px);
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            rgba(72, 110, 82, 0.06) 20px
+        );
+
+    font-family:
+        "Segoe UI",
+        Tahoma,
+        Geneva,
+        Verdana,
+        sans-serif;
+
     color: #243b2f;
+
     padding: 40px 20px;
+
     display: flex;
     justify-content: center;
     align-items: center;
+
+    box-sizing: border-box;
 }
 
 .number-memory-card {
     width: 100%;
     max-width: 900px;
-    background: rgba(255, 255, 255, 0.98);
+
+    background: rgba(
+        255,
+        255,
+        255,
+        0.98
+    );
+
     border-radius: 24px;
+
     padding: 42px;
-    box-shadow: 0 12px 35px rgba(42, 70, 49, 0.12);
-    border: 1px solid rgba(72, 110, 82, 0.15);
+
+    box-shadow:
+        0 12px 35px
+            rgba(
+                42,
+                70,
+                49,
+                0.12
+            );
+
+    border:
+        1px solid
+        rgba(
+            72,
+            110,
+            82,
+            0.15
+        );
+
     position: relative;
+
     overflow: hidden;
+
+    box-sizing: border-box;
 }
 
 .number-memory-card::before {
     content: "";
+
     position: absolute;
+
     top: 0;
     left: 0;
     right: 0;
+
     height: 7px;
+
     background: #557c5c;
 }
 
+/* -------------------------------------------------------
+   INTRO
+------------------------------------------------------- */
+
 .game-pattern {
     text-align: center;
+
     font-size: 26px;
+
     letter-spacing: 16px;
+
     color: #6f9674;
+
     margin-bottom: 12px;
 }
 
 .game-icon-large {
     width: 86px;
     height: 86px;
+
     border-radius: 50%;
+
     background: #edf5ed;
+
     display: flex;
     justify-content: center;
     align-items: center;
+
     font-size: 44px;
+
     margin: 0 auto 20px;
 }
 
@@ -65,85 +125,130 @@
 .intro-card h1,
 .result-card h1 {
     font-size: 38px;
-    margin: 8px 0 15px;
+
+    margin:
+        8px 0
+        15px;
+
     color: #294c34;
 }
 
 .game-description {
     font-size: 20px;
+
     line-height: 1.6;
+
     max-width: 680px;
-    margin: 0 auto 30px;
+
+    margin:
+        0 auto
+        30px;
+
     color: #52665a;
 }
 
 .instructions-box {
     background: #f4f8f4;
+
     border-radius: 18px;
+
     padding: 24px;
+
     text-align: left;
+
     margin: 25px 0;
-    border-left: 5px solid #6b9070;
+
+    border-left:
+        5px solid
+        #6b9070;
 }
 
 .instructions-box h2 {
     font-size: 25px;
+
     margin-top: 0;
+
     color: #345c3e;
 }
 
 .instruction-item {
     display: flex;
+
     align-items: flex-start;
+
     gap: 16px;
+
     margin: 18px 0;
 }
 
 .instruction-item span {
     font-size: 27px;
+
     min-width: 36px;
 }
 
 .instruction-item p {
     margin: 2px 0;
+
     font-size: 18px;
+
     line-height: 1.5;
+
     color: #485b4e;
 }
 
 .level-info {
     background: #edf5ef;
+
     border-radius: 15px;
+
     padding: 18px 20px;
+
     display: flex;
+
     flex-direction: column;
+
     gap: 6px;
+
     margin: 22px 0;
 }
 
 .level-info strong {
     font-size: 20px;
+
     color: #315c3b;
 }
 
 .level-info span {
     font-size: 17px;
+
     line-height: 1.5;
+
     color: #53665a;
 }
 
 .adaptive-text {
     font-size: 17px;
+
     color: #64766a;
+
     margin: 20px 0;
 }
+
+/* -------------------------------------------------------
+   BUTTONS
+------------------------------------------------------- */
 
 .intro-buttons,
 .result-buttons {
     display: flex;
+
     justify-content: center;
+
     gap: 16px;
+
     flex-wrap: wrap;
+
     margin-top: 25px;
 }
 
@@ -151,11 +256,19 @@
 .secondary-button,
 .submit-button {
     border: none;
+
     border-radius: 13px;
-    padding: 15px 28px;
+
+    padding:
+        15px
+        28px;
+
     font-size: 18px;
+
     font-weight: 600;
+
     cursor: pointer;
+
     transition:
         transform 0.2s ease,
         box-shadow 0.2s ease;
@@ -163,33 +276,65 @@
 
 .primary-button {
     background: #557c5c;
+
     color: white;
+
     min-width: 190px;
 }
 
 .primary-button:hover {
-    transform: translateY(-2px);
+    transform:
+        translateY(-2px);
+
     box-shadow:
-        0 7px 18px rgba(66, 101, 72, 0.25);
+        0 7px 18px
+            rgba(
+                66,
+                101,
+                72,
+                0.25
+            );
 }
 
 .primary-button:disabled {
     opacity: 0.6;
+
     cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
 }
 
 .secondary-button {
     background: #eef3ef;
+
     color: #355a3d;
-    border: 1px solid #c6d7c8;
+
+    border:
+        1px solid
+        #c6d7c8;
+
     min-width: 190px;
 }
 
 .secondary-button:hover {
-    transform: translateY(-2px);
+    transform:
+        translateY(-2px);
+
     box-shadow:
-        0 7px 18px rgba(66, 101, 72, 0.12);
+        0 7px 18px
+            rgba(
+                66,
+                101,
+                72,
+                0.12
+            );
 }
+
+/* -------------------------------------------------------
+   GAME
+------------------------------------------------------- */
 
 .game-card {
     min-height: 600px;
@@ -197,147 +342,257 @@
 
 .game-header {
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
+
     gap: 20px;
-    border-bottom: 1px solid #e2eae3;
+
+    border-bottom:
+        1px solid
+        #e2eae3;
+
     padding-bottom: 20px;
+
     margin-bottom: 35px;
 }
 
 .game-header h1 {
     margin: 9px 0 0;
+
     color: #294c34;
+
     font-size: 30px;
 }
 
 .level-badge {
     display: inline-block;
-    padding: 7px 15px;
+
+    padding:
+        7px
+        15px;
+
     border-radius: 20px;
+
     background: #e8f1e9;
+
     color: #3e6747;
+
     font-weight: 700;
+
     font-size: 15px;
 }
 
 .question-counter {
     background: #f2f5f2;
+
     border-radius: 12px;
-    padding: 10px 15px;
+
+    padding:
+        10px
+        15px;
+
     color: #52665a;
+
     font-size: 16px;
+
     white-space: nowrap;
 }
 
+/* -------------------------------------------------------
+   NUMBER RECALL
+------------------------------------------------------- */
+
 .recall-instruction {
     text-align: center;
+
     font-size: 21px;
+
     color: #52665a;
 }
 
 .sequence-display {
     min-height: 150px;
+
     display: flex;
+
     justify-content: center;
+
     align-items: center;
+
     gap: 15px;
+
     margin: 30px 0;
+
     flex-wrap: wrap;
 }
 
 .memory-number {
     width: 76px;
     height: 76px;
+
     display: flex;
+
     align-items: center;
+
     justify-content: center;
+
     background: #edf5ed;
-    border: 2px solid #8eae91;
+
+    border:
+        2px solid
+        #8eae91;
+
     border-radius: 16px;
+
     font-size: 38px;
+
     font-weight: 700;
+
     color: #315d3b;
+
+    box-sizing: border-box;
 }
 
 .sequence-arrow {
     font-size: 30px;
+
     color: #76957b;
 }
 
 .countdown-circle {
     width: 76px;
     height: 76px;
+
     border-radius: 50%;
-    margin: 15px auto;
+
+    margin:
+        15px
+        auto;
+
     background: #557c5c;
+
     color: white;
+
     display: flex;
+
     align-items: center;
+
     justify-content: center;
+
     font-size: 32px;
+
     font-weight: 700;
+
     box-shadow:
-        0 7px 20px rgba(72, 108, 78, 0.25);
+        0 7px 20px
+            rgba(
+                72,
+                108,
+                78,
+                0.25
+            );
 }
 
 .countdown-text {
     text-align: center;
+
     font-size: 18px;
+
     color: #64766a;
 }
 
 .progress-bar-container {
     height: 10px;
+
     background: #e7eee8;
+
     border-radius: 10px;
+
     overflow: hidden;
-    margin: 30px auto;
+
+    margin:
+        30px
+        auto;
+
     max-width: 600px;
 }
 
 .progress-bar {
     height: 100%;
+
     background: #6d9472;
+
     border-radius: 10px;
-    transition: width 1s linear;
+
+    transition:
+        width 1s linear;
 }
+
+/* -------------------------------------------------------
+   QUESTIONS
+------------------------------------------------------- */
 
 .question-area {
     max-width: 700px;
+
     margin: 0 auto;
+
     text-align: center;
 }
 
 .question-instruction {
     font-size: 20px;
+
     color: #586b5e;
+
     margin-bottom: 25px;
 }
 
 .question-symbol {
     width: 110px;
     height: 110px;
-    margin: 20px auto 30px;
+
+    margin:
+        20px
+        auto
+        30px;
+
     border-radius: 20px;
+
     background: #edf5ed;
+
     display: flex;
+
     align-items: center;
+
     justify-content: center;
+
     font-size: 58px;
+
     font-weight: 700;
+
     color: #557c5c;
 }
 
 .math-question {
     display: flex;
+
     justify-content: center;
+
     align-items: center;
+
     gap: 25px;
+
     font-size: 46px;
+
     font-weight: 700;
+
     color: #294c34;
+
     margin: 35px 0;
+
     flex-wrap: wrap;
 }
 
@@ -347,28 +602,54 @@
 
 .answer-section {
     display: flex;
+
     flex-direction: column;
+
     align-items: center;
+
     gap: 16px;
 }
 
 .answer-input {
-    width: min(100%, 500px);
-    padding: 17px 20px;
+    width: min(
+        100%,
+        500px
+    );
+
+    padding:
+        17px
+        20px;
+
     border-radius: 13px;
-    border: 2px solid #bdcfc0;
+
+    border:
+        2px solid
+        #bdcfc0;
+
     font-size: 24px;
+
     text-align: center;
+
     outline: none;
+
     color: #294c34;
+
     background: white;
+
     box-sizing: border-box;
 }
 
 .answer-input:focus {
     border-color: #63866a;
+
     box-shadow:
-        0 0 0 4px rgba(91, 132, 98, 0.12);
+        0 0 0 4px
+            rgba(
+                91,
+                132,
+                98,
+                0.12
+            );
 }
 
 .answer-input:disabled {
@@ -377,102 +658,196 @@
 
 .submit-button {
     background: #557c5c;
+
     color: white;
+
     min-width: 230px;
 }
 
-.submit-button:hover:not(:disabled) {
-    transform: translateY(-2px);
+.submit-button:hover:not(
+        :disabled
+    ) {
+    transform:
+        translateY(-2px);
+
     box-shadow:
-        0 7px 18px rgba(66, 101, 72, 0.25);
+        0 7px 18px
+            rgba(
+                66,
+                101,
+                72,
+                0.25
+            );
 }
 
 .submit-button:disabled {
     opacity: 0.55;
+
     cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
 }
 
 .attempts-display {
     margin-top: 18px;
+
     color: #68786c;
+
     font-size: 16px;
 }
 
 /* -------------------------------------------------------
-   HINT BOX
+   HINT
 ------------------------------------------------------- */
 
 .hint-box {
-    margin: 25px auto 0;
+    margin:
+        25px
+        auto
+        0;
+
     max-width: 600px;
+
     background: #fff8e8;
-    border: 1px solid #ead8a7;
-    border-left: 5px solid #d3aa50;
+
+    border:
+        1px solid
+        #ead8a7;
+
+    border-left:
+        5px solid
+        #d3aa50;
+
     border-radius: 13px;
-    padding: 17px 20px;
+
+    padding:
+        17px
+        20px;
+
     display: flex;
+
     align-items: flex-start;
+
     gap: 15px;
+
     text-align: left;
 }
 
 .hint-icon {
     font-size: 27px;
+
     min-width: 35px;
 }
 
 .hint-box strong {
     font-size: 18px;
+
     color: #745d2a;
 }
 
 .hint-box p {
-    margin: 5px 0 0;
+    margin:
+        5px 0
+        0;
+
     font-size: 17px;
+
     line-height: 1.5;
+
     color: #695a38;
 }
 
+/* -------------------------------------------------------
+   CORRECT ANSWER
+------------------------------------------------------- */
+
 .correct-answer-box {
-    margin: 25px auto 0;
+    margin:
+        25px
+        auto
+        0;
+
     max-width: 600px;
+
     background: #edf6ef;
-    border: 1px solid #bcd2bf;
-    border-left: 5px solid #5d8a65;
+
+    border:
+        1px solid
+        #bcd2bf;
+
+    border-left:
+        5px solid
+        #5d8a65;
+
     border-radius: 13px;
+
     padding: 18px;
+
     display: flex;
+
     flex-direction: column;
+
     gap: 7px;
 }
 
 .correct-answer-box strong {
     color: #365f3d;
+
     font-size: 18px;
 }
 
 .correct-answer-box span {
     color: #294c34;
+
     font-size: 26px;
+
     font-weight: 700;
 }
 
 .correct-answer-box p {
-    margin: 5px 0 0;
+    margin:
+        5px 0
+        0;
+
     color: #627166;
+
     font-size: 15px;
 }
 
+/* -------------------------------------------------------
+   ERROR
+------------------------------------------------------- */
+
 .error-message {
-    margin: 18px auto 0;
+    margin:
+        18px
+        auto
+        0;
+
     max-width: 600px;
+
     background: #fff0f0;
-    border: 1px solid #e4b8b8;
+
+    border:
+        1px solid
+        #e4b8b8;
+
     color: #a24646;
+
     border-radius: 11px;
-    padding: 13px 16px;
+
+    padding:
+        13px
+        16px;
+
     font-size: 16px;
 }
+
+/* -------------------------------------------------------
+   RESULT
+------------------------------------------------------- */
 
 .result-card {
     text-align: center;
@@ -480,84 +855,145 @@
 
 .result-icon {
     font-size: 65px;
+
     margin-bottom: 10px;
 }
 
 .result-message {
     font-size: 18px;
+
     color: #5a6c60;
+
     line-height: 1.5;
+
     max-width: 650px;
-    margin: 0 auto 30px;
+
+    margin:
+        0 auto
+        30px;
 }
 
 .result-stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
     gap: 15px;
-    max-width: 700px;
-    margin: 30px auto;
+
+    max-width: 780px;
+
+    margin:
+        30px
+        auto;
 }
 
 .stat-box {
     background: #f3f7f3;
+
     border-radius: 15px;
-    padding: 20px 12px;
-    border: 1px solid #dce7dd;
+
+    padding:
+        20px
+        12px;
+
+    border:
+        1px solid
+        #dce7dd;
+
+    min-width: 0;
+
+    box-sizing: border-box;
 }
 
 .stat-value {
     display: block;
+
     font-size: 27px;
+
     font-weight: 700;
+
     color: #355e3d;
+
+    overflow-wrap: anywhere;
 }
 
 .stat-label {
     display: block;
+
     margin-top: 5px;
+
     color: #69796e;
+
     font-size: 15px;
+}
+
+.game-name-stat {
+    font-size: 18px;
+
+    line-height: 1.3;
 }
 
 .adaptive-result-box {
     max-width: 650px;
-    margin: 25px auto;
+
+    margin:
+        25px
+        auto;
+
     background: #edf5ef;
+
     border-radius: 15px;
-    padding: 18px 22px;
+
+    padding:
+        18px
+        22px;
+
     display: flex;
+
     align-items: center;
+
     text-align: left;
+
     gap: 15px;
 }
 
-.adaptive-result-box>span {
+.adaptive-result-box > span {
     font-size: 30px;
 }
 
 .adaptive-result-box strong {
     color: #365f3d;
+
     font-size: 17px;
 }
 
 .adaptive-result-box p {
-    margin: 4px 0 0;
+    margin:
+        4px 0
+        0;
+
     color: #65756a;
+
     font-size: 15px;
 }
 
 /* -------------------------------------------------------
-   RESPONSIVE DESIGN
+   RESPONSIVE
 ------------------------------------------------------- */
 
 @media (max-width: 700px) {
     .number-memory-container {
-        padding: 20px 12px;
+        padding:
+            20px
+            12px;
     }
 
     .number-memory-card {
-        padding: 25px 18px;
+        padding:
+            25px
+            18px;
+
         border-radius: 18px;
     }
 
@@ -572,6 +1008,7 @@
 
     .game-header {
         flex-direction: column;
+
         align-items: flex-start;
     }
 
@@ -586,6 +1023,7 @@
     .memory-number {
         width: 60px;
         height: 60px;
+
         font-size: 30px;
     }
 
@@ -595,6 +1033,7 @@
 
     .math-question {
         font-size: 35px;
+
         gap: 15px;
     }
 
@@ -603,7 +1042,8 @@
     }
 
     .result-stats {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns:
+            repeat(2, 1fr);
     }
 
     .primary-button,
@@ -621,6 +1061,7 @@
     .memory-number {
         width: 52px;
         height: 52px;
+
         font-size: 27px;
     }
 
@@ -630,5 +1071,9 @@
 
     .math-question {
         font-size: 30px;
+    }
+
+    .game-pattern {
+        letter-spacing: 8px;
     }
 }

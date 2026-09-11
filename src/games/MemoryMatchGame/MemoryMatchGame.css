@@ -29,7 +29,7 @@
 }
 
 /* =========================================================
-   ROUND SETUP
+   GAME SETUP
    ========================================================= */
 
 .memory-round-setup {
@@ -64,69 +64,16 @@
     line-height: 1.7;
 }
 
-.memory-round-input-section {
-    margin-bottom: 1.5rem;
-}
-
-.memory-round-input-section label {
-    display: block;
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-    color: #1a365d;
-}
-
-.round-input {
-    width: 100%;
-    max-width: 280px;
-    box-sizing: border-box;
-    padding: 1rem 1.25rem;
-    border: 2px solid #cbd5e1;
-    border-radius: 12px;
-    font-size: 1.2rem;
-    text-align: center;
-    color: #1a365d;
-    background: #ffffff;
-    outline: none;
-    transition:
-        border-color 0.2s,
-        box-shadow 0.2s;
-}
-
-.round-input:focus {
-    border-color: #2F70B5;
-    box-shadow: 0 0 0 4px rgba(47, 112, 181, 0.12);
-}
-
-.round-input.invalid {
-    border-color: #dc2626;
-    background-color: #fff5f5;
-}
-
-.round-error-alert {
-    max-width: 420px;
-    margin: 0.8rem auto 0 auto;
-    padding: 0.85rem 1rem;
-    background-color: #fee2e2;
-    border: 2px solid #dc2626;
-    border-radius: 10px;
-    color: #b91c1c;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.round-limit-text {
-    color: #64748b;
-    font-size: 0.95rem;
-    margin: 0.75rem 0 0 0;
-}
+/* =========================================================
+   LEVEL INFORMATION
+   ========================================================= */
 
 .memory-level-info {
     display: flex;
     justify-content: center;
     gap: 0.8rem;
     flex-wrap: wrap;
-    margin: 1.75rem 0 2rem 0;
+    margin: 1.75rem 0 1.25rem 0;
 }
 
 .level-info-item {
@@ -147,6 +94,17 @@
     color: #1a365d;
     font-size: 1rem;
 }
+
+.round-limit-text {
+    color: #64748b;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 1rem 0 1.75rem 0;
+}
+
+/* =========================================================
+   START / HOME BUTTONS
+   ========================================================= */
 
 .memory-start-btn {
     width: 100%;
@@ -445,7 +403,7 @@
 }
 
 /* =========================================================
-   ROUND RESULT OVERLAY
+   ROUND RESULT / CHECKPOINT OVERLAY
    ========================================================= */
 
 .memory-round-overlay {
@@ -457,16 +415,19 @@
     justify-content: center;
     padding: 1.5rem;
     z-index: 100;
+    overflow-y: auto;
 }
 
 .memory-round-card {
     background: #ffffff;
     border-radius: 22px;
     padding: 2.3rem;
-    max-width: 500px;
+    max-width: 650px;
     width: 100%;
     text-align: center;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    max-height: 92vh;
+    overflow-y: auto;
 }
 
 .round-result-icon {
@@ -520,29 +481,33 @@
     color: #64748b;
 }
 
-.round-result-stats {
+/* =========================================================
+   ROUND ANALYTICS
+   ========================================================= */
+
+.round-result-analytics {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.8rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
     margin-bottom: 1.25rem;
 }
 
-.round-result-stats div {
+.round-result-analytics div {
     background-color: #f0f4f8;
     border-radius: 12px;
-    padding: 0.9rem;
+    padding: 0.8rem;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
 }
 
-.round-result-stats span {
-    font-size: 0.9rem;
+.round-result-analytics span {
+    font-size: 0.85rem;
     color: #64748b;
 }
 
-.round-result-stats strong {
-    font-size: 1.25rem;
+.round-result-analytics strong {
+    font-size: 1.05rem;
     color: #1a365d;
 }
 
@@ -557,6 +522,7 @@
     border-radius: 12px;
     color: #1e40af;
     font-size: 1.05rem;
+    margin-bottom: 1rem;
 }
 
 .next-level-message span {
@@ -567,10 +533,36 @@
     font-size: 1.2rem;
 }
 
-.next-round-countdown {
+.checkpoint-message {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 1rem;
+    background-color: #ecfdf5;
+    border: 2px solid #86efac;
+    border-radius: 12px;
+    color: #166534;
+    margin-bottom: 1.25rem;
+}
+
+.checkpoint-message strong {
+    font-size: 1.05rem;
+}
+
+.checkpoint-message span {
     color: #64748b;
-    font-size: 0.9rem;
-    margin: 1rem 0 0 0;
+    font-size: 0.95rem;
+}
+
+.round-checkpoint-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.round-checkpoint-actions .memory-control-btn {
+    min-width: 210px;
 }
 
 /* =========================================================
@@ -593,10 +585,12 @@
     background: #ffffff;
     border-radius: 22px;
     padding: 2.5rem;
-    max-width: 620px;
+    max-width: 720px;
     width: 100%;
     text-align: center;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    max-height: 94vh;
+    overflow-y: auto;
 }
 
 .final-result-icon {
@@ -623,9 +617,43 @@
     margin: 0 0 1.5rem 0;
 }
 
+/* =========================================================
+   FINAL ANALYTICS
+   ========================================================= */
+
+.final-analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.final-analytics-item {
+    background: #f0f4f8;
+    border-radius: 14px;
+    padding: 1rem 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.final-analytics-item span {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.final-analytics-item strong {
+    color: #1a365d;
+    font-size: 1.2rem;
+}
+
+/* =========================================================
+   FINAL SUMMARY
+   ========================================================= */
+
 .final-result-summary {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 0.8rem;
     margin-bottom: 1.5rem;
 }
@@ -673,7 +701,6 @@
     min-width: 190px;
 }
 
-/* Dedicated dashboard button on final screen */
 .dashboard-btn {
     background-color: #2F8B61;
     color: #ffffff;
@@ -715,6 +742,10 @@
     }
 
     .final-result-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .final-analytics-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
@@ -804,16 +835,26 @@
         padding: 1.75rem 1.25rem;
     }
 
-    .round-result-stats {
+    .round-result-analytics {
+        grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
     }
 
-    .round-result-stats div {
+    .round-result-analytics div {
         padding: 0.7rem 0.3rem;
     }
 
-    .round-result-stats strong {
-        font-size: 1.05rem;
+    .round-result-analytics strong {
+        font-size: 0.95rem;
+    }
+
+    .round-checkpoint-actions {
+        flex-direction: column;
+    }
+
+    .round-checkpoint-actions .memory-control-btn {
+        width: 100%;
+        min-width: 0;
     }
 
     .memory-complete-card {
@@ -822,6 +863,19 @@
 
     .final-result-summary {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .final-analytics-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .final-analytics-item {
+        padding: 0.8rem 0.4rem;
+    }
+
+    .final-analytics-item strong {
+        font-size: 1rem;
     }
 
     .final-summary-item strong {

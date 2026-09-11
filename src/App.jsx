@@ -54,15 +54,17 @@ function HeroBackdrop() {
             }}
         >
             {backgroundImages.map((image, index) => (
-                <div
+                <img
                     key={image}
+                    src={image}
+                    alt=""
                     style={{
                         position: 'absolute',
                         inset: 0,
-                        backgroundImage: `url(${image})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        backgroundRepeat: 'no-repeat',
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center 20%',
                         opacity:
                             index === currentImage
                                 ? 1
@@ -181,7 +183,7 @@ function App() {
     const breathingPhaseLabel =
         t(
             breathingPhaseLabels[
-                breathingPhase
+            breathingPhase
             ]
         );
 
@@ -310,7 +312,7 @@ function App() {
         const guardAuthScreens = async () => {
             if (
                 currentScreen ===
-                    'caregiverAuth' &&
+                'caregiverAuth' &&
                 !isPasswordRecovery
             ) {
                 const {
@@ -428,7 +430,7 @@ function App() {
 
         setSessionSecondsLeft(
             totalSessionSeconds -
-                breathingElapsed
+            breathingElapsed
         );
     }, [
         breathingElapsed,
@@ -535,11 +537,10 @@ function App() {
             <div className="session-length-selector">
 
                 <button
-                    className={`session-btn ${
-                        sessionLength === 2
-                            ? 'active-session'
-                            : ''
-                    }`}
+                    className={`session-btn ${sessionLength === 2
+                        ? 'active-session'
+                        : ''
+                        }`}
                     onClick={() =>
                         selectSessionLength(2)
                     }
@@ -553,11 +554,10 @@ function App() {
                 </button>
 
                 <button
-                    className={`session-btn ${
-                        sessionLength === 5
-                            ? 'active-session'
-                            : ''
-                    }`}
+                    className={`session-btn ${sessionLength === 5
+                        ? 'active-session'
+                        : ''
+                        }`}
                     onClick={() =>
                         selectSessionLength(5)
                     }
@@ -581,13 +581,12 @@ function App() {
                         <button
                             key={phase}
                             type="button"
-                            className={`phase-step ${
-                                isShowingPhase &&
+                            className={`phase-step ${isShowingPhase &&
                                 breathingPhaseIndex ===
-                                    index
-                                    ? 'active-step'
-                                    : ''
-                            }`}
+                                index
+                                ? 'active-step'
+                                : ''
+                                }`}
                             onClick={() =>
                                 jumpToPhase(
                                     index
@@ -596,7 +595,7 @@ function App() {
                             aria-pressed={
                                 isShowingPhase &&
                                 breathingPhaseIndex ===
-                                    index
+                                index
                             }
                         >
                             <span className="phase-step-num">
@@ -606,7 +605,7 @@ function App() {
                             <span className="phase-step-label">
                                 {t(
                                     breathingPhaseLabels[
-                                        phase
+                                    phase
                                     ]
                                 )}
                             </span>
@@ -621,16 +620,15 @@ function App() {
             <div className="breathing-circle-container">
 
                 <div
-                    className={`breathing-circle ${
-                        isShowingPhase
-                            ? breathingPhase
-                            : ''
-                    }`}
+                    className={`breathing-circle ${isShowingPhase
+                        ? breathingPhase
+                        : ''
+                        }`}
                     style={
                         isShowingPhase
                             ? breathingCircleStyles[
-                                  breathingPhase
-                              ]
+                            breathingPhase
+                            ]
                             : undefined
                     }
                 >
@@ -639,16 +637,16 @@ function App() {
                         {isShowingPhase
                             ? breathingPhaseLabel
                             : t(
-                                  'breathing.ready'
-                              )}
+                                'breathing.ready'
+                            )}
                     </span>
 
                     <span className="timer-text">
                         {isShowingPhase
                             ? `${breathingTimer}s`
                             : t(
-                                  'breathing.seconds4'
-                              )}
+                                'breathing.seconds4'
+                            )}
                     </span>
 
                 </div>
@@ -660,9 +658,9 @@ function App() {
             {isShowingPhase &&
                 (
                     breathingPhase ===
-                        'hold1' ||
+                    'hold1' ||
                     breathingPhase ===
-                        'hold2'
+                    'hold2'
                 ) && (
                     <p className="hold-cue">
                         ⏸{' '}
@@ -695,11 +693,11 @@ function App() {
             >
                 {isBreathingActive
                     ? `⏹️ ${t(
-                          'breathing.stopExercise'
-                      )}`
+                        'breathing.stopExercise'
+                    )}`
                     : `▶️ ${t(
-                          'breathing.startExercise'
-                      )}`}
+                        'breathing.startExercise'
+                    )}`}
             </button>
 
             {/* PREVIEW HINT */}
@@ -824,13 +822,29 @@ function App() {
 
             <header className="navbar">
 
+                <div className="logo-title">
+                    <img
+                        src="/images/logo.png"
+                        alt={t('aria.brain')}
+                        className="brand-logo-img"
+                    />
+                    <div>
+                        <h1 className="nav-brand-name">
+                            {t('brand')}
+                        </h1>
+                        <p className="tagline">
+                            {t('hero.tagline')}
+                        </p>
+                    </div>
+                </div>
+
                 <div className="nav-links">
 
                     <a
                         href="#home"
                         className={
                             currentScreen ===
-                            'home'
+                                'home'
                                 ? 'active-link'
                                 : ''
                         }
@@ -849,7 +863,7 @@ function App() {
                         href="#how-it-works"
                         className={
                             currentScreen ===
-                            'how-it-works'
+                                'how-it-works'
                                 ? 'active-link'
                                 : ''
                         }
@@ -870,7 +884,7 @@ function App() {
                         href="#about"
                         className={
                             currentScreen ===
-                            'about'
+                                'about'
                                 ? 'active-link'
                                 : ''
                         }
@@ -889,7 +903,7 @@ function App() {
                         href="#resources"
                         className={
                             currentScreen ===
-                            'resources'
+                                'resources'
                                 ? 'active-link'
                                 : ''
                         }
@@ -930,69 +944,9 @@ function App() {
 
                     <HeroBackdrop />
 
-                    {/* BRAND */}
 
-                    <div className="brand-header">
 
-                        <div className="logo-title">
 
-                            <div
-                                className="brand-logo-mark"
-                                role="img"
-                                aria-label={t(
-                                    'aria.brain'
-                                )}
-                            >
-                                <span>🌸</span>
-                            </div>
-
-                            <div>
-
-                                <h1>
-                                    {t('brand')}
-                                </h1>
-
-                                <p className="tagline">
-                                    {t(
-                                        'hero.tagline'
-                                    )}
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    {/* HERO MESSAGE */}
-
-                    <div className="hero-copy">
-
-                        <div
-                            className="hero-leaf"
-                            aria-hidden="true"
-                        >
-                            ❧
-                        </div>
-
-                        <h2>
-                            Because Every Memory
-                            <br />
-                            <em>
-                                Still Matters
-                            </em>
-                        </h2>
-
-                        <p>
-                            Compassionate support
-                            for people with
-                            dementia,
-                            <br />
-                            rooted in the heart of
-                            Northeast India.
-                        </p>
-
-                    </div>
 
                     {/* LOGIN CARDS */}
 
@@ -1012,7 +966,7 @@ function App() {
                             onKeyDown={(e) => {
                                 if (
                                     e.key ===
-                                        'Enter' ||
+                                    'Enter' ||
                                     e.key === ' '
                                 ) {
                                     setCurrentScreen(
@@ -1116,7 +1070,7 @@ function App() {
                             onKeyDown={(e) => {
                                 if (
                                     e.key ===
-                                        'Enter' ||
+                                    'Enter' ||
                                     e.key === ' '
                                 ) {
                                     setCurrentScreen(
@@ -1229,161 +1183,161 @@ function App() {
 
             {currentScreen ===
                 'how-it-works' && (
-                <main className="page-content how-it-works-page">
+                    <main className="page-content how-it-works-page">
 
-                    <div className="about-header">
+                        <div className="about-header">
 
-                        <h1>
-                            {t(
-                                'howItWorks.title'
-                            )}
-                        </h1>
+                            <h1>
+                                {t(
+                                    'howItWorks.title'
+                                )}
+                            </h1>
 
-                        <p className="about-subtitle">
-                            {t(
-                                'howItWorks.subtitle'
-                            )}
-                        </p>
+                            <p className="about-subtitle">
+                                {t(
+                                    'howItWorks.subtitle'
+                                )}
+                            </p>
 
-                    </div>
+                        </div>
 
-                    <div className="steps-path">
+                        <div className="steps-path">
 
-                        <div className="step-item step-blue">
+                            <div className="step-item step-blue">
 
-                            <div className="step-marker">
-                                <span
-                                    role="img"
-                                    aria-label={t(
-                                        'aria.gameController'
-                                    )}
-                                >
-                                    🎮
-                                </span>
+                                <div className="step-marker">
+                                    <span
+                                        role="img"
+                                        aria-label={t(
+                                            'aria.gameController'
+                                        )}
+                                    >
+                                        🎮
+                                    </span>
+                                </div>
+
+                                <div className="step-body">
+
+                                    <span className="step-index">
+                                        {t(
+                                            'howItWorks.step1.label'
+                                        )}
+                                    </span>
+
+                                    <h2>
+                                        {t(
+                                            'howItWorks.step1.title'
+                                        )}
+                                    </h2>
+
+                                    <p>
+                                        {t(
+                                            'howItWorks.step1.text'
+                                        )}
+                                    </p>
+
+                                </div>
+
                             </div>
 
-                            <div className="step-body">
+                            <div className="step-item step-green">
 
-                                <span className="step-index">
-                                    {t(
-                                        'howItWorks.step1.label'
-                                    )}
-                                </span>
+                                <div className="step-marker">
+                                    <span
+                                        role="img"
+                                        aria-label={t(
+                                            'aria.speakingHead'
+                                        )}
+                                    >
+                                        🗣️
+                                    </span>
+                                </div>
 
-                                <h2>
-                                    {t(
-                                        'howItWorks.step1.title'
-                                    )}
-                                </h2>
+                                <div className="step-body">
 
-                                <p>
-                                    {t(
-                                        'howItWorks.step1.text'
-                                    )}
-                                </p>
+                                    <span className="step-index">
+                                        {t(
+                                            'howItWorks.step2.label'
+                                        )}
+                                    </span>
+
+                                    <h2>
+                                        {t(
+                                            'howItWorks.step2.title'
+                                        )}
+                                    </h2>
+
+                                    <p>
+                                        {t(
+                                            'howItWorks.step2.text'
+                                        )}
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div className="step-item step-navy">
+
+                                <div className="step-marker">
+                                    <span
+                                        role="img"
+                                        aria-label={t(
+                                            'aria.barChart'
+                                        )}
+                                    >
+                                        📊
+                                    </span>
+                                </div>
+
+                                <div className="step-body">
+
+                                    <span className="step-index">
+                                        {t(
+                                            'howItWorks.step3.label'
+                                        )}
+                                    </span>
+
+                                    <h2>
+                                        {t(
+                                            'howItWorks.step3.title'
+                                        )}
+                                    </h2>
+
+                                    <p>
+                                        {t(
+                                            'howItWorks.step3.text'
+                                        )}
+                                    </p>
+
+                                </div>
 
                             </div>
 
                         </div>
 
-                        <div className="step-item step-green">
-
-                            <div className="step-marker">
-                                <span
-                                    role="img"
-                                    aria-label={t(
-                                        'aria.speakingHead'
-                                    )}
-                                >
-                                    🗣️
-                                </span>
-                            </div>
-
-                            <div className="step-body">
-
-                                <span className="step-index">
-                                    {t(
-                                        'howItWorks.step2.label'
-                                    )}
-                                </span>
-
-                                <h2>
-                                    {t(
-                                        'howItWorks.step2.title'
-                                    )}
-                                </h2>
-
-                                <p>
-                                    {t(
-                                        'howItWorks.step2.text'
-                                    )}
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                        <div className="step-item step-navy">
-
-                            <div className="step-marker">
-                                <span
-                                    role="img"
-                                    aria-label={t(
-                                        'aria.barChart'
-                                    )}
-                                >
-                                    📊
-                                </span>
-                            </div>
-
-                            <div className="step-body">
-
-                                <span className="step-index">
-                                    {t(
-                                        'howItWorks.step3.label'
-                                    )}
-                                </span>
-
-                                <h2>
-                                    {t(
-                                        'howItWorks.step3.title'
-                                    )}
-                                </h2>
-
-                                <p>
-                                    {t(
-                                        'howItWorks.step3.text'
-                                    )}
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div
-                        style={{
-                            textAlign: 'center',
-                            marginTop: '40px'
-                        }}
-                    >
-                        <button
-                            className="back-btn"
-                            onClick={() =>
-                                setCurrentScreen(
-                                    'home'
-                                )
-                            }
+                        <div
+                            style={{
+                                textAlign: 'center',
+                                marginTop: '40px'
+                            }}
                         >
-                            {t(
-                                'common.backHome'
-                            )}
-                        </button>
-                    </div>
+                            <button
+                                className="back-btn"
+                                onClick={() =>
+                                    setCurrentScreen(
+                                        'home'
+                                    )
+                                }
+                            >
+                                {t(
+                                    'common.backHome'
+                                )}
+                            </button>
+                        </div>
 
-                </main>
-            )}
+                    </main>
+                )}
 
             {/* ====================================================
                 ABOUT US
@@ -1712,6 +1666,130 @@ function App() {
             )}
 
             {/* ====================================================
+                CONTACT PAGE
+            ==================================================== */}
+
+            {currentScreen === 'contact' && (
+                <main className="page-content contact-page">
+
+                    <div className="about-header">
+                        <h1>Contact Us</h1>
+                        <p className="about-subtitle">
+                            Have questions, feedback, or need support? We're here to help families and caregivers across North Eastern India.
+                        </p>
+                    </div>
+
+                    <div className="contact-layout">
+
+                        <div className="contact-info-col">
+
+                            <div className="contact-info-card">
+                                <span className="contact-info-icon">📍</span>
+                                <div>
+                                    <h3>Our Base</h3>
+                                    <p>North Eastern Region, India<br />Serving all 8 NE States</p>
+                                </div>
+                            </div>
+
+                            <div className="contact-info-card">
+                                <span className="contact-info-icon">📧</span>
+                                <div>
+                                    <h3>Email</h3>
+                                    <p>support@neuroplay.in<br />
+                                        <span style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>We respond within 24–48 hours</span></p>
+                                </div>
+                            </div>
+
+                            <div className="contact-info-card">
+                                <span className="contact-info-icon">📞</span>
+                                <div>
+                                    <h3>Helpline</h3>
+                                    <p>Tele-MANAS: 14416<br />
+                                        <span style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>Available in regional languages</span></p>
+                                </div>
+                            </div>
+
+                            <div className="contact-info-card emergency-card">
+                                <span className="contact-info-icon">🚨</span>
+                                <div>
+                                    <h3>Emergency</h3>
+                                    <p>National Emergency: <strong>112</strong></p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <form
+                            className="contact-form"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                alert('Thank you for reaching out! We will get back to you soon.');
+                            }}
+                        >
+                            <h2>Send Us a Message</h2>
+
+                            <div className="form-group">
+                                <label htmlFor="contact-name">Full Name</label>
+                                <input
+                                    id="contact-name"
+                                    type="text"
+                                    placeholder="Your name"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="contact-email">Email Address</label>
+                                <input
+                                    id="contact-email"
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="contact-role">I am a</label>
+                                <select id="contact-role">
+                                    <option value="">Select your role</option>
+                                    <option value="patient">Patient / Family Member</option>
+                                    <option value="caregiver">Caregiver</option>
+                                    <option value="healthcare">Healthcare Professional</option>
+                                    <option value="ngo">NGO / Organization</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="contact-message">Message</label>
+                                <textarea
+                                    id="contact-message"
+                                    rows="5"
+                                    placeholder="How can we help you?"
+                                    required
+                                />
+                            </div>
+
+                            <button type="submit" className="contact-submit-btn">
+                                Send Message →
+                            </button>
+                        </form>
+
+                    </div>
+
+                    <div style={{ textAlign: 'center', marginTop: '48px' }}>
+                        <button
+                            className="back-btn"
+                            onClick={() => setCurrentScreen('home')}
+                        >
+                            Back to Home
+                        </button>
+                    </div>
+
+                </main>
+            )}
+
+            {/* ====================================================
                 MODALS
             ==================================================== */}
 
@@ -1758,254 +1836,254 @@ function App() {
                         {activeModal ===
                             'directory' && (
 
-                            <div className="modal-body directory-modal-body">
+                                <div className="modal-body directory-modal-body">
 
-                                <h2>
-                                    🩺{' '}
-                                    {t(
-                                        'directory.title'
-                                    )}
-                                </h2>
+                                    <h2>
+                                        🩺{' '}
+                                        {t(
+                                            'directory.title'
+                                        )}
+                                    </h2>
 
-                                <p className="directory-subtext">
-                                    {t(
-                                        'directory.subtitle'
-                                    )}
-                                </p>
+                                    <p className="directory-subtext">
+                                        {t(
+                                            'directory.subtitle'
+                                        )}
+                                    </p>
 
-                                <div className="directory-scroll-box">
+                                    <div className="directory-scroll-box">
 
-                                    <div className="state-dir-block">
+                                        <div className="state-dir-block">
 
-                                        <h3>
-                                            🟢 Assam
-                                        </h3>
+                                            <h3>
+                                                🟢 Assam
+                                            </h3>
 
-                                        <ul>
+                                            <ul>
 
-                                            <li>
-                                                <strong>
-                                                    Gauhati Medical College & Hospital (GMCH), Guwahati:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.assam.gauhati'
-                                                )}
-                                            </li>
-
-                                            <li>
-                                                <strong>
-                                                    Assam Medical College (AMC), Dibrugarh:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.assam.amc'
-                                                )}
-                                            </li>
-
-                                            <li>
-                                                <strong>
-                                                    Silchar Medical College & Hospital (SMCH), Silchar:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.assam.silchar'
-                                                )}
-                                            </li>
-
-                                        </ul>
-
-                                    </div>
-
-                                    <div className="state-dir-block">
-
-                                        <h3>
-                                            🟢 Meghalaya
-                                        </h3>
-
-                                        <ul>
-
-                                            <li>
-                                                <strong>
-                                                    NEIGRIHMS, Shillong:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.meghalaya.neigrihms'
-                                                )}
-                                            </li>
-
-                                            <li>
-                                                <strong>
-                                                    Civil Hospital Shillong:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.meghalaya.civil'
-                                                )}
-                                            </li>
-
-                                        </ul>
-
-                                    </div>
-
-                                    <div className="state-dir-block">
-
-                                        <h3>
-                                            🟢 Manipur
-                                        </h3>
-
-                                        <ul>
-
-                                            <li>
-                                                <strong>
-                                                    Regional Institute of Medical Sciences (RIMS), Imphal:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.manipur.rims'
-                                                )}
-                                            </li>
-
-                                            <li>
-                                                <strong>
-                                                    Jawaharlal Nehru Institute of Medical Sciences (JNIMS), Imphal:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.manipur.jnims'
-                                                )}
-                                            </li>
-
-                                        </ul>
-
-                                    </div>
-
-                                    <div className="state-dir-block">
-
-                                        <h3>
-                                            🟢 Tripura
-                                        </h3>
-
-                                        <ul>
-
-                                            <li>
-                                                <strong>
-                                                    Agartala Government Medical College (AGMC) & GBP Hospital, Agartala:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.tripura.agmc'
-                                                )}
-                                            </li>
-
-                                        </ul>
-
-                                    </div>
-
-                                    <div className="state-dir-block">
-
-                                        <h3>
-                                            🟢 Mizoram
-                                        </h3>
-
-                                        <ul>
-
-                                            <li>
-                                                <strong>
-                                                    Zoram Medical College (ZMC), Falkawn, Aizawl:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.mizoram.zmc'
-                                                )}
-                                            </li>
-
-                                        </ul>
-
-                                    </div>
-
-                                    <div className="state-dir-block">
-
-                                        <h3>
-                                            🟢 Nagaland
-                                        </h3>
-
-                                        <ul>
-
-                                            <li>
-                                                <strong>
-                                                    Kohima Naga Hospital Authority, Kohima:
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.nagaland.kohima'
-                                                )}
-                                            </li>
-
-                                        </ul>
-
-                                    </div>
-
-                                    <div className="state-dir-block">
-
-                                        <h3>
-                                            🟢 Arunachal Pradesh & Sikkim
-                                        </h3>
-
-                                        <ul>
-
-                                            <li>
-                                                <strong>
-                                                    Tomo Riba Institute of Health and Medical Sciences (TRIHMS), Naharlagun (AP):
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.arunachal.sikkim.trihms'
-                                                )}
-                                            </li>
-
-                                            <li>
-                                                <strong>
-                                                    Sir Thutob Namgyal Memorial (STNM) Hospital, Gangtok (Sikkim):
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.arunachal.sikkim.stnm'
-                                                )}
-                                            </li>
-
-                                        </ul>
-
-                                    </div>
-
-                                    <div className="state-dir-block emergency-highlight-block">
-
-                                        <h3>
-                                            🚨{' '}
-                                            {t(
-                                                'directory.emergency.title'
-                                            )}
-                                        </h3>
-
-                                        <ul>
-
-                                            <li>
-                                                <strong>
+                                                <li>
+                                                    <strong>
+                                                        Gauhati Medical College & Hospital (GMCH), Guwahati:
+                                                    </strong>{' '}
                                                     {t(
-                                                        'directory.emergency.teleManas'
+                                                        'directory.details.assam.gauhati'
                                                     )}
-                                                </strong>{' '}
-                                                {t(
-                                                    'directory.details.teleManasSupport'
-                                                )}
-                                            </li>
+                                                </li>
 
-                                            <li>
-                                                <strong>
+                                                <li>
+                                                    <strong>
+                                                        Assam Medical College (AMC), Dibrugarh:
+                                                    </strong>{' '}
                                                     {t(
-                                                        'directory.emergency.national'
+                                                        'directory.details.assam.amc'
                                                     )}
-                                                </strong>{' '}
-                                                112
-                                            </li>
+                                                </li>
 
-                                        </ul>
+                                                <li>
+                                                    <strong>
+                                                        Silchar Medical College & Hospital (SMCH), Silchar:
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.assam.silchar'
+                                                    )}
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                        <div className="state-dir-block">
+
+                                            <h3>
+                                                🟢 Meghalaya
+                                            </h3>
+
+                                            <ul>
+
+                                                <li>
+                                                    <strong>
+                                                        NEIGRIHMS, Shillong:
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.meghalaya.neigrihms'
+                                                    )}
+                                                </li>
+
+                                                <li>
+                                                    <strong>
+                                                        Civil Hospital Shillong:
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.meghalaya.civil'
+                                                    )}
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                        <div className="state-dir-block">
+
+                                            <h3>
+                                                🟢 Manipur
+                                            </h3>
+
+                                            <ul>
+
+                                                <li>
+                                                    <strong>
+                                                        Regional Institute of Medical Sciences (RIMS), Imphal:
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.manipur.rims'
+                                                    )}
+                                                </li>
+
+                                                <li>
+                                                    <strong>
+                                                        Jawaharlal Nehru Institute of Medical Sciences (JNIMS), Imphal:
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.manipur.jnims'
+                                                    )}
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                        <div className="state-dir-block">
+
+                                            <h3>
+                                                🟢 Tripura
+                                            </h3>
+
+                                            <ul>
+
+                                                <li>
+                                                    <strong>
+                                                        Agartala Government Medical College (AGMC) & GBP Hospital, Agartala:
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.tripura.agmc'
+                                                    )}
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                        <div className="state-dir-block">
+
+                                            <h3>
+                                                🟢 Mizoram
+                                            </h3>
+
+                                            <ul>
+
+                                                <li>
+                                                    <strong>
+                                                        Zoram Medical College (ZMC), Falkawn, Aizawl:
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.mizoram.zmc'
+                                                    )}
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                        <div className="state-dir-block">
+
+                                            <h3>
+                                                🟢 Nagaland
+                                            </h3>
+
+                                            <ul>
+
+                                                <li>
+                                                    <strong>
+                                                        Kohima Naga Hospital Authority, Kohima:
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.nagaland.kohima'
+                                                    )}
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                        <div className="state-dir-block">
+
+                                            <h3>
+                                                🟢 Arunachal Pradesh & Sikkim
+                                            </h3>
+
+                                            <ul>
+
+                                                <li>
+                                                    <strong>
+                                                        Tomo Riba Institute of Health and Medical Sciences (TRIHMS), Naharlagun (AP):
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.arunachal.sikkim.trihms'
+                                                    )}
+                                                </li>
+
+                                                <li>
+                                                    <strong>
+                                                        Sir Thutob Namgyal Memorial (STNM) Hospital, Gangtok (Sikkim):
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.arunachal.sikkim.stnm'
+                                                    )}
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                        <div className="state-dir-block emergency-highlight-block">
+
+                                            <h3>
+                                                🚨{' '}
+                                                {t(
+                                                    'directory.emergency.title'
+                                                )}
+                                            </h3>
+
+                                            <ul>
+
+                                                <li>
+                                                    <strong>
+                                                        {t(
+                                                            'directory.emergency.teleManas'
+                                                        )}
+                                                    </strong>{' '}
+                                                    {t(
+                                                        'directory.details.teleManasSupport'
+                                                    )}
+                                                </li>
+
+                                                <li>
+                                                    <strong>
+                                                        {t(
+                                                            'directory.emergency.national'
+                                                        )}
+                                                    </strong>{' '}
+                                                    112
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
 
                                     </div>
 
                                 </div>
-
-                            </div>
-                        )}
+                            )}
 
                         {/* ====================================================
                             CAREGIVER MANUAL
@@ -2014,249 +2092,245 @@ function App() {
                         {activeModal ===
                             'manual' && (
 
-                            <div className="modal-body manual-modal-body">
+                                <div className="modal-body manual-modal-body">
 
-                                <h2>
-                                    📘{' '}
-                                    {t(
-                                        'manual.title'
-                                    )}
-                                </h2>
+                                    <h2>
+                                        📘{' '}
+                                        {t(
+                                            'manual.title'
+                                        )}
+                                    </h2>
 
-                                <p className="modal-subtitle">
-                                    {t(
-                                        'manual.subtitle'
-                                    )}
-                                </p>
+                                    <p className="modal-subtitle">
+                                        {t(
+                                            'manual.subtitle'
+                                        )}
+                                    </p>
 
-                                <div className="manual-tabs">
+                                    <div className="manual-tabs">
 
-                                    <button
-                                        className={`tab-btn ${
-                                            activeManualTab ===
-                                            'guide'
-                                                ? 'active-tab'
-                                                : ''
-                                        }`}
-                                        onClick={() =>
-                                            setActiveManualTab(
+                                        <button
+                                            className={`tab-btn ${activeManualTab ===
                                                 'guide'
-                                            )
-                                        }
-                                    >
-                                        📖{' '}
-                                        {t(
-                                            'manual.tabs.guide'
-                                        )}
-                                    </button>
-
-                                    <button
-                                        className={`tab-btn ${
-                                            activeManualTab ===
-                                            'deescalation'
                                                 ? 'active-tab'
                                                 : ''
-                                        }`}
-                                        onClick={() =>
-                                            setActiveManualTab(
+                                                }`}
+                                            onClick={() =>
+                                                setActiveManualTab(
+                                                    'guide'
+                                                )
+                                            }
+                                        >
+                                            📖{' '}
+                                            {t(
+                                                'manual.tabs.guide'
+                                            )}
+                                        </button>
+
+                                        <button
+                                            className={`tab-btn ${activeManualTab ===
                                                 'deescalation'
-                                            )
-                                        }
-                                    >
-                                        🕊️{' '}
-                                        {t(
-                                            'manual.tabs.deescalation'
-                                        )}
-                                    </button>
-
-                                    <button
-                                        className={`tab-btn ${
-                                            activeManualTab ===
-                                            'breathing'
                                                 ? 'active-tab'
                                                 : ''
-                                        }`}
-                                        onClick={() =>
-                                            setActiveManualTab(
+                                                }`}
+                                            onClick={() =>
+                                                setActiveManualTab(
+                                                    'deescalation'
+                                                )
+                                            }
+                                        >
+                                            🕊️{' '}
+                                            {t(
+                                                'manual.tabs.deescalation'
+                                            )}
+                                        </button>
+
+                                        <button
+                                            className={`tab-btn ${activeManualTab ===
                                                 'breathing'
-                                            )
-                                        }
-                                    >
-                                        🧘{' '}
-                                        {t(
-                                            'manual.tabs.breathing'
-                                        )}
-                                    </button>
-
-                                    <button
-                                        className={`tab-btn ${
-                                            activeManualTab ===
-                                            'dementia'
                                                 ? 'active-tab'
                                                 : ''
-                                        }`}
-                                        onClick={() =>
-                                            setActiveManualTab(
+                                                }`}
+                                            onClick={() =>
+                                                setActiveManualTab(
+                                                    'breathing'
+                                                )
+                                            }
+                                        >
+                                            🧘{' '}
+                                            {t(
+                                                'manual.tabs.breathing'
+                                            )}
+                                        </button>
+
+                                        <button
+                                            className={`tab-btn ${activeManualTab ===
                                                 'dementia'
-                                            )
-                                        }
-                                    >
-                                        🧠{' '}
-                                        {t(
-                                            'manual.tabs.dementia'
-                                        )}
-                                    </button>
+                                                ? 'active-tab'
+                                                : ''
+                                                }`}
+                                            onClick={() =>
+                                                setActiveManualTab(
+                                                    'dementia'
+                                                )
+                                            }
+                                        >
+                                            🧠{' '}
+                                            {t(
+                                                'manual.tabs.dementia'
+                                            )}
+                                        </button>
+
+                                    </div>
+
+                                    <div className="guide-scroll-container">
+
+                                        {activeManualTab ===
+                                            'guide' && (
+
+                                                <div className="tab-content">
+
+                                                    <h3>
+                                                        {t(
+                                                            'manual.guide.title'
+                                                        )}
+                                                    </h3>
+
+                                                    <p>
+                                                        {t(
+                                                            'manual.guide.text'
+                                                        )}
+                                                    </p>
+
+                                                </div>
+                                            )}
+
+                                        {activeManualTab ===
+                                            'deescalation' && (
+
+                                                <div className="tab-content">
+
+                                                    <h3>
+                                                        {t(
+                                                            'manual.deescalation.title'
+                                                        )}
+                                                    </h3>
+
+                                                    <p>
+                                                        {t(
+                                                            'manual.deescalation.text'
+                                                        )}
+                                                    </p>
+
+                                                </div>
+                                            )}
+
+                                        {activeManualTab ===
+                                            'breathing' &&
+                                            renderBreathingExercise()}
+
+                                        {activeManualTab ===
+                                            'dementia' && (
+
+                                                <div className="tab-content">
+
+                                                    <h3>
+                                                        {t(
+                                                            'dementia.whatIs.title'
+                                                        )}
+                                                    </h3>
+
+                                                    <p>
+                                                        {t(
+                                                            'dementia.whatIs.text'
+                                                        )}
+                                                    </p>
+
+                                                    <h3>
+                                                        {t(
+                                                            'dementia.earlySigns.title'
+                                                        )}
+                                                    </h3>
+
+                                                    <p>
+                                                        {t(
+                                                            'dementia.earlySigns.text'
+                                                        )}
+                                                    </p>
+
+                                                    <h3>
+                                                        {t(
+                                                            'dementia.stages.title'
+                                                        )}
+                                                    </h3>
+
+                                                    <p>
+
+                                                        <strong>
+                                                            {t(
+                                                                'dementia.stages.earlyLabel'
+                                                            )}
+                                                        </strong>{' '}
+
+                                                        {t(
+                                                            'dementia.stages.early'
+                                                        )}
+
+                                                        <strong>
+                                                            {' '}
+                                                            {t(
+                                                                'dementia.stages.middleLabel'
+                                                            )}
+                                                        </strong>{' '}
+
+                                                        {t(
+                                                            'dementia.stages.middle'
+                                                        )}
+
+                                                        <strong>
+                                                            {' '}
+                                                            {t(
+                                                                'dementia.stages.lateLabel'
+                                                            )}
+                                                        </strong>{' '}
+
+                                                        {t(
+                                                            'dementia.stages.late'
+                                                        )}
+
+                                                    </p>
+
+                                                    <h3>
+                                                        {t(
+                                                            'dementia.detection.title'
+                                                        )}
+                                                    </h3>
+
+                                                    <p>
+                                                        {t(
+                                                            'dementia.detection.text'
+                                                        )}
+                                                    </p>
+
+                                                    <h3>
+                                                        {t(
+                                                            'dementia.supporting.title'
+                                                        )}
+                                                    </h3>
+
+                                                    <p>
+                                                        {t(
+                                                            'dementia.supporting.text'
+                                                        )}
+                                                    </p>
+
+                                                </div>
+                                            )}
+
+                                    </div>
 
                                 </div>
-
-                                <div className="guide-scroll-container">
-
-                                    {activeManualTab ===
-                                        'guide' && (
-
-                                        <div className="tab-content">
-
-                                            <h3>
-                                                {t(
-                                                    'manual.guide.title'
-                                                )}
-                                            </h3>
-
-                                            <p>
-                                                {t(
-                                                    'manual.guide.text'
-                                                )}
-                                            </p>
-
-                                        </div>
-                                    )}
-
-                                    {activeManualTab ===
-                                        'deescalation' && (
-
-                                        <div className="tab-content">
-
-                                            <h3>
-                                                {t(
-                                                    'manual.deescalation.title'
-                                                )}
-                                            </h3>
-
-                                            <p>
-                                                {t(
-                                                    'manual.deescalation.text'
-                                                )}
-                                            </p>
-
-                                        </div>
-                                    )}
-
-                                    {activeManualTab ===
-                                        'breathing' &&
-                                        renderBreathingExercise()}
-
-                                    {activeManualTab ===
-                                        'dementia' && (
-
-                                        <div className="tab-content">
-
-                                            <h3>
-                                                {t(
-                                                    'dementia.whatIs.title'
-                                                )}
-                                            </h3>
-
-                                            <p>
-                                                {t(
-                                                    'dementia.whatIs.text'
-                                                )}
-                                            </p>
-
-                                            <h3>
-                                                {t(
-                                                    'dementia.earlySigns.title'
-                                                )}
-                                            </h3>
-
-                                            <p>
-                                                {t(
-                                                    'dementia.earlySigns.text'
-                                                )}
-                                            </p>
-
-                                            <h3>
-                                                {t(
-                                                    'dementia.stages.title'
-                                                )}
-                                            </h3>
-
-                                            <p>
-
-                                                <strong>
-                                                    {t(
-                                                        'dementia.stages.earlyLabel'
-                                                    )}
-                                                </strong>{' '}
-
-                                                {t(
-                                                    'dementia.stages.early'
-                                                )}
-
-                                                <strong>
-                                                    {' '}
-                                                    {t(
-                                                        'dementia.stages.middleLabel'
-                                                    )}
-                                                </strong>{' '}
-
-                                                {t(
-                                                    'dementia.stages.middle'
-                                                )}
-
-                                                <strong>
-                                                    {' '}
-                                                    {t(
-                                                        'dementia.stages.lateLabel'
-                                                    )}
-                                                </strong>{' '}
-
-                                                {t(
-                                                    'dementia.stages.late'
-                                                )}
-
-                                            </p>
-
-                                            <h3>
-                                                {t(
-                                                    'dementia.detection.title'
-                                                )}
-                                            </h3>
-
-                                            <p>
-                                                {t(
-                                                    'dementia.detection.text'
-                                                )}
-                                            </p>
-
-                                            <h3>
-                                                {t(
-                                                    'dementia.supporting.title'
-                                                )}
-                                            </h3>
-
-                                            <p>
-                                                {t(
-                                                    'dementia.supporting.text'
-                                                )}
-                                            </p>
-
-                                        </div>
-                                    )}
-
-                                </div>
-
-                            </div>
-                        )}
+                            )}
 
                         {/* ====================================================
                             TIPS
@@ -2265,102 +2339,102 @@ function App() {
                         {activeModal ===
                             'tips' && (
 
-                            <div className="modal-body directory-modal-body">
+                                <div className="modal-body directory-modal-body">
 
-                                <h2>
-                                    📚{' '}
-                                    {t(
-                                        'tips.title'
-                                    )}
-                                </h2>
+                                    <h2>
+                                        📚{' '}
+                                        {t(
+                                            'tips.title'
+                                        )}
+                                    </h2>
 
-                                <p className="directory-subtext">
-                                    {t(
-                                        'tips.subtitle'
-                                    )}
-                                </p>
+                                    <p className="directory-subtext">
+                                        {t(
+                                            'tips.subtitle'
+                                        )}
+                                    </p>
 
-                                <div className="directory-scroll-box">
+                                    <div className="directory-scroll-box">
 
-                                    <div className="state-dir-block">
-                                        <h3>
-                                            🥗{' '}
-                                            {t(
-                                                'tips.nutrition.title'
-                                            )}
-                                        </h3>
+                                        <div className="state-dir-block">
+                                            <h3>
+                                                🥗{' '}
+                                                {t(
+                                                    'tips.nutrition.title'
+                                                )}
+                                            </h3>
 
-                                        <p>
-                                            {t(
-                                                'tips.nutrition.text'
-                                            )}
-                                        </p>
-                                    </div>
+                                            <p>
+                                                {t(
+                                                    'tips.nutrition.text'
+                                                )}
+                                            </p>
+                                        </div>
 
-                                    <div className="state-dir-block">
-                                        <h3>
-                                            🚶{' '}
-                                            {t(
-                                                'tips.activity.title'
-                                            )}
-                                        </h3>
+                                        <div className="state-dir-block">
+                                            <h3>
+                                                🚶{' '}
+                                                {t(
+                                                    'tips.activity.title'
+                                                )}
+                                            </h3>
 
-                                        <p>
-                                            {t(
-                                                'tips.activity.text'
-                                            )}
-                                        </p>
-                                    </div>
+                                            <p>
+                                                {t(
+                                                    'tips.activity.text'
+                                                )}
+                                            </p>
+                                        </div>
 
-                                    <div className="state-dir-block">
-                                        <h3>
-                                            😴{' '}
-                                            {t(
-                                                'tips.sleep.title'
-                                            )}
-                                        </h3>
+                                        <div className="state-dir-block">
+                                            <h3>
+                                                😴{' '}
+                                                {t(
+                                                    'tips.sleep.title'
+                                                )}
+                                            </h3>
 
-                                        <p>
-                                            {t(
-                                                'tips.sleep.text'
-                                            )}
-                                        </p>
-                                    </div>
+                                            <p>
+                                                {t(
+                                                    'tips.sleep.text'
+                                                )}
+                                            </p>
+                                        </div>
 
-                                    <div className="state-dir-block">
-                                        <h3>
-                                            🏠{' '}
-                                            {t(
-                                                'tips.safety.title'
-                                            )}
-                                        </h3>
+                                        <div className="state-dir-block">
+                                            <h3>
+                                                🏠{' '}
+                                                {t(
+                                                    'tips.safety.title'
+                                                )}
+                                            </h3>
 
-                                        <p>
-                                            {t(
-                                                'tips.safety.text'
-                                            )}
-                                        </p>
-                                    </div>
+                                            <p>
+                                                {t(
+                                                    'tips.safety.text'
+                                                )}
+                                            </p>
+                                        </div>
 
-                                    <div className="state-dir-block">
-                                        <h3>
-                                            💬{' '}
-                                            {t(
-                                                'tips.communication.title'
-                                            )}
-                                        </h3>
+                                        <div className="state-dir-block">
+                                            <h3>
+                                                💬{' '}
+                                                {t(
+                                                    'tips.communication.title'
+                                                )}
+                                            </h3>
 
-                                        <p>
-                                            {t(
-                                                'tips.communication.text'
-                                            )}
-                                        </p>
+                                            <p>
+                                                {t(
+                                                    'tips.communication.text'
+                                                )}
+                                            </p>
+                                        </div>
+
                                     </div>
 
                                 </div>
-
-                            </div>
-                        )}
+                            )}
 
                         {/* ====================================================
                             SUPPORT
@@ -2369,95 +2443,95 @@ function App() {
                         {activeModal ===
                             'support' && (
 
-                            <div className="modal-body directory-modal-body">
+                                <div className="modal-body directory-modal-body">
 
-                                <h2>
-                                    🤝{' '}
-                                    {t(
-                                        'support.title'
-                                    )}
-                                </h2>
+                                    <h2>
+                                        🤝{' '}
+                                        {t(
+                                            'support.title'
+                                        )}
+                                    </h2>
 
-                                <p className="directory-subtext">
-                                    {t(
-                                        'support.subtitle'
-                                    )}
-                                </p>
+                                    <p className="directory-subtext">
+                                        {t(
+                                            'support.subtitle'
+                                        )}
+                                    </p>
 
-                                <div className="directory-scroll-box">
+                                    <div className="directory-scroll-box">
 
-                                    <div className="state-dir-block">
+                                        <div className="state-dir-block">
 
-                                        <h3>
-                                            🧑‍🤝‍🧑{' '}
-                                            {t(
-                                                'support.local.title'
-                                            )}
-                                        </h3>
+                                            <h3>
+                                                🧑‍🤝‍🧑{' '}
+                                                {t(
+                                                    'support.local.title'
+                                                )}
+                                            </h3>
 
-                                        <p>
-                                            {t(
-                                                'support.local.text'
-                                            )}
-                                        </p>
+                                            <p>
+                                                {t(
+                                                    'support.local.text'
+                                                )}
+                                            </p>
 
-                                    </div>
+                                        </div>
 
-                                    <div className="state-dir-block">
+                                        <div className="state-dir-block">
 
-                                        <h3>
-                                            🏢{' '}
-                                            {t(
-                                                'support.organizations.title'
-                                            )}
-                                        </h3>
+                                            <h3>
+                                                🏢{' '}
+                                                {t(
+                                                    'support.organizations.title'
+                                                )}
+                                            </h3>
 
-                                        <p>
-                                            {t(
-                                                'support.organizations.text'
-                                            )}
-                                        </p>
+                                            <p>
+                                                {t(
+                                                    'support.organizations.text'
+                                                )}
+                                            </p>
 
-                                    </div>
+                                        </div>
 
-                                    <div className="state-dir-block">
+                                        <div className="state-dir-block">
 
-                                        <h3>
-                                            💻{' '}
-                                            {t(
-                                                'support.online.title'
-                                            )}
-                                        </h3>
+                                            <h3>
+                                                💻{' '}
+                                                {t(
+                                                    'support.online.title'
+                                                )}
+                                            </h3>
 
-                                        <p>
-                                            {t(
-                                                'support.online.text'
-                                            )}
-                                        </p>
+                                            <p>
+                                                {t(
+                                                    'support.online.text'
+                                                )}
+                                            </p>
 
-                                    </div>
+                                        </div>
 
-                                    <div className="state-dir-block emergency-highlight-block">
+                                        <div className="state-dir-block emergency-highlight-block">
 
-                                        <h3>
-                                            🕊️{' '}
-                                            {t(
-                                                'support.mentalHealth.title'
-                                            )}
-                                        </h3>
+                                            <h3>
+                                                🕊️{' '}
+                                                {t(
+                                                    'support.mentalHealth.title'
+                                                )}
+                                            </h3>
 
-                                        <p>
-                                            {t(
-                                                'support.mentalHealth.text'
-                                            )}
-                                        </p>
+                                            <p>
+                                                {t(
+                                                    'support.mentalHealth.text'
+                                                )}
+                                            </p>
+
+                                        </div>
 
                                     </div>
 
                                 </div>
-
-                            </div>
-                        )}
+                            )}
 
                         {/* ====================================================
                             QUICK CALM
@@ -2466,25 +2540,25 @@ function App() {
                         {activeModal ===
                             'quickCalm' && (
 
-                            <div className="modal-body quick-calm-modal-body">
+                                <div className="modal-body quick-calm-modal-body">
 
-                                <h2>
-                                    🧘{' '}
-                                    {t(
-                                        'quickCalm.title'
-                                    )}
-                                </h2>
+                                    <h2>
+                                        🧘{' '}
+                                        {t(
+                                            'quickCalm.title'
+                                        )}
+                                    </h2>
 
-                                <p className="modal-subtitle">
-                                    {t(
-                                        'quickCalm.subtitle'
-                                    )}
-                                </p>
+                                    <p className="modal-subtitle">
+                                        {t(
+                                            'quickCalm.subtitle'
+                                        )}
+                                    </p>
 
-                                {renderBreathingExercise()}
+                                    {renderBreathingExercise()}
 
-                            </div>
-                        )}
+                                </div>
+                            )}
 
                     </div>
 
@@ -2514,28 +2588,6 @@ function App() {
                 )}
             </button>
 
-            {/* ====================================================
-                EMERGENCY BANNER
-                KEPT ON NON-HOME PAGES
-            ==================================================== */}
-
-            {currentScreen !== 'home' && (
-                <div className="emergency-banner">
-
-                    <span>
-                        {t(
-                            'emergency.banner'
-                        )}
-                    </span>
-
-                    <button className="help-btn">
-                        {t(
-                            'emergency.button'
-                        )}
-                    </button>
-
-                </div>
-            )}
 
         </div>
     );

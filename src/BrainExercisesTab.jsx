@@ -1,23 +1,5 @@
 import React, { useState } from 'react';
 
-/**
- * BrainExercisesTab — drop-in replacement for the exercises section.
- *
- * Props:
- *   onPlay(gameId) — called when user clicks Play on a ready game
- *   t(key)        — i18next translation fn (optional)
- *
- * In PatientDashboard.jsx, replace the {activeTab === 'exercises'} block:
- *
- *   {activeTab === 'exercises' && (
- *     <BrainExercisesTab onPlay={(id) => setActiveGame(id)} t={t} />
- *   )}
- *
- * Game IDs map 1-to-1 with the existing setActiveGame() ids:
- *   mind-snap | picture-memory | memory-match | memory-map
- *   number-memory | picture-recall | attention | memory-lane
- */
-
 const CATEGORIES = [
     {
         id: 'personalised',
@@ -61,8 +43,8 @@ const CATEGORIES = [
         games: [
             {
                 id: 'mind-snap',
-                title: 'Quick Recall',
-                subtitle: 'See a pattern briefly, then reproduce it from memory',
+                title: 'Mind Snap',
+                subtitle: 'Watch boxes light up in sequence and repeat the pattern from memory',
                 icon: '⚡',
                 playable: true,
                 tag: null,
@@ -109,7 +91,7 @@ const CATEGORIES = [
         games: [
             {
                 id: 'memory-map',
-                title: 'Location Map',
+                title: 'Memory Map', 
                 subtitle: 'Study a map and remember where items are placed',
                 icon: '📍',
                 playable: true,

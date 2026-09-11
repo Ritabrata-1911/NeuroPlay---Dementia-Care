@@ -1,25 +1,237 @@
-/* src/LanguageSwitcher.css */
-.language-switcher {
-    background-color: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    color: #1a365d;
-    font-weight: 600;
-    font-size: 0.9rem;
-    padding: 0.5rem 0.9rem;
-    border-radius: 20px;
+/* ============================================================
+   LANGUAGE SWITCHER — NeuroPlay
+   ============================================================ */
+
+.ls-wrap {
+    position: relative;
+    user-select: none;
+    font-family: 'Karla', sans-serif;
+}
+
+/* ── Pill trigger button ── */
+.ls-trigger {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px 7px 10px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1.5px solid rgba(44, 74, 62, 0.22);
+    border-radius: 50px;
     cursor: pointer;
-    outline: none;
-    transition: border-color 0.2s ease;
+    font-family: 'Karla', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E3D2F;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(44, 74, 62, 0.10);
+    transition:
+        background   0.22s ease,
+        border-color 0.22s ease,
+        box-shadow   0.22s ease,
+        transform    0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.language-switcher:hover,
-.language-switcher:focus {
-    border-color: #2F70B5;
+.ls-trigger:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(44, 74, 62, 0.42);
+    box-shadow: 0 4px 16px rgba(44, 74, 62, 0.16);
+    transform: translateY(-1px);
 }
 
+.ls-trigger.ls-open {
+    background: #ffffff;
+    border-color: #2C4A3E;
+    box-shadow: 0 6px 22px rgba(44, 74, 62, 0.20);
+    transform: translateY(0);
+}
+
+/* Flag */
+.ls-flag {
+    font-size: 17px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Label clip + slide animation */
+.ls-label-clip {
+    overflow: hidden;
+    height: 1.25em;
+    display: flex;
+    align-items: center;
+}
+
+.ls-label-text {
+    display: block;
+    line-height: 1.25;
+    transition:
+        transform 0.30s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity   0.30s ease;
+}
+
+.ls-label-text.ls-enter {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.ls-label-text.ls-exit {
+    transform: translateY(-110%);
+    opacity: 0;
+}
+
+/* Animated chevron */
+.ls-caret {
+    width: 13px;
+    height: 13px;
+    color: #2C4A3E;
+    flex-shrink: 0;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ls-trigger.ls-open .ls-caret {
+    transform: rotate(180deg);
+}
+
+/* ── Dropdown panel ── */
+.ls-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 210px;
+    background: #ffffff;
+    border: 1.5px solid rgba(44, 74, 62, 0.13);
+    border-radius: 18px;
+    padding: 6px 0 8px;
+    box-shadow:
+        0 20px 48px rgba(20, 40, 30, 0.18),
+        0 4px 12px  rgba(20, 40, 30, 0.10);
+    z-index: 9999;
+    transform-origin: top right;
+    animation: ls-pop 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    overflow: hidden;
+}
+
+@keyframes ls-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.88) translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Dropdown section label */
+.ls-dropdown-label {
+    margin: 0;
+    padding: 8px 16px 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+    color: #9FB2BD;
+    border-bottom: 1px solid #F0EDE4;
+}
+
+/* ── Individual option ── */
+.ls-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Karla', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #20291F;
+    text-align: left;
+    /* Stagger in */
+    opacity: 0;
+    animation: ls-row-in 0.22s ease forwards;
+    transition:
+        background    0.15s ease,
+        padding-left  0.15s ease,
+        color         0.15s ease;
+}
+
+@keyframes ls-row-in {
+    from { opacity: 0; transform: translateX(6px); }
+    to   { opacity: 1; transform: translateX(0);   }
+}
+
+.ls-option:hover {
+    background: #F0F8F3;
+    padding-left: 20px;
+    color: #1E3D2F;
+}
+
+.ls-option:active {
+    background: #D8EEE1;
+}
+
+.ls-option-active {
+    background: #EAF4EE;
+    color: #1E3D2F;
+    font-weight: 700;
+}
+
+.ls-option-active:hover {
+    background: #DDEEE5;
+}
+
+/* Flag in option */
+.ls-opt-flag {
+    font-size: 17px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+/* Text stack */
+.ls-opt-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.ls-opt-en {
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.ls-opt-native {
+    font-size: 11px;
+    color: #9FB2BD;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.ls-option-active .ls-opt-native {
+    color: #6E9078;
+}
+
+/* Tick for active */
+.ls-tick {
+    width: 15px;
+    height: 15px;
+    color: #2C4A3E;
+    flex-shrink: 0;
+}
+
+/* ── Responsive ── */
 @media (max-width: 720px) {
-    .language-switcher {
-        font-size: 0.85rem;
-        padding: 0.45rem 0.7rem;
+    .ls-trigger {
+        font-size: 13px;
+        padding: 6px 12px 6px 8px;
+    }
+
+    .ls-dropdown {
+        right: auto;
+        left: 0;
     }
 }

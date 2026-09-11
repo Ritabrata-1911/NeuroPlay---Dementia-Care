@@ -19,6 +19,14 @@ const BASE_OBJECTS = [
 ];
 
 // -----------------------------------------------------------------------------
+// GAME CONFIGURATION
+// -----------------------------------------------------------------------------
+
+const GAME_NAME = 'Card Match';
+const MAX_ROUNDS = 30;
+const ROUNDS_PER_CHECKPOINT = 3;
+
+// -----------------------------------------------------------------------------
 // DIFFICULTY CONFIGURATION
 // -----------------------------------------------------------------------------
 
@@ -44,8 +52,6 @@ const DIFFICULTY_CONFIG = {
 };
 
 const DIFFICULTY_ORDER = ['easy', 'medium', 'hard'];
-
-const MAX_ROUNDS = 20;
 
 // Performance threshold.
 // A round is considered good when the number of moves
@@ -111,9 +117,9 @@ function formatTime(totalSeconds) {
     return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-// -----------------------------------------------------------------------------
-// ADAPTIVE DIFFICULTY FUNCTIONS
-// -----------------------------------------------------------------------------
+function formatPercentage(value) {
+    return `${Number(value || 0).toFixed(1)}%`;
+}
 
 function getNextDifficulty(currentDifficulty, isGood) {
     const currentIndex =
@@ -142,24 +148,90 @@ function isGoodRound(moves, pairs) {
 }
 
 // -----------------------------------------------------------------------------
+// ANALYTICS CALCULATION
+// -----------------------------------------------------------------------------
+
+function calculateAnalytics(history) {
+    const attempts = history.reduce(
+        (sum, round) => sum + round.attempts,
+        0
+    );
+
+    const correctAnswers = history.reduce(
+        (sum, round) => sum + round.correctAnswers,
+        0
+    );
+
+    const incorrectAnswers = history.reduce(
+        (sum, round) => sum + round.incorrectAnswers,
+        0
+    );
+
+    const hintsUsed = history.reduce(
+        (sum, round) => sum + round.hintsUsed,
+        0
+    );
+
+    const completionTime = history.reduce(
+        (sum, round) => sum + round.completionTime,
+        0
+    );
+
+    const accuracy =
+        attempts > 0
+            ? (correctAnswers / attempts) * 100
+            : 0;
+
+    const mistakeRate =
+        attempts > 0
+            ? (incorrectAnswers / attempts) * 100
+            : 0;
+
+    const hintRate =
+        attempts > 0
+            ? (hintsUsed / attempts) * 100
+            : 0;
+
+    const averageResponseTime =
+        attempts > 0
+            ? completionTime / attempts
+            : 0;
+
+    const lastRound =
+        history.length > 0
+            ? history[history.length - 1]
+            : null;
+
+    return {
+        accuracy,
+        mistake_rate: mistakeRate,
+        hint_rate: hintRate,
+        completion_time: completionTime,
+        average_response_time: averageResponseTime,
+        difficulty_level:
+            lastRound?.difficulty || 'easy',
+        attempts,
+        correct_answers: correctAnswers,
+        incorrect_answers: incorrectAnswers,
+        game_name: GAME_NAME,
+    };
+}
+
+// -----------------------------------------------------------------------------
 // COMPONENT
 // -----------------------------------------------------------------------------
 
 export default function MemoryMatchGame({ patient, onHome }) {
     // -------------------------------------------------------------------------
-    // GAME SETUP
+    // GAME STATE
     // -------------------------------------------------------------------------
 
-    const [totalRounds, setTotalRounds] = useState('');
-    const [roundInputError, setRoundInputError] = useState('');
     const [gameStarted, setGameStarted] = useState(false);
 
-    // -------------------------------------------------------------------------
-    // ROUND / DIFFICULTY
-    // -------------------------------------------------------------------------
-
     const [currentRound, setCurrentRound] = useState(1);
-    const [difficulty, setDifficulty] = useState('easy');
+
+    const [difficulty, setDifficulty] =
+        useState('easy');
 
     // -------------------------------------------------------------------------
     // CARD GAME STATE
@@ -169,17 +241,21 @@ export default function MemoryMatchGame({ patient, onHome }) {
         buildDeck('easy')
     );
 
-    const [flippedIndices, setFlippedIndices] = useState([]);
-    const [isChecking, setIsChecking] = useState(false);
+    const [flippedIndices, setFlippedIndices] =
+        useState([]);
+
+    const [isChecking, setIsChecking] =
+        useState(false);
 
     const [moves, setMoves] = useState(0);
+
     const [matches, setMatches] = useState(0);
 
-    const [hintsRemaining, setHintsRemaining] = useState(
-        DIFFICULTY_CONFIG.easy.hints
-    );
+    const [hintsRemaining, setHintsRemaining] =
+        useState(DIFFICULTY_CONFIG.easy.hints);
 
-    const [hintHighlight, setHintHighlight] = useState([]);
+    const [hintHighlight, setHintHighlight] =
+        useState([]);
 
     const [message, setMessage] = useState(
         'Find all the matching pairs.'
@@ -189,28 +265,36 @@ export default function MemoryMatchGame({ patient, onHome }) {
     // TIMER
     // -------------------------------------------------------------------------
 
-    const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    const [elapsedSeconds, setElapsedSeconds] =
+        useState(0);
 
     // -------------------------------------------------------------------------
-    // ROUND / GAME COMPLETION
+    // COMPLETION / CHECKPOINT STATE
     // -------------------------------------------------------------------------
 
-    const [roundComplete, setRoundComplete] = useState(false);
-    const [roundResult, setRoundResult] = useState(null);
+    const [roundComplete, setRoundComplete] =
+        useState(false);
 
-    const [gameComplete, setGameComplete] = useState(false);
-    const [finalStats, setFinalStats] = useState(null);
+    const [roundResult, setRoundResult] =
+        useState(null);
+
+    const [gameComplete, setGameComplete] =
+        useState(false);
+
+    const [finalStats, setFinalStats] =
+        useState(null);
 
     // -------------------------------------------------------------------------
     // ROUND HISTORY
     // -------------------------------------------------------------------------
 
-    const [roundHistory, setRoundHistory] = useState([]);
+    const [roundHistory, setRoundHistory] =
+        useState([]);
 
     const timerRef = useRef(null);
-    const nextRoundTimerRef = useRef(null);
 
-    const config = DIFFICULTY_CONFIG[difficulty];
+    const config =
+        DIFFICULTY_CONFIG[difficulty];
 
     // -------------------------------------------------------------------------
     // TIMER
@@ -223,14 +307,20 @@ export default function MemoryMatchGame({ patient, onHome }) {
             !roundComplete
         ) {
             timerRef.current = setInterval(() => {
-                setElapsedSeconds((prev) => prev + 1);
+                setElapsedSeconds(
+                    (prev) => prev + 1
+                );
             }, 1000);
         }
 
         return () => {
             clearInterval(timerRef.current);
         };
-    }, [gameStarted, gameComplete, roundComplete]);
+    }, [
+        gameStarted,
+        gameComplete,
+        roundComplete,
+    ]);
 
     // -------------------------------------------------------------------------
     // CLEANUP
@@ -239,7 +329,6 @@ export default function MemoryMatchGame({ patient, onHome }) {
     useEffect(() => {
         return () => {
             clearInterval(timerRef.current);
-            clearTimeout(nextRoundTimerRef.current);
         };
     }, []);
 
@@ -261,26 +350,33 @@ export default function MemoryMatchGame({ patient, onHome }) {
 
         const timeout = setTimeout(() => {
             setCards((prevCards) =>
-                prevCards.map((card, idx) => {
-                    if (idx !== i1 && idx !== i2) {
-                        return card;
-                    }
+                prevCards.map(
+                    (card, idx) => {
+                        if (
+                            idx !== i1 &&
+                            idx !== i2
+                        ) {
+                            return card;
+                        }
 
-                    return isMatch
-                        ? {
-                              ...card,
-                              isMatched: true,
-                              isFlipped: true,
-                          }
-                        : {
-                              ...card,
-                              isFlipped: false,
-                          };
-                })
+                        return isMatch
+                            ? {
+                                  ...card,
+                                  isMatched: true,
+                                  isFlipped: true,
+                              }
+                            : {
+                                  ...card,
+                                  isFlipped: false,
+                              };
+                    }
+                )
             );
 
             if (isMatch) {
-                setMatches((prev) => prev + 1);
+                setMatches(
+                    (prev) => prev + 1
+                );
 
                 setMessage(
                     MATCH_MESSAGES[
@@ -302,11 +398,13 @@ export default function MemoryMatchGame({ patient, onHome }) {
             }
 
             setFlippedIndices([]);
+
             setIsChecking(false);
         }, 900);
 
-        return () => clearTimeout(timeout);
-    }, [flippedIndices]);
+        return () =>
+            clearTimeout(timeout);
+    }, [flippedIndices, cards]);
 
     // -------------------------------------------------------------------------
     // CHECK ROUND COMPLETION
@@ -326,12 +424,24 @@ export default function MemoryMatchGame({ patient, onHome }) {
         clearInterval(timerRef.current);
 
         const hintsUsed =
-            config.hints - hintsRemaining;
+            config.hints -
+            hintsRemaining;
 
-        const roundGood = isGoodRound(
-            moves,
-            config.pairs
-        );
+        const correctAnswers = matches;
+
+        const incorrectAnswers =
+            Math.max(
+                0,
+                moves - correctAnswers
+            );
+
+        const attempts = moves;
+
+        const roundGood =
+            isGoodRound(
+                moves,
+                config.pairs
+            );
 
         const movePenalty =
             Math.max(
@@ -342,12 +452,13 @@ export default function MemoryMatchGame({ patient, onHome }) {
         const hintPenalty =
             hintsUsed * 20;
 
-        const roundScore = Math.max(
-            0,
-            config.pairs * 100 -
-                movePenalty -
-                hintPenalty
-        );
+        const roundScore =
+            Math.max(
+                0,
+                config.pairs * 100 -
+                    movePenalty -
+                    hintPenalty
+            );
 
         const nextDifficulty =
             getNextDifficulty(
@@ -357,12 +468,57 @@ export default function MemoryMatchGame({ patient, onHome }) {
 
         const roundStats = {
             round: currentRound,
+
             difficulty,
+
             moves,
+
+            attempts,
+
+            matches,
+
             hintsUsed,
-            completionTime: elapsedSeconds,
+
+            correctAnswers,
+
+            incorrectAnswers,
+
+            completionTime:
+                elapsedSeconds,
+
+            averageResponseTime:
+                attempts > 0
+                    ? elapsedSeconds /
+                      attempts
+                    : 0,
+
+            accuracy:
+                attempts > 0
+                    ? (
+                          correctAnswers /
+                          attempts
+                      ) * 100
+                    : 0,
+
+            mistakeRate:
+                attempts > 0
+                    ? (
+                          incorrectAnswers /
+                          attempts
+                      ) * 100
+                    : 0,
+
+            hintRate:
+                attempts > 0
+                    ? (hintsUsed /
+                          attempts) *
+                      100
+                    : 0,
+
             score: roundScore,
+
             good: roundGood,
+
             nextDifficulty,
         };
 
@@ -371,42 +527,27 @@ export default function MemoryMatchGame({ patient, onHome }) {
             roundStats,
         ];
 
-        setRoundHistory(finalHistory);
+        setRoundHistory(
+            finalHistory
+        );
 
         // ---------------------------------------------------------------------
-        // FINAL ROUND
+        // FINAL ROUND - ROUND 30
         // ---------------------------------------------------------------------
 
         if (
             currentRound >=
-            Number(totalRounds)
+            MAX_ROUNDS
         ) {
+            const analytics =
+                calculateAnalytics(
+                    finalHistory
+                );
+
             const totalScore =
                 finalHistory.reduce(
                     (sum, round) =>
                         sum + round.score,
-                    0
-                );
-
-            const totalMoves =
-                finalHistory.reduce(
-                    (sum, round) =>
-                        sum + round.moves,
-                    0
-                );
-
-            const totalHints =
-                finalHistory.reduce(
-                    (sum, round) =>
-                        sum + round.hintsUsed,
-                    0
-                );
-
-            const totalTime =
-                finalHistory.reduce(
-                    (sum, round) =>
-                        sum +
-                        round.completionTime,
                     0
                 );
 
@@ -416,66 +557,70 @@ export default function MemoryMatchGame({ patient, onHome }) {
                 ).length;
 
             const overallStats = {
+                ...analytics,
+
                 totalRounds:
-                    Number(totalRounds),
+                    finalHistory.length,
 
                 totalScore,
-
-                totalMoves,
-
-                totalHints,
-
-                totalTime,
 
                 goodRounds,
 
                 averageScore:
-                    finalHistory.length > 0
+                    finalHistory.length >
+                    0
                         ? Math.round(
                               totalScore /
                                   finalHistory.length
                           )
                         : 0,
+
+                roundHistory:
+                    finalHistory,
             };
 
-            setFinalStats(overallStats);
-
-            setRoundResult(roundStats);
-
-            setRoundComplete(true);
-
-            setGameComplete(true);
-
-            setMessage(
-                'Wonderful! You completed all the rounds.'
+            setFinalStats(
+                overallStats
             );
 
-            const analytics = {
+            setRoundResult(
+                roundStats
+            );
+
+            setRoundComplete(
+                true
+            );
+
+            setGameComplete(
+                true
+            );
+
+            setMessage(
+                'Wonderful! You completed all 30 rounds.'
+            );
+
+            const backendAnalytics = {
                 userId:
                     patient?.id ||
                     patient?.full_name ||
                     'unknown',
 
-                gameName: 'Memory Match',
+                ...analytics,
 
-                totalRounds:
-                    Number(totalRounds),
+                total_rounds:
+                    MAX_ROUNDS,
 
-                completedRounds:
+                completed_rounds:
                     finalHistory.length,
 
-                roundHistory:
+                round_history:
                     finalHistory,
 
-                totalScore,
+                total_score:
+                    totalScore,
 
-                totalMoves,
-
-                totalHints,
-
-                totalTime,
-
-                goodRounds,
+                good_rounds:
+                    goodRounds,
 
                 completed: true,
 
@@ -484,87 +629,78 @@ export default function MemoryMatchGame({ patient, onHome }) {
             };
 
             console.log(
-                'Memory Match analytics:',
-                analytics
+                'Card Match analytics:',
+                backendAnalytics
             );
 
             return;
         }
 
         // ---------------------------------------------------------------------
-        // CURRENT ROUND COMPLETED
+        // ROUND CHECKPOINT
         // ---------------------------------------------------------------------
 
-        setRoundResult(roundStats);
+        setRoundResult(
+            roundStats
+        );
 
-        setRoundComplete(true);
+        setRoundComplete(
+            true
+        );
 
-        if (roundGood) {
-            if (difficulty === 'hard') {
-                setMessage(
-                    'Excellent performance! You are already at the hardest level.'
-                );
-            } else {
-                setMessage(
-                    `Great job! The next round will be ${DIFFICULTY_CONFIG[nextDifficulty].label}.`
-                );
-            }
-        } else {
-            if (difficulty === 'easy') {
-                setMessage(
-                    'Good effort! We will keep the next round at Easy.'
-                );
-            } else {
-                setMessage(
-                    `Keep practicing! The next round will be ${DIFFICULTY_CONFIG[nextDifficulty].label}.`
-                );
-            }
-        }
+        const analytics =
+            calculateAnalytics(
+                finalHistory
+            );
 
-        nextRoundTimerRef.current =
-            setTimeout(() => {
-                startNextRound(
-                    nextDifficulty
-                );
-            }, 2500);
+        const checkpointAnalytics = {
+            userId:
+                patient?.id ||
+                patient?.full_name ||
+                'unknown',
 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [matches]);
+            ...analytics,
+
+            completed_rounds:
+                finalHistory.length,
+
+            round_history:
+                finalHistory,
+
+            completed: false,
+
+            timestamp:
+                new Date().toISOString(),
+        };
+
+        console.log(
+            'Card Match checkpoint analytics:',
+            checkpointAnalytics
+        );
+    }, [
+        matches,
+        gameStarted,
+        config.pairs,
+        config.hints,
+        hintsRemaining,
+        moves,
+        currentRound,
+        difficulty,
+        elapsedSeconds,
+        roundComplete,
+        gameComplete,
+        roundHistory,
+        patient,
+    ]);
 
     // -------------------------------------------------------------------------
     // START GAME
     // -------------------------------------------------------------------------
 
     function handleStartGame() {
-        const rounds = Number(totalRounds);
-
-        if (
-            totalRounds === '' ||
-            !Number.isInteger(rounds)
-        ) {
-            setRoundInputError(
-                'Please enter a valid number of rounds.'
-            );
-            return;
-        }
-
-        if (rounds < 1) {
-            setRoundInputError(
-                'Number of rounds cannot be less than 1.'
-            );
-            return;
-        }
-
-        if (rounds > MAX_ROUNDS) {
-            setRoundInputError(
-                'Number of rounds cannot be greater than 20.'
-            );
-            return;
-        }
-
-        setRoundInputError('');
-
-        clearInterval(timerRef.current);
+        clearInterval(
+            timerRef.current
+        );
 
         setGameStarted(true);
 
@@ -582,7 +718,9 @@ export default function MemoryMatchGame({ patient, onHome }) {
 
         setRoundResult(null);
 
-        setCards(buildDeck('easy'));
+        setCards(
+            buildDeck('easy')
+        );
 
         setFlippedIndices([]);
 
@@ -606,21 +744,33 @@ export default function MemoryMatchGame({ patient, onHome }) {
     }
 
     // -------------------------------------------------------------------------
-    // START NEXT ROUND
+    // CONTINUE TO NEXT ROUND
     // -------------------------------------------------------------------------
 
-    function startNextRound(nextDifficulty) {
-        clearInterval(timerRef.current);
+    function continueToNextRound() {
+        const nextDifficulty =
+            roundResult?.nextDifficulty ||
+            difficulty;
 
         const nextRound =
             currentRound + 1;
 
-        setCurrentRound(nextRound);
+        clearInterval(
+            timerRef.current
+        );
 
-        setDifficulty(nextDifficulty);
+        setCurrentRound(
+            nextRound
+        );
+
+        setDifficulty(
+            nextDifficulty
+        );
 
         setCards(
-            buildDeck(nextDifficulty)
+            buildDeck(
+                nextDifficulty
+            )
         );
 
         setFlippedIndices([]);
@@ -663,7 +813,8 @@ export default function MemoryMatchGame({ patient, onHome }) {
             return;
         }
 
-        const card = cards[index];
+        const card =
+            cards[index];
 
         if (!card) {
             return;
@@ -687,20 +838,28 @@ export default function MemoryMatchGame({ patient, onHome }) {
                 i === index
                     ? {
                           ...c,
-                          isFlipped: true,
+                          isFlipped:
+                              true,
                       }
                     : c
             )
         );
 
-        setFlippedIndices((prev) => [
-            ...prev,
-            index,
-        ]);
+        setFlippedIndices(
+            (prev) => [
+                ...prev,
+                index,
+            ]
+        );
 
-        // One move = two selected cards.
-        if (flippedIndices.length === 1) {
-            setMoves((prev) => prev + 1);
+        // One move/attempt = two selected cards.
+        if (
+            flippedIndices.length ===
+            1
+        ) {
+            setMoves(
+                (prev) => prev + 1
+            );
         }
     }
 
@@ -713,7 +872,8 @@ export default function MemoryMatchGame({ patient, onHome }) {
         index
     ) {
         if (
-            event.key === 'Enter' ||
+            event.key ===
+                'Enter' ||
             event.key === ' '
         ) {
             event.preventDefault();
@@ -732,7 +892,8 @@ export default function MemoryMatchGame({ patient, onHome }) {
             isChecking ||
             gameComplete ||
             roundComplete ||
-            flippedIndices.length > 0
+            flippedIndices.length >
+                0
         ) {
             return;
         }
@@ -742,28 +903,34 @@ export default function MemoryMatchGame({ patient, onHome }) {
                 (c) => !c.isMatched
             );
 
-        if (unmatched.length === 0) {
+        if (
+            unmatched.length === 0
+        ) {
             return;
         }
 
         const targetId =
             unmatched[0].id;
 
-        const idxs = cards.reduce(
-            (acc, c, i) => {
-                if (
-                    c.id === targetId &&
-                    !c.isMatched
-                ) {
-                    acc.push(i);
-                }
+        const idxs =
+            cards.reduce(
+                (acc, c, i) => {
+                    if (
+                        c.id ===
+                            targetId &&
+                        !c.isMatched
+                    ) {
+                        acc.push(i);
+                    }
 
-                return acc;
-            },
-            []
+                    return acc;
+                },
+                []
+            );
+
+        setHintHighlight(
+            idxs
         );
-
-        setHintHighlight(idxs);
 
         setHintsRemaining(
             (prev) => prev - 1
@@ -783,23 +950,19 @@ export default function MemoryMatchGame({ patient, onHome }) {
     // -------------------------------------------------------------------------
 
     function restartEntireGame() {
-        clearInterval(timerRef.current);
-
-        clearTimeout(
-            nextRoundTimerRef.current
+        clearInterval(
+            timerRef.current
         );
 
         setGameStarted(false);
-
-        setTotalRounds('');
-
-        setRoundInputError('');
 
         setCurrentRound(1);
 
         setDifficulty('easy');
 
-        setCards(buildDeck('easy'));
+        setCards(
+            buildDeck('easy')
+        );
 
         setFlippedIndices([]);
 
@@ -840,7 +1003,7 @@ export default function MemoryMatchGame({ patient, onHome }) {
         return (
             <div className="memory-game-container">
                 <header className="memory-game-header">
-                    <h1>Memory Match</h1>
+                    <h1>Card Match</h1>
 
                     <p>
                         Find all the matching pairs
@@ -850,77 +1013,18 @@ export default function MemoryMatchGame({ patient, onHome }) {
                 <div className="memory-round-setup">
                     <div className="memory-setup-card">
                         <h2>
-                            Set Number of Rounds
+                            Ready to Play?
                         </h2>
 
                         <p className="memory-setup-description">
-                            The game starts at Easy
-                            level. Your performance
-                            will automatically adjust
-                            the difficulty of each
-                            following round.
+                            The game starts at
+                            Easy level.
+                            Your performance
+                            will automatically
+                            adjust the
+                            difficulty as you
+                            progress.
                         </p>
-
-                        <div className="memory-round-input-section">
-                            <label htmlFor="round-count">
-                                Number of Rounds
-                            </label>
-
-                            <input
-                                id="round-count"
-                                type="number"
-                                min="1"
-                                max="20"
-                                value={totalRounds}
-                                onChange={(e) => {
-                                    setTotalRounds(
-                                        e.target.value
-                                    );
-
-                                    setRoundInputError(
-                                        ''
-                                    );
-                                }}
-                                onKeyDown={(e) => {
-                                    if (
-                                        e.key ===
-                                        'Enter'
-                                    ) {
-                                        handleStartGame();
-                                    }
-                                }}
-                                className={
-                                    roundInputError
-                                        ? 'round-input invalid'
-                                        : 'round-input'
-                                }
-                                placeholder="Enter 1–20"
-                                aria-describedby={
-                                    roundInputError
-                                        ? 'round-error'
-                                        : undefined
-                                }
-                            />
-
-                            {roundInputError && (
-                                <div
-                                    id="round-error"
-                                    className="round-error-alert"
-                                    role="alert"
-                                >
-                                    ⚠️{' '}
-                                    {
-                                        roundInputError
-                                    }
-                                </div>
-                            )}
-
-                            <p className="round-limit-text">
-                                Minimum: 1 round
-                                &nbsp;|&nbsp;
-                                Maximum: 20 rounds
-                            </p>
-                        </div>
 
                         <div className="memory-level-info">
                             <div className="level-info-item">
@@ -954,13 +1058,20 @@ export default function MemoryMatchGame({ patient, onHome }) {
                             </div>
                         </div>
 
+                        <p className="round-limit-text">
+                            The game has a maximum
+                            of 30 rounds.
+                            You can continue after
+                            every 3 rounds.
+                        </p>
+
                         <button
                             className="memory-start-btn"
                             onClick={
                                 handleStartGame
                             }
                         >
-                            ▶ Start Game
+                            ▶ Start
                         </button>
 
                         <button
@@ -982,7 +1093,7 @@ export default function MemoryMatchGame({ patient, onHome }) {
     return (
         <div className="memory-game-container">
             <header className="memory-game-header">
-                <h1>Memory Match</h1>
+                <h1>Card Match</h1>
 
                 <p>
                     Find all the matching pairs
@@ -999,7 +1110,7 @@ export default function MemoryMatchGame({ patient, onHome }) {
 
                     <span className="round-progress-value">
                         {currentRound} /{' '}
-                        {totalRounds}
+                        {MAX_ROUNDS}
                     </span>
                 </div>
 
@@ -1079,95 +1190,104 @@ export default function MemoryMatchGame({ patient, onHome }) {
             <div
                 className={`memory-board cols-${config.columns}`}
                 role="group"
-                aria-label="Memory match game board"
+                aria-label="Card match game board"
             >
-                {cards.map((card, index) => {
-                    const isRevealed =
-                        card.isFlipped ||
-                        card.isMatched ||
-                        hintHighlight.includes(
-                            index
-                        );
+                {cards.map(
+                    (card, index) => {
+                        const isRevealed =
+                            card.isFlipped ||
+                            card.isMatched ||
+                            hintHighlight.includes(
+                                index
+                            );
 
-                    return (
-                        <button
-                            key={card.uid}
-                            type="button"
-                            className={`
-                                memory-card
-                                ${
-                                    isRevealed
-                                        ? 'flipped'
-                                        : ''
+                        return (
+                            <button
+                                key={
+                                    card.uid
                                 }
-                                ${
-                                    card.isMatched
-                                        ? 'matched'
-                                        : ''
-                                }
-                                ${
-                                    hintHighlight.includes(
+                                type="button"
+                                className={`
+                                    memory-card
+                                    ${
+                                        isRevealed
+                                            ? 'flipped'
+                                            : ''
+                                    }
+                                    ${
+                                        card.isMatched
+                                            ? 'matched'
+                                            : ''
+                                    }
+                                    ${
+                                        hintHighlight.includes(
+                                            index
+                                        )
+                                            ? 'hint-active'
+                                            : ''
+                                    }
+                                `}
+                                onClick={() =>
+                                    handleCardClick(
                                         index
                                     )
-                                        ? 'hint-active'
-                                        : ''
                                 }
-                            `}
-                            onClick={() =>
-                                handleCardClick(
-                                    index
-                                )
-                            }
-                            onKeyDown={(e) =>
-                                handleCardKeyDown(
-                                    e,
-                                    index
-                                )
-                            }
-                            aria-label={
-                                isRevealed
-                                    ? `${card.name} card${
-                                          card.isMatched
-                                              ? ', matched'
-                                              : ''
-                                      }`
-                                    : `Hidden card ${
-                                          index + 1
-                                      }. Press to flip.`
-                            }
-                            disabled={
-                                gameComplete ||
-                                roundComplete
-                            }
-                        >
-                            <span className="memory-card-inner">
-                                {isRevealed ? (
-                                    <>
+                                onKeyDown={(
+                                    e
+                                ) =>
+                                    handleCardKeyDown(
+                                        e,
+                                        index
+                                    )
+                                }
+                                aria-label={
+                                    isRevealed
+                                        ? `${card.name} card${
+                                              card.isMatched
+                                                  ? ', matched'
+                                                  : ''
+                                          }`
+                                        : `Hidden card ${
+                                              index +
+                                              1
+                                          }. Press to flip.`
+                                }
+                                disabled={
+                                    gameComplete ||
+                                    roundComplete
+                                }
+                            >
+                                <span className="memory-card-inner">
+                                    {isRevealed ? (
+                                        <>
+                                            <span
+                                                className="memory-card-symbol"
+                                                aria-hidden="true"
+                                            >
+                                                {
+                                                    card.symbol
+                                                }
+                                            </span>
+
+                                            <span className="memory-card-name">
+                                                {
+                                                    card.name
+                                                }
+                                            </span>
+                                        </>
+                                    ) : (
                                         <span
-                                            className="memory-card-symbol"
+                                            className="memory-card-back"
                                             aria-hidden="true"
                                         >
-                                            {
-                                                card.symbol
-                                            }
+                                            ?
                                         </span>
-
-                                        <span className="memory-card-name">
-                                            {card.name}
-                                        </span>
-                                    </>
-                                ) : (
-                                    <span
-                                        className="memory-card-back"
-                                        aria-hidden="true"
-                                    >
-                                        ?
-                                    </span>
-                                )}
-                            </span>
-                        </button>
-                    );
-                })}
+                                    )}
+                                </span>
+                            </button>
+                        );
+                    }
+                )}
             </div>
 
             {/* CONTROLS */}
@@ -1186,7 +1306,8 @@ export default function MemoryMatchGame({ patient, onHome }) {
                     className="memory-control-btn hint-btn"
                     onClick={useHint}
                     disabled={
-                        hintsRemaining <= 0 ||
+                        hintsRemaining <=
+                            0 ||
                         gameComplete ||
                         roundComplete
                     }
@@ -1203,7 +1324,7 @@ export default function MemoryMatchGame({ patient, onHome }) {
                 </button>
             </div>
 
-            {/* ROUND RESULT */}
+            {/* ROUND CHECKPOINT / RESULT */}
 
             {roundComplete &&
                 roundResult &&
@@ -1258,40 +1379,128 @@ export default function MemoryMatchGame({ patient, onHome }) {
                                 </span>
                             </div>
 
-                            <div className="round-result-stats">
+                            {/* CHECKPOINT RESULTS */}
+
+                            <div className="round-result-analytics">
                                 <div>
                                     <span>
-                                        Moves
+                                        Accuracy
+                                    </span>
+
+                                    <strong>
+                                        {formatPercentage(
+                                            roundResult.accuracy
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>
+                                        Mistake Rate
+                                    </span>
+
+                                    <strong>
+                                        {formatPercentage(
+                                            roundResult.mistakeRate
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>
+                                        Hint Rate
+                                    </span>
+
+                                    <strong>
+                                        {formatPercentage(
+                                            roundResult.hintRate
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>
+                                        Completion Time
+                                    </span>
+
+                                    <strong>
+                                        {formatTime(
+                                            roundResult.completionTime
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>
+                                        Avg. Response
+                                    </span>
+
+                                    <strong>
+                                        {roundResult.averageResponseTime.toFixed(
+                                            1
+                                        )}
+                                        s
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>
+                                        Difficulty
                                     </span>
 
                                     <strong>
                                         {
-                                            roundResult.moves
+                                            DIFFICULTY_CONFIG[
+                                                roundResult
+                                                    .difficulty
+                                            ].label
                                         }
                                     </strong>
                                 </div>
 
                                 <div>
                                     <span>
-                                        Hints
+                                        Attempts
                                     </span>
 
                                     <strong>
                                         {
-                                            roundResult.hintsUsed
+                                            roundResult.attempts
                                         }
                                     </strong>
                                 </div>
 
                                 <div>
                                     <span>
-                                        Score
+                                        Correct
                                     </span>
 
                                     <strong>
                                         {
-                                            roundResult.score
+                                            roundResult.correctAnswers
                                         }
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>
+                                        Incorrect
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            roundResult.incorrectAnswers
+                                        }
+                                    </strong>
+                                </div>
+
+                                <div>
+                                    <span>
+                                        Game
+                                    </span>
+
+                                    <strong>
+                                        Card Match
                                     </strong>
                                 </div>
                             </div>
@@ -1311,10 +1520,42 @@ export default function MemoryMatchGame({ patient, onHome }) {
                                 </strong>
                             </div>
 
-                            <p className="next-round-countdown">
-                                Starting the next
-                                round shortly...
-                            </p>
+                            {/* CONTINUE AFTER EVERY 3 ROUNDS */}
+
+                            <div className="checkpoint-message">
+                                <strong>
+                                    {roundResult.round %
+                                        ROUNDS_PER_CHECKPOINT ===
+                                    0
+                                        ? `You have completed ${roundResult.round} rounds.`
+                                        : 'Round complete.'}
+                                </strong>
+
+                                <span>
+                                    Continue when you are
+                                    ready for the next round.
+                                </span>
+                            </div>
+
+                            <div className="round-checkpoint-actions">
+                                <button
+                                    className="memory-control-btn restart-btn"
+                                    onClick={
+                                        continueToNextRound
+                                    }
+                                >
+                                    ▶ Continue
+                                </button>
+
+                                <button
+                                    className="memory-control-btn home-btn"
+                                    onClick={
+                                        onHome
+                                    }
+                                >
+                                    🏠 Back to Patient Dashboard
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1334,17 +1575,139 @@ export default function MemoryMatchGame({ patient, onHome }) {
                             </div>
 
                             <h2>
-                                Memory Match Complete!
+                                Card Match Complete!
                             </h2>
 
                             <p>
                                 Wonderful work! You
-                                completed all{' '}
-                                {
-                                    finalStats.totalRounds
-                                }{' '}
+                                completed all 30
                                 rounds.
                             </p>
+
+                            {/* FINAL ANALYTICS */}
+
+                            <div className="final-analytics-grid">
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Accuracy
+                                    </span>
+
+                                    <strong>
+                                        {formatPercentage(
+                                            finalStats.accuracy
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Mistake Rate
+                                    </span>
+
+                                    <strong>
+                                        {formatPercentage(
+                                            finalStats.mistake_rate
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Hint Rate
+                                    </span>
+
+                                    <strong>
+                                        {formatPercentage(
+                                            finalStats.hint_rate
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Completion Time
+                                    </span>
+
+                                    <strong>
+                                        {formatTime(
+                                            finalStats.completion_time
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Avg. Response
+                                    </span>
+
+                                    <strong>
+                                        {finalStats.average_response_time.toFixed(
+                                            1
+                                        )}
+                                        s
+                                    </strong>
+                                </div>
+
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Difficulty
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            DIFFICULTY_CONFIG[
+                                                finalStats.difficulty_level
+                                            ].label
+                                        }
+                                    </strong>
+                                </div>
+
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Attempts
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            finalStats.attempts
+                                        }
+                                    </strong>
+                                </div>
+
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Correct Answers
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            finalStats.correct_answers
+                                        }
+                                    </strong>
+                                </div>
+
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Incorrect Answers
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            finalStats.incorrect_answers
+                                        }
+                                    </strong>
+                                </div>
+
+                                <div className="final-analytics-item">
+                                    <span>
+                                        Game Name
+                                    </span>
+
+                                    <strong>
+                                        Card Match
+                                    </strong>
+                                </div>
+                            </div>
 
                             <div className="final-result-summary">
                                 <div className="final-summary-item">
@@ -1392,30 +1755,6 @@ export default function MemoryMatchGame({ patient, onHome }) {
                                         {
                                             finalStats.averageScore
                                         }
-                                    </strong>
-                                </div>
-
-                                <div className="final-summary-item">
-                                    <span>
-                                        Total Moves
-                                    </span>
-
-                                    <strong>
-                                        {
-                                            finalStats.totalMoves
-                                        }
-                                    </strong>
-                                </div>
-
-                                <div className="final-summary-item">
-                                    <span>
-                                        Total Time
-                                    </span>
-
-                                    <strong>
-                                        {formatTime(
-                                            finalStats.totalTime
-                                        )}
                                     </strong>
                                 </div>
                             </div>

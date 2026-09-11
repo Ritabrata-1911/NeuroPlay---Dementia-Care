@@ -301,9 +301,6 @@
         0 0 0 4px rgba(47, 112, 181, 0.12);
 }
 
-
-/* Remove browser number arrows where appropriate */
-
 .ms-round-input::-webkit-inner-spin-button,
 .ms-round-input::-webkit-outer-spin-button {
     opacity: 1;
@@ -506,9 +503,6 @@
     transform: translateY(0);
 }
 
-
-/* Disabled start button */
-
 .ms-primary-btn:disabled {
     background: #aebdca;
 
@@ -537,6 +531,59 @@
 
 
 /* ============================================================
+   BACK BAR  —  new "← Back to Dashboard" strip inside game card
+   ============================================================ */
+
+.ms-back-bar {
+    display: flex;
+
+    justify-content: flex-start;
+
+    margin-bottom: 16px;
+}
+
+.ms-back-btn {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #2f70b5;
+
+    font-size: 0.9rem;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    padding: 6px 10px;
+
+    border-radius: 8px;
+
+    font-family: inherit;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.ms-back-btn:hover {
+    background: #edf4fb;
+
+    color: #1a4d82;
+}
+
+.ms-back-btn:active {
+    background: #dce8f5;
+}
+
+
+/* ============================================================
    GAME CARD
    ============================================================ */
 
@@ -561,7 +608,7 @@
 
     gap: 12px;
 
-    margin-bottom: 22px;
+    margin-bottom: 10px;
 }
 
 .ms-round-board,
@@ -999,18 +1046,22 @@
    ============================================================ */
 
 .ms-game-over-card {
-    max-width: 700px;
+    max-width: 760px;
 }
+
+/* ============================================================
+   STATS  —  updated to 3-column grid to fit all 10 fields
+   ============================================================ */
 
 .ms-stats {
     display: grid;
 
     grid-template-columns:
-        repeat(2, 1fr);
+        repeat(3, 1fr);
 
-    gap: 14px;
+    gap: 12px;
 
-    max-width: 520px;
+    max-width: 680px;
 
     margin: 25px auto;
 }
@@ -1024,7 +1075,7 @@
 
     text-align: left;
 
-    padding: 15px;
+    padding: 14px;
 
     background: #f7f9fc;
 
@@ -1034,13 +1085,17 @@
 }
 
 .ms-stat-full {
-    grid-column: span 2;
+    grid-column: span 3;
 
     justify-content: center;
+
+    text-align: center;
 }
 
 .ms-stat-icon {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
+
+    flex-shrink: 0;
 }
 
 .ms-stat-item div {
@@ -1054,13 +1109,13 @@
 .ms-stat-label {
     color: #64748b;
 
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .ms-stat-item strong {
     color: #1a365d;
 
-    font-size: 1.25rem;
+    font-size: 1.15rem;
 }
 
 .ms-game-over-buttons {
@@ -1158,6 +1213,7 @@
 
 .ms-primary-btn:focus-visible,
 .ms-secondary-btn:focus-visible,
+.ms-back-btn:focus-visible,
 .ms-round-input:focus-visible {
     outline: 4px solid #f0a500;
 
@@ -1205,7 +1261,11 @@
     }
 
     .ms-stats {
-        gap: 10px;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ms-stat-full {
+        grid-column: span 2;
     }
 }
 
@@ -1259,9 +1319,6 @@
         padding: 11px 13px;
     }
 
-
-    /* Round selection */
-
     .ms-round-selection {
         padding: 18px 13px;
     }
@@ -1281,9 +1338,6 @@
 
         padding: 11px 12px;
     }
-
-
-    /* Top bar */
 
     .ms-top-bar {
         grid-template-columns:
@@ -1306,9 +1360,6 @@
         grid-column: span 2;
     }
 
-
-    /* Feedback */
-
     .ms-feedback-area {
         min-height: 135px;
     }
@@ -1320,9 +1371,6 @@
     .ms-feedback-text {
         font-size: 0.98rem;
     }
-
-
-    /* Grid */
 
     .ms-grid {
         gap: 7px;
@@ -1352,19 +1400,13 @@
         font-size: 1.6rem;
     }
 
-
-    /* Statistics */
-
     .ms-stats {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 
     .ms-stat-full {
-        grid-column: span 1;
+        grid-column: span 2;
     }
-
-
-    /* Buttons */
 
     .ms-primary-btn,
     .ms-secondary-btn {
@@ -1376,9 +1418,6 @@
     .ms-game-over-buttons {
         flex-direction: column;
     }
-
-
-    /* Helper */
 
     .ms-helper-text {
         font-size: 0.85rem;
@@ -1418,5 +1457,13 @@
         height: 32px;
 
         font-size: 1rem;
+    }
+
+    .ms-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .ms-stat-full {
+        grid-column: span 1;
     }
 }
