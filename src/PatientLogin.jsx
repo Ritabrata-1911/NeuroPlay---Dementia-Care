@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from './SupabaseClient';
 import './App.css';
@@ -9,16 +9,29 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
     const [loginCode, setLoginCode] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
+    const inputRef = useRef(null);
+
+    // Auto-focus the real input on mount so typing works immediately
+    useEffect(() => {
+        inputRef.current?.focus();
+    }, []);
+
+    // Split into 6 chars for the visual boxes
+    const codeChars = loginCode.split('').concat(Array(6).fill('')).slice(0, 6);
 
     const handleCodeChange = (e) => {
-        // Case-insensitive Normalization: Convert to uppercase, remove spaces/special chars, restrict to 6 chars
         const normalizedCode = e.target.value
             .replace(/[^a-zA-Z0-9]/g, '')
             .toUpperCase()
             .slice(0, 6);
-
         setLoginCode(normalizedCode);
         setErrorMsg('');
+    };
+
+    // Clicking anywhere on the digit track focuses the hidden input
+    const focusInput = () => {
+        inputRef.current?.focus();
     };
 
     const handleLogin = async (e) => {
@@ -32,17 +45,14 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
             return;
         }
 
-        // Call the secure RPC to validate, burn the code, and return patient data
         const { data, error } = await supabase.rpc('redeem_patient_code', {
             p_code: loginCode
         });
 
-        // 👇 DIAGNOSTIC LOG ADDED HERE 👇
         if (error) {
             console.error("Detailed DB Error:", error);
         }
 
-        // The RPC returns an array of rows. We expect exactly 1 if successful.
         if (error || !data || data.length === 0) {
             setErrorMsg(t('patientLogin.errors.invalidOrExpired'));
             setLoading(false);
@@ -51,7 +61,6 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
 
         const patientData = data[0];
 
-        // Create secure patient session
         const patientSession = {
             role: 'patient',
             id: patientData.id,
@@ -61,7 +70,16 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
             timestamp: new Date().getTime()
         };
 
-        sessionStorage.setItem('neuroplay_patient_session', JSON.stringify(patientSession));
+        // Store session data persistently so it survives browser close/reopen
+        // and page refreshes. Only a manual sign-out clears this.
+        localStorage.setItem('neuroplay_patient_session', JSON.stringify(patientSession));
+
+        // Tab-scoped flag: controls whether App.jsx auto-redirects to the
+        // dashboard on startup. Dies when this tab/browser is closed, so new
+        // tabs land on the home page first instead of jumping straight in.
+        // The AUTH SCREEN GUARD still uses localStorage, so clicking
+        // "Patient Login" from the home page skips code re-entry.
+        sessionStorage.setItem('neuroplay_patient_active', 'true');
 
         setLoading(false);
         onLoginSuccess(patientData);
@@ -75,17 +93,23 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
                 </button>
 
                 <div className="auth-card">
-                    {/* Brand / context panel */}
+                    {/* Brand panel */}
                     <aside className="auth-brand-panel">
+                        <div className="auth-brand-orb auth-brand-orb-1" aria-hidden="true" />
+                        <div className="auth-brand-orb auth-brand-orb-2" aria-hidden="true" />
+                        <div className="auth-brand-orb auth-brand-orb-3" aria-hidden="true" />
+
                         <div className="auth-brand-mark">
-                            <span role="img" aria-label="brain">🧠</span>
+                            <div className="auth-brand-brain-wrap" aria-hidden="true">
+                                <span className="auth-brand-brain-icon" role="img" aria-label="brain">🧠</span>
+                            </div>
                             <span>{t('brand')}</span>
                         </div>
 
                         <h1 className="auth-brand-heading">{t('patientLogin.brandHeading')}</h1>
-                        <p className="auth-brand-copy">
-                            {t('patientLogin.brandCopy')}
-                        </p>
+                        <p className="auth-brand-copy">{t('patientLogin.brandCopy')}</p>
+
+                        <div className="auth-brand-divider" />
 
                         <ul className="auth-brand-list">
                             <li>{t('patientLogin.brandList.0')}</li>
@@ -97,9 +121,7 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
                     {/* Form panel */}
                     <div className="auth-form-panel">
                         {errorMsg && (
-                            <div className="auth-error-banner">
-                                ⚠️ {errorMsg}
-                            </div>
+                            <div className="auth-error-banner">⚠️ {errorMsg}</div>
                         )}
 
                         <form onSubmit={handleLogin}>
@@ -108,36 +130,91 @@ export default function PatientLogin({ onBackToHome, onLoginSuccess }) {
 
                             <div className="form-group">
                                 <label htmlFor="loginCode">{t('patientLogin.loginCodeLabel')}</label>
-                                <input
-                                    id="loginCode"
-                                    type="text"
-                                    name="loginCode"
-                                    value={loginCode}
-                                    onChange={handleCodeChange}
-                                    placeholder={t('patientLogin.loginCodePlaceholder')}
-                                    className="form-input"
-                                    autoComplete="off"
-                                    style={{
-                                        fontSize: '1.6rem',
-                                        textAlign: 'center',
-                                        letterSpacing: '6px',
-                                        fontWeight: 700,
-                                        color: 'var(--primary-blue)',
-                                        padding: '1rem',
-                                    }}
-                                />
+
+                                <div
+                                    className="code-input-shell"
+                                    onClick={focusInput}
+                                    style={{ position: 'relative', cursor: 'text' }}
+                                >
+                                    {/* Visual boxes — purely decorative */}
+                                    <div
+                                        className="code-input-track"
+                                        aria-hidden="true"
+                                    >
+                                        {codeChars.map((ch, i) => (
+                                            <div
+                                                key={i}
+                                                className={[
+                                                    'code-digit-box',
+                                                    ch ? 'filled' : '',
+                                                    !ch && i === loginCode.length && isFocused ? 'empty-active' : '',
+                                                ].filter(Boolean).join(' ')}
+                                            >
+                                                {ch}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* The REAL input — sits over the boxes, fully transparent */}
+                                    <input
+                                        ref={inputRef}
+                                        id="loginCode"
+                                        type="text"
+                                        name="loginCode"
+                                        value={loginCode}
+                                        onChange={handleCodeChange}
+                                        onFocus={() => setIsFocused(true)}
+                                        onBlur={() => setIsFocused(false)}
+                                        autoComplete="off"
+                                        inputMode="text"
+                                        maxLength={6}
+                                        aria-label={t('patientLogin.loginCodeLabel')}
+                                        style={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            opacity: 0,
+                                            cursor: 'text',
+                                            fontSize: '1rem',
+                                            zIndex: 2,
+                                        }}
+                                    />
+                                </div>
                             </div>
 
                             <button
                                 type="submit"
                                 className="btn-primary btn-patient"
-                                style={{ marginTop: '0.5rem' }}
-                                disabled={loading}
+                                style={{ marginTop: '1.25rem' }}
+                                disabled={loading || loginCode.length < 6}
                             >
                                 {loading ? t('patientLogin.submitting') : t('patientLogin.submit')}
                             </button>
+
+                            <p style={{
+                                marginTop: '1.25rem',
+                                fontSize: '0.8rem',
+                                textAlign: 'center',
+                                color: 'var(--ca-mist)',
+                                lineHeight: 1.5,
+                            }}>
+                                Don't have a code? Ask your caregiver to generate one from the dashboard.
+                            </p>
                         </form>
                     </div>
+                </div>
+
+                <div className="auth-trust-row" aria-hidden="true">
+                    <span className="auth-trust-chip">
+                        <span className="auth-trust-chip-icon">🔒</span> Secure login
+                    </span>
+                    <span className="auth-trust-chip">
+                        <span className="auth-trust-chip-icon">🧩</span> Fun &amp; friendly
+                    </span>
+                    <span className="auth-trust-chip">
+                        <span className="auth-trust-chip-icon">✦</span> No password needed
+                    </span>
                 </div>
             </div>
         </div>

@@ -23,7 +23,7 @@ import MemoryMatchGame from './games/MemoryMatchGame/MemoryMatchGame';
 import PictureRecallGame from './games/PictureRecallGame/PictureRecallGame';
 import NumberMemoryGame from './games/NumberMemoryGame/NumberMemoryGame';
 import MemoryMapGame from './games/MemoryMapGame/MemoryMapGame';
-import MindSnap from './games/MindSnap/MindSnap'; // NEW GAME IMPORTED HERE
+import MindSnap from './games/MindSnap/MindSnap';
 import MemoryLaneGame from './games/MemoryLaneGame/MemoryLaneGame';
 import PersonalizedMemoryGame from './games/PersonalizedMemoryGame/PersonalizedMemoryGame';
 import EncouragementToast from './EncouragementToast';
@@ -42,11 +42,6 @@ const GAME_CATEGORIES = [
     { id: 'engagement', icon: '💛' },
 ];
 
-// Storage bucket that holds patient profile photos. Patients don't have a
-// Supabase Auth session (they log in with a caregiver-issued code, and the
-// dashboard runs under the anon key), so the photo can't live in
-// user_metadata like it does for caregivers — it's a column on the
-// `patients` table instead, updated through an RPC. See backend notes.
 const PATIENT_AVATAR_BUCKET = 'patient-avatars';
 const MAX_AVATAR_SIZE_MB = 5;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -127,11 +122,6 @@ export default function PatientDashboard({ onLogout }) {
     const [sendingNote, setSendingNote] = useState(false);
     const [assignedCaregiver, setAssignedCaregiver] = useState(null);
 
-    // Which Daily Care Overview cards are currently expanded — these 4
-    // (medicine / hydration / activity / appointments) are set by the
-    // caregiver only; the patient can view and mark complete but never
-    // add, edit, or delete them. Stored as a list so more than one card
-    // can stay open at once.
     const [expandedRoutine, setExpandedRoutine] = useState([]);
     const [hydrationBusy, setHydrationBusy] = useState(false);
 
@@ -147,9 +137,7 @@ export default function PatientDashboard({ onLogout }) {
     const [profileSaveSuccess, setProfileSaveSuccess] = useState('');
 
     useEffect(() => {
-        const storedSession = sessionStorage.getItem(
-            'neuroplay_patient_session'
-        );
+        const storedSession = localStorage.getItem('neuroplay_patient_session');
 
         if (!storedSession) {
             onLogout?.();
@@ -160,14 +148,19 @@ export default function PatientDashboard({ onLogout }) {
             const parsedPatient = JSON.parse(storedSession);
 
             if (!parsedPatient?.id && !parsedPatient?.patient_id) {
+                localStorage.removeItem('neuroplay_patient_session');
                 onLogout?.();
                 return;
             }
 
+            // Stamp the tab-scoped flag so that App.jsx's STARTUP SESSION
+            // RESTORE will auto-redirect back to the dashboard if the patient
+            // refreshes within this same tab.
+            sessionStorage.setItem('neuroplay_patient_active', 'true');
             setPatient(parsedPatient);
         } catch (error) {
             console.error('Unable to restore patient session:', error);
-            sessionStorage.removeItem('neuroplay_patient_session');
+            localStorage.removeItem('neuroplay_patient_session');
             onLogout?.();
         }
     }, [onLogout]);
@@ -239,10 +232,6 @@ export default function PatientDashboard({ onLogout }) {
 
         loadAssignedCaregiver();
 
-        // Auth metadata is persisted in Supabase and the patient dashboard
-        // may already be open when the caregiver changes their profile.
-        // Refresh when the patient returns to this tab/window so the newest
-        // caregiver details are shown without requiring a logout/login.
         const handleWindowFocus = () => {
             loadAssignedCaregiver();
         };
@@ -285,10 +274,6 @@ export default function PatientDashboard({ onLogout }) {
     }, [patient]);
 
     // ── Presence broadcast ──────────────────────────────────────────────────
-    // Tells the caregiver dashboard this patient is online. Joins the same
-    // channel the caregiver listens on: `neuroplay-patient-presence-{id}`.
-    // Uses a `patient-{id}` key so the caregiver can distinguish it from
-    // its own observer key (which starts with `caregiver-`).
     useEffect(() => {
         const patientId = patient?.id || patient?.patient_id;
         if (!patientId) return;
@@ -363,11 +348,6 @@ export default function PatientDashboard({ onLogout }) {
         }
     }
 
-    // Routine items (medicine/activity/appointment) are caregiver-owned
-    // and the patient device runs under the anon key, so completion is
-    // toggled via the toggle_patient_reminder RPC rather than a direct
-    // table update. True custom reminders (patient's own one-off items)
-    // still go through the existing direct-update path.
     const [encouragement, setEncouragement] = useState(null);
 
     const handleReminderToggle = async (reminder) => {
@@ -429,17 +409,21 @@ export default function PatientDashboard({ onLogout }) {
     };
 
     function handleSignOut() {
-        sessionStorage.removeItem('neuroplay_patient_session');
+        // Clear both storages on manual sign-out so the patient must
+        // enter their code again — the localStorage session is gone,
+        // so the AUTH SCREEN GUARD won't skip code entry either.
+        localStorage.removeItem('neuroplay_patient_session');
+        sessionStorage.removeItem('neuroplay_patient_active');
         onLogout?.();
     }
 
-    // Persists an updated patient object to both state and the session so
-    // the new avatar survives a page refresh without a full re-login.
+    // Persists an updated patient object to both state and localStorage so
+    // the new avatar/profile survives a page refresh without a full re-login.
     function persistPatientUpdate(updatedFields) {
         setPatient((prev) => {
             const next = { ...prev, ...updatedFields };
             try {
-                sessionStorage.setItem('neuroplay_patient_session', JSON.stringify(next));
+                localStorage.setItem('neuroplay_patient_session', JSON.stringify(next));
             } catch (error) {
                 console.error('Unable to persist updated patient session:', error);
             }
@@ -449,12 +433,9 @@ export default function PatientDashboard({ onLogout }) {
 
     // Uploads a new profile photo to Supabase Storage, then saves its URL
     // on the patient's own record via the update_patient_avatar RPC.
-    // (Patients aren't Supabase Auth users, so there's no user_metadata to
-    // write to the way there is for caregivers — the photo lives directly
-    // on the `patients` row instead.)
     async function handleAvatarFileChange(e) {
         const file = e.target.files?.[0];
-        e.target.value = ''; // allow re-selecting the same file later
+        e.target.value = '';
         const patientId = patient?.id || patient?.patient_id;
         if (!file || !patientId) return;
 
@@ -473,13 +454,8 @@ export default function PatientDashboard({ onLogout }) {
         setAvatarUploading(true);
 
         const fileExt = file.name.split('.').pop().toLowerCase();
-        // Fixed filename (not a timestamp) so re-uploads overwrite the old
-        // photo instead of orphaning files in storage forever.
         const filePath = `${patientId}/profile.${fileExt}`;
 
-        // Clean up any previous photo(s) first — upsert only overwrites a
-        // file with the *same* name, so a .png replacing a .jpg would
-        // otherwise leave the old .jpg behind as an orphaned file.
         const { data: existingFiles, error: listError } = await supabase.storage
             .from(PATIENT_AVATAR_BUCKET)
             .list(patientId);
@@ -517,8 +493,6 @@ export default function PatientDashboard({ onLogout }) {
             .from(PATIENT_AVATAR_BUCKET)
             .getPublicUrl(filePath);
 
-        // Cache-bust so the new photo shows immediately even though the
-        // path/filename didn't change.
         const freshAvatarUrl = `${publicUrlData.publicUrl}?updated=${Date.now()}`;
 
         const { error: rpcError } = await supabase.rpc('update_patient_avatar', {
@@ -537,8 +511,6 @@ export default function PatientDashboard({ onLogout }) {
         persistPatientUpdate({ avatar_url: freshAvatarUrl });
     }
 
-    // Deletes the patient's photo from Storage and clears avatar_url on
-    // their record, reverting the UI back to the initials circle.
     async function handleRemoveAvatar() {
         const patientId = patient?.id || patient?.patient_id;
         if (!patientId) return;
@@ -638,17 +610,14 @@ export default function PatientDashboard({ onLogout }) {
         setProfileSaveError('');
         setProfileSaveSuccess('');
 
-        // Persist to local session immediately so the UI always reflects changes
         persistPatientUpdate(trimmed);
 
-        // Attempt a silent DB write — may be blocked by RLS under anon key
         const { error } = await supabase
             .from('patients')
             .update(trimmed)
             .eq('id', patientId);
 
         if (error) {
-            // Log for debugging but don't surface to user — local state is updated
             console.warn('Patient profile DB write blocked (likely RLS):', error.message, error.code);
         }
 
@@ -667,9 +636,7 @@ export default function PatientDashboard({ onLogout }) {
         const patientId = patient?.id || patient?.patient_id;
 
         if (!patientId) {
-            window.alert(
-                t('patientDashboard.alerts.noteSessionInvalid')
-            );
+            window.alert(t('patientDashboard.alerts.noteSessionInvalid'));
             return;
         }
 
@@ -786,7 +753,7 @@ export default function PatientDashboard({ onLogout }) {
         patient.caregiver_phone ||
         patient.caregiver_contact ||
         patient.caregiverContact ||
-        t('patientDashboard.fallback.primaryContact'); // <- Frontend fallback contact
+        t('patientDashboard.fallback.primaryContact');
 
     const currentDateString = new Date().toLocaleDateString(i18n.language, {
         weekday: 'long',
@@ -1419,7 +1386,6 @@ export default function PatientDashboard({ onLogout }) {
                         {/* Profile info / edit form */}
                         <div style={{ marginTop: '1.5rem' }}>
                             {!editingProfile ? (
-                                // Read-only view
                                 <div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem 1.5rem', marginBottom: '1.25rem' }}>
                                         {[
@@ -1451,7 +1417,6 @@ export default function PatientDashboard({ onLogout }) {
                                     </button>
                                 </div>
                             ) : (
-                                // Edit form — animated entry
                                 <form className="pt-profile-edit-form" onSubmit={handleProfileSave}>
                                     <div className="pt-profile-edit-grid">
                                         <div className="pt-profile-field pt-profile-field-full">

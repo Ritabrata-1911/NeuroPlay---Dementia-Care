@@ -303,6 +303,28 @@ function App() {
     }, []);
 
     // ============================================================
+    // ============================================================
+    // STARTUP SESSION RESTORE
+    // ============================================================
+    useEffect(() => {
+        const raw = localStorage.getItem('neuroplay_patient_session');
+        if (!raw) return;
+        try {
+            const parsed = JSON.parse(raw);
+            // Only auto-redirect to dashboard within the SAME tab session.
+            // New tabs and fresh browser opens won't have this sessionStorage
+            // flag, so they land on the home page first. The patient can then
+            // click "Patient Login" which skips code entry via the AUTH SCREEN
+            // GUARD below (localStorage session still present).
+            const isActive = sessionStorage.getItem('neuroplay_patient_active');
+            if (parsed && parsed.role === 'patient' && parsed.patient_id && isActive) {
+                navigate('/patientDashboard', { replace: true });
+            }
+        } catch {
+            localStorage.removeItem('neuroplay_patient_session');
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     // AUTH SCREEN GUARD
     // ============================================================
 
@@ -335,7 +357,7 @@ function App() {
                 'patientAuth'
             ) {
                 const storedSession =
-                    sessionStorage.getItem(
+                    localStorage.getItem(
                         'neuroplay_patient_session'
                     );
 
