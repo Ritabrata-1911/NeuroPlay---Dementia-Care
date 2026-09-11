@@ -261,6 +261,7 @@ export default function CaregiverDashboard() {
     };
 
     const [patientOnlineStatus, setPatientOnlineStatus] = useState({});
+    const [copiedPatientId, setCopiedPatientId] = useState(null);
 
     // Mood & Engagement — aggregated lightweight view across all of this
     // caregiver's patients, for the dashboard overview card. Mood and
@@ -459,19 +460,18 @@ export default function CaregiverDashboard() {
             const channelName =
                 `neuroplay-patient-presence-${patient.id}`;
 
-            const channel = supabase.channel(channelName, {
-                config: {
-                    presence: {
-                        key: `caregiver-${user?.id || 'dashboard'}`
-                    }
-                }
-            });
+            // No presence key — caregiver is a silent observer only.
+            // This prevents the caregiver from appearing as "present" and
+            // falsely marking the patient as online.
+            const channel = supabase.channel(channelName);
 
             const updateOnlineStatus = () => {
                 const presenceState = channel.presenceState();
 
-                const hasPatientPresence =
-                    Object.keys(presenceState).length > 0;
+                // Any key that is NOT a caregiver key means the patient is online.
+                const hasPatientPresence = Object.keys(presenceState).some(
+                    (key) => !key.startsWith('caregiver-')
+                );
 
                 setPatientOnlineStatus((previous) => ({
                     ...previous,
@@ -1843,17 +1843,6 @@ export default function CaregiverDashboard() {
                                 <button className="filter-pill filter-pill-active">
                                     {t('caregiverDashboard.patients.all')}
                                 </button>
-
-                                <button
-                                    className="filter-pill"
-                                    onClick={() =>
-                                        alert(
-                                            t('caregiverDashboard.patients.customFiltersComingSoon')
-                                        )
-                                    }
-                                >
-                                    {t('caregiverDashboard.patients.needsAttention')}
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -2005,22 +1994,22 @@ export default function CaregiverDashboard() {
 
                                             <div className="patient-actions">
                                                 <button
-                                                    className="btn-outline"
+                                                    className={`btn-outline btn-copy-code ${copiedPatientId === patient.id ? 'btn-copy-success' : ''}`}
                                                     onClick={() => {
-                                                        if (
-                                                            patient.login_code
-                                                        ) {
-                                                            navigator.clipboard.writeText(
-                                                                patient.login_code
-                                                            );
+                                                        if (patient.login_code) {
+                                                            navigator.clipboard.writeText(patient.login_code);
+                                                            setCopiedPatientId(patient.id);
+                                                            setTimeout(() => setCopiedPatientId(null), 2000);
                                                         } else {
-                                                            alert(
-                                                                t('caregiverDashboard.patients.noActiveCode')
-                                                            );
+                                                            alert(t('caregiverDashboard.patients.noActiveCode'));
                                                         }
                                                     }}
                                                 >
-                                                    {t('caregiverDashboard.patients.copyCode')}
+                                                    {copiedPatientId === patient.id ? (
+                                                        <span className="copy-success-inner">✓ Copied!</span>
+                                                    ) : (
+                                                        <span>{t('caregiverDashboard.patients.copyCode')}</span>
+                                                    )}
                                                 </button>
 
                                                 <button
@@ -2054,7 +2043,7 @@ export default function CaregiverDashboard() {
                                                         )
                                                     }
                                                 >
-                                                    🔄 {t('caregiverDashboard.patients.regenerateCode')}
+                                                    🔑 {patient.login_code ? 'New Login Code' : 'Generate Login Code'}
                                                 </button>
 
                                                 <button

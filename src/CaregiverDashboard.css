@@ -7,6 +7,12 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700;800&display=swap');
 
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 /* ============================================================
    DESIGN TOKENS (mirrors App.css + CaregiverAuth.css)
    ============================================================ */
@@ -72,6 +78,7 @@
   background-color: var(--cream);
   font-family: var(--font-body);
   color: var(--ink);
+  overflow-x: hidden;
 }
 
 .dashboard-loading {
@@ -117,6 +124,7 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
@@ -265,10 +273,11 @@
    ============================================================ */
 
 .dashboard-main {
-  flex: 1;
+  flex: 1 1 0%;
   max-width: 1440px;
   padding: 2.25rem clamp(1.5rem, 3vw, 3rem) 3.5rem;
   min-width: 0;
+  overflow-x: hidden;
 }
 
 /* ============================================================
@@ -438,15 +447,19 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.25rem;
   margin-bottom: 2.5rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .stats-grid.stats-grid-top {
   grid-template-columns: 1.15fr 0.85fr 1fr;
   gap: 1rem;
   margin-bottom: 1rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .stat-card {
@@ -647,7 +660,7 @@
   border: 1.5px solid var(--line);
   border-radius: var(--radius-pill);
   padding: 0.5rem 1rem;
-  min-width: 220px;
+  min-width: min(220px, 100%);
   transition: border-color 0.20s ease, box-shadow 0.20s ease;
 }
 
@@ -713,8 +726,11 @@
 
 .patients-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 1.5rem;
+  overflow: hidden;
+  min-width: 0;
+  width: 100%;
 }
 
 .patient-card {
@@ -1210,6 +1226,157 @@
 
 .profile-edit-form {
   margin-top: 0.25rem;
+  animation: cg-form-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cg-form-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Staggered field animations */
+.profile-edit-field {
+  animation: cg-field-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.profile-edit-field:nth-child(1) {
+  animation-delay: 0.04s;
+}
+
+.profile-edit-field:nth-child(2) {
+  animation-delay: 0.07s;
+}
+
+.profile-edit-field:nth-child(3) {
+  animation-delay: 0.10s;
+}
+
+.profile-edit-field:nth-child(4) {
+  animation-delay: 0.13s;
+}
+
+.profile-edit-field:nth-child(5) {
+  animation-delay: 0.16s;
+}
+
+.profile-edit-field:nth-child(6) {
+  animation-delay: 0.19s;
+}
+
+.profile-edit-field:nth-child(7) {
+  animation-delay: 0.22s;
+}
+
+.profile-edit-field:nth-child(8) {
+  animation-delay: 0.25s;
+}
+
+.profile-edit-field:nth-child(9) {
+  animation-delay: 0.28s;
+}
+
+.profile-edit-field:nth-child(10) {
+  animation-delay: 0.31s;
+}
+
+.profile-edit-field:nth-child(11) {
+  animation-delay: 0.34s;
+}
+
+.profile-edit-field:nth-child(12) {
+  animation-delay: 0.37s;
+}
+
+@keyframes cg-field-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Error banner — shake on appear */
+.profile-edit-error {
+  margin: 1rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(168, 62, 50, 0.07);
+  border: 1px solid rgba(168, 62, 50, 0.20);
+  color: var(--alert);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  animation: cg-error-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes cg-error-shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  15% {
+    transform: translateX(-5px);
+  }
+
+  40% {
+    transform: translateX(5px);
+  }
+
+  65% {
+    transform: translateX(-4px);
+  }
+
+  85% {
+    transform: translateX(3px);
+  }
+}
+
+/* Success banner — pop on appear */
+.profile-save-success {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(44, 74, 62, 0.08);
+  border: 1px solid rgba(44, 74, 62, 0.18);
+  color: var(--tea-green);
+  font-size: 0.86rem;
+  font-weight: 600;
+  animation: cg-success-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes cg-success-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.93);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Action buttons row */
+.profile-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.4rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+  animation: cg-field-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) 0.40s both;
 }
 
 .profile-edit-grid {
@@ -1265,29 +1432,10 @@
   min-height: 90px;
 }
 
-.profile-edit-error {
-  margin: 1rem 0 0;
-  padding: 0.75rem 0.9rem;
-  border-radius: 10px;
-  background: rgba(168, 62, 50, 0.07);
-  border: 1px solid rgba(168, 62, 50, 0.20);
-  color: var(--alert);
-  font-size: 0.86rem;
-  line-height: 1.45;
-}
+/* profile-edit-actions: animated version is defined above near profile-edit-form */
+/* profile-save-success: animated version is defined above near profile-edit-form */
+/* profile-edit-error:   animated version is defined above near profile-edit-form */
 
-.profile-save-success {
-  margin-bottom: 1rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 10px;
-  background: rgba(44, 74, 62, 0.08);
-  border: 1px solid rgba(44, 74, 62, 0.18);
-  color: var(--tea-green);
-  font-size: 0.86rem;
-  font-weight: 600;
-}
-
-.profile-edit-actions,
 .profile-view-actions {
   display: flex;
   justify-content: flex-end;
@@ -3038,4 +3186,308 @@ input:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ============================================================
+   COPY CODE BUTTON — animated success state
+   ============================================================ */
+
+.btn-copy-code {
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.1s ease;
+}
+
+.btn-copy-code:active {
+  transform: scale(0.97);
+}
+
+.btn-copy-success {
+  background-color: #2C4A3E !important;
+  color: #fff !important;
+  border-color: #2C4A3E !important;
+  animation: copy-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes copy-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.06);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.copy-success-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  animation: fade-slide-in 0.2s ease;
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   SETTINGS PANEL — extended styles
+   ============================================================ */
+
+/* Card header with inline warning */
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.settings-card-header h2 {
+  margin: 0;
+}
+
+.settings-permission-warn {
+  font-size: 0.78rem;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-weight: 500;
+}
+
+/* Quiet hours time row */
+.settings-quiet-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0 0.75rem 0;
+  margin-left: 0.1rem;
+}
+
+.settings-time-input {
+  border: 1.5px solid var(--db-border-color, #E2DCC8);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  background: var(--db-light-bg, #F7F4EC);
+  color: var(--db-navy-text, #20291F);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.settings-time-input:focus {
+  outline: none;
+  border-color: var(--db-caregiver-green, #2C4A3E);
+}
+
+/* Test notification row */
+.settings-row-test {
+  border-top: 1px dashed var(--db-border-color, #E2DCC8);
+  margin-top: 0.5rem;
+  padding-top: 0.85rem;
+}
+
+.settings-btn-test {
+  white-space: nowrap;
+  font-size: 0.85rem !important;
+  padding: 6px 14px !important;
+}
+
+/* ── Text-size level buttons ───────────────────────────────── */
+.settings-level-group {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.settings-level-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 20px;
+  border: 1.5px solid var(--db-border-color, #E2DCC8);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  min-width: 96px;
+}
+
+.settings-level-btn:hover {
+  border-color: var(--db-caregiver-green, #2C4A3E);
+  background: #f0f4f2;
+}
+
+.settings-level-btn--active {
+  border-color: var(--db-caregiver-green, #2C4A3E);
+  background: var(--db-caregiver-green, #2C4A3E);
+  box-shadow: 0 2px 8px rgba(44, 74, 62, 0.18);
+}
+
+.settings-level-btn--active .settings-level-label,
+.settings-level-btn--active .settings-level-hint {
+  color: #fff;
+}
+
+.settings-level-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--db-navy-text, #20291F);
+  font-family: 'Fraunces', serif;
+}
+
+.settings-level-hint {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+/* ── Theme buttons ─────────────────────────────────────────── */
+.settings-theme-group {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.settings-theme-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 18px;
+  border: 1.5px solid var(--db-border-color, #E2DCC8);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  min-width: 100px;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.settings-theme-btn:hover {
+  border-color: var(--db-caregiver-green, #2C4A3E);
+  background: #f0f4f2;
+}
+
+.settings-theme-btn--active {
+  border-color: var(--db-caregiver-green, #2C4A3E);
+  background: var(--db-caregiver-green, #2C4A3E);
+  box-shadow: 0 2px 8px rgba(44, 74, 62, 0.18);
+}
+
+.settings-theme-btn--active .settings-theme-label,
+.settings-theme-btn--active .settings-theme-hint {
+  color: #fff;
+}
+
+.settings-theme-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--db-navy-text, #20291F);
+}
+
+.settings-theme-hint {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+/* ── Saved badge (animated) ─────────────────────────────────── */
+.settings-saved-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--db-caregiver-green, #2C4A3E);
+  background: #e6f0ec;
+  border-radius: 20px;
+  padding: 4px 14px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.settings-saved-badge--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Dark theme tokens ──────────────────────────────────────── */
+[data-theme="dark"] {
+  --db-light-bg: #1a1f1e;
+  --db-border-color: #2e3a36;
+  --db-navy-text: #e8ede8;
+  --db-caregiver-green: #4a8c72;
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .settings-card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .patient-card {
+  background: #232b28;
+  border-color: #2e3a36;
+}
+
+[data-theme="dark"] .settings-level-btn,
+[data-theme="dark"] .settings-theme-btn {
+  background: #2a332f;
+  border-color: #3a4a44;
+  color: #e8ede8;
+}
+
+[data-theme="dark"] .settings-time-input {
+  background: #2a332f;
+  color: #e8ede8;
+}
+
+[data-theme="dark"] body,
+[data-theme="dark"] .dashboard-shell {
+  background: #161b19;
+}
+
+/* ── Warm theme tokens ──────────────────────────────────────── */
+[data-theme="warm"] {
+  --db-light-bg: #faf5ed;
+  --db-border-color: #e8d9c0;
+  --db-caregiver-green: #7a5c38;
+}
+
+[data-theme="warm"] .settings-level-btn--active,
+[data-theme="warm"] .settings-theme-btn--active {
+  background: #7a5c38;
+  border-color: #7a5c38;
+}
+
+/* ── High contrast overrides ────────────────────────────────── */
+[data-high-contrast] .settings-row-label,
+[data-high-contrast] .credential-label,
+[data-high-contrast] h1,
+[data-high-contrast] h2,
+[data-high-contrast] h3 {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+[data-high-contrast] .settings-card,
+[data-high-contrast] .patient-card,
+[data-high-contrast] .stat-card {
+  border-width: 2px;
+}
+
+[data-high-contrast] .btn-outline {
+  border-width: 2px;
 }
